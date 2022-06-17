@@ -1,0 +1,45 @@
+program			: (application | section | definition)*
+
+application		: "#" (IDENT ".")* IDENT
+section 		: IDENT "{" (application | section | definition)* "}"
+
+definition 		: func_def | var_def
+func_def		: IDENT "(" (IDENT type? ("," IDENT type?)*)? ")" type? "=" expression
+var_def			: IDENT type? "=" expression
+
+expression		: (expression ",")? definition | logical
+
+logical 		: switch
+				| loop
+
+switch 			: "??" basic_expr ("|" basic_expr "=>" basic_expr)+
+loop			: basic_expr "=>" IDENT basic_expr
+
+basic_expr		: conditional
+
+conditional		: basic_expr "?" basic_expr (":" basic_expr)?
+logical_or		: logical_xor ("||" logical_xor)*
+logical_or		: logical_and ("^^" logical_and)*
+logical_and		: bitwise_or ("&&" bitwise_or)*
+bitwise_or		: bitwise_xor ("|" bitwise_xor)*
+bitwise_xor		: bitwise_and ("^" bitwise_and)*
+bitwise_and		: equality ("&" equality)*
+equality		: comparison (("!=" | "==") comparison)*
+comparison		: bitwise_shift ((">" | ">=" | "<" | "<=") bitwise_shift)*
+bitwise_shift	: term (("<<" | ">>") term)*
+term			: factor (("-" | "+") factor)*
+factor			: cast (("/" | "*") cast)*
+cast			: unary ("->" type)*
+unary			: ("!" | "-" | "++" | "--") unary | subscript
+subscript		: range ("[" expression "]")*
+range			: primary (".." primary)?
+primary			: NUMBER | CHAR | STRING | "(" expression ")"
+				| list | variable | call | null
+
+list			: "[" (expression ("," expression)*)? "]"
+variable		: IDENT
+call			: IDENT "(" (expression ("," expression)*)? ")"
+null			: "()"
+
+type 			: BASE_TYPE "[" "]" *
+

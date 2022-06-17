@@ -1,0 +1,17 @@
+#std.io.println
+
+fizzbuzz(n) nll =
+	-- if-elseif-else stuff
+	n % 15 == 0 ? println("fizzbuzz") :
+	n % 3 == 0 ? println("fizz") :
+	n % 5 == 0 ? println("buzz") :
+	()
+
+main(argc, argv) =
+	-- iter() methods return an iterator
+	-- which is like map() but without 
+	-- actually mapping the new data
+	1..100.iter() => n fizzbuzz(n),
+
+	0
+

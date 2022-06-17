@@ -1,0 +1,7 @@
+{
+	"scope": "source.idk",
+
+	"completions": [
+		// { "trigger": "some_trigger", "contents": "some_trigger" },
+	]
+}
