@@ -7,9 +7,7 @@ use token::{Token, TokenKind::{self, *}};
 use source::Source;
 use crate::{fmt_error_msg, deref_source};
 use crate::report::ecode::ErrorCode;
-use crate::runtime::types::Type;
-
-// pub type TokenIter<'a> = std::slice::Iter<'a, Token>;
+// use crate::runtime::types::Type;
 
 pub struct Lexer {
 	source: *const Source,
@@ -117,10 +115,11 @@ impl Lexer {
 		// get ident
 		let ident = deref_source!(self).slice(self.start_offset, self.current_offset);
 
-		match <dyn Type>::from_string(ident.to_string()) {
-			Some(_) => self.make_token(Type),
-			None => self.make_token(Identifier),
-		}
+		// match <dyn Type>::from_string(ident.to_string()) {
+		// 	Some(_) => self.make_token(Type),
+		// 	None => self.make_token(Identifier),
+		// }
+		self.make_token(Identifier)
 	}
 
 	fn number(&mut self, first: char) -> Token {

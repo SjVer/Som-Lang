@@ -56,7 +56,6 @@ impl ErrorCode {
 				Self::_C => Some("error"),
 				Self::_L => Some("lexical error"),
 				Self::_S => Some("syntax error"),
-				Self::_D => Some("disassembly error"),
 				_ => None
 			}
 		}
