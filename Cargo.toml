@@ -1,0 +1,17 @@
+[package]
+name = "idk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+yansi = "0.5.1"
+json = "0.12.4"
+num_enum = "0.5.7"
+convert_case = "0.5.0"
+
+[alias]
+b = "build"
+br = "build --release"
+r = "run --"
+rr = "run --release --"
+rq = "run --quiet --"
