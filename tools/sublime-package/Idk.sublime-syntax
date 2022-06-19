@@ -11,15 +11,19 @@ variables:
   ident: '[A-Za-z_][A-Za-z_0-9]*''*'
 
   # numbers
-  decimal: '\b[0-9]+(\.[0-9]+)?\b'
+  decimal: '\b[0-9]+(?:\.[0-9]+)?\b'
   binary: '\b0b[0-1]+\b'
   octal: '\b0c[0-7]+\b'
   hexadecimal: '\b0x[0-9a-fA-F]+\b'
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
   # types
-  basetype: int|flt|bln|chr|str|nll(?:\[\])*
-  type: '{{basetype}}'
+  basetype: int|flt|bln|chr|str|nll
+  modifier: \[\s*(?:{{number}})?\s*\]
+  type: \b(?:{{basetype}})(?:{{modifier}})*\b
+
+  # properties
+  property: (?:no_redef|warn_redef|public|private)
 
 contexts:
   prototype:
@@ -30,7 +34,11 @@ contexts:
     # The main context is the initial starting point of our syntax.
     # Include other contexts from here (or specify them directly).
     - include: comment
-    - include: statement
+    - include: property
+    - include: application
+    - include: section
+    - include: structdef
+    - include: expression
     - include: invalid
 
   type:
@@ -40,10 +48,9 @@ contexts:
 
   # STATEMENTS
 
-  statement:
-    - include: application
-    - include: section
-    - include: expression
+  property:
+    - match: \!\!?\s*{{property}}
+      scope: punctuation.definition.annotation.idk
 
   application:
     - match: \#
@@ -59,15 +66,33 @@ contexts:
         - include: invalid
 
   section:
-    - match: ({{ident}})\s*(\{)
+    - match: ({{ident}})\s*(\[)
       captures:
         1: entity.name.namespace.idk
         2: punctuation.section.braces.begin.idk
       push:
-        - match: \}
+        - match: \]
           scope: punctuation.section.braces.end.idk
           pop: true
         - include: main
+
+  structdef:
+    - match: ({{ident}})\s*(\{)
+      captures:
+        1: entity.name.struct.idk
+        2: punctuation.section.brackets.begin.idk
+      push:
+        - match: ({{ident}})\s*({{type}})
+          captures:
+            1: meta.field.idk
+            2: storage.type.idk
+
+        - match: \}
+          scope: punctuation.section.brackets.end.idk
+          pop: true
+
+        - include: expression
+        - include: invalid
 
   expression:
     - include: comment
@@ -83,8 +108,6 @@ contexts:
 
     - include: definition_or_variable
 
-    - include: invalid
-
   # DEFINITION
 
   definition_or_variable:
@@ -96,8 +119,11 @@ contexts:
         - variable_or_call
 
   definition:
-    - match: '{{ident}}'
-      scope: entity.name.function.idk
+    - match: ({{ident}})\s+({{ident}})|({{ident}})
+      captures:
+        1: entity.name.class.idk
+        2: entity.name.function.method.idk
+        3: entity.name.function.idk
       push:
         - match: \(
           scope: punctuation.section.parens.begin.idk
@@ -232,10 +258,12 @@ contexts:
         - include: escaped-char
 
   variable_or_call:
-    - match: '({{ident}})\s*(\()'
+    - match: (?:({{ident}})\s+({{ident}})|({{ident}}))\s*(\()
       captures:
-        1: variable.function.idk
-        2: punctuation.section.arguments.begin.idk
+        1: variable.class.idk
+        2: variable.function.method.idk
+        3: variable.function.idk
+        4: punctuation.section.arguments.begin.idk
       push:
         - include: comment
         - match: \)

@@ -1,6 +1,8 @@
--- some signatures
+-- warn for redef of any of these symbols
+!!warn_redef
 
-io {
+-- some signatures
+io [
 	print(fmt str, ...) nll :=
 	println(fmt str, ...) nll :=
 
@@ -8,12 +10,12 @@ io {
 	close(file int) nll :=
 	read(file int) str :=
 	write(file int, text str) nll :=
-}
+]
 
-str {
+str [
 	display(value .) str :=
 	concat(a str, b str) str :=
 	trim(string str) str :=
 	strip(string str, delim str) str :=
 	split(string str, delim str) str :=
-}
+]
