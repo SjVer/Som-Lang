@@ -1,25 +1,25 @@
 #std.io
 
 rect {
-    width int
-    height int
-    color str
+	width int
+	height int
+	color str
 }
 
 rect_new(width, height) =
-    rect {
-        width,
-        height,
-        "red"
-    }
+	rect {
+		width,
+		height,
+		"red"
+	}
 
 rect draw(scale int) = () -- TODO
-    
+
 main() =
-    print("Hello, world!\n"),
+	print("Hello, world!\n"),
 
-    my_rect = rect_new(10, 10),
-    my_rect.color = "blue", -- ???
-    my_rect draw(1),
+	my_rect = rect_new(10, 10),
+	my_rect.color = "blue", -- ???
+	my_rect draw(1),
 
-    0
+	0

@@ -1,13 +1,13 @@
-program			: (application | section | definition)*
+program			: (application | section |  definition)*
 
 application		: "#" (IDENT ".")* IDENT
-section 		: IDENT "{" (application | section | definition)* "}"
+section 		: IDENT "[" (application | section | definition)* "]"
 
 definition 		: func_def | var_def
-func_def		: IDENT "(" (IDENT type? ("," IDENT type?)*)? ")" type? "=" expression
+func_def		: IDENT "(" parameters? ")" type? "=" expression
 var_def			: IDENT type? "=" expression
 
-expression		: (expression ",")? definition | logical
+expression		: (expression ",")? (definition | logical | basic_expr)
 
 logical 		: switch
 				| loop
@@ -32,14 +32,19 @@ factor			: cast (("/" | "*") cast)*
 cast			: unary ("->" type)*
 unary			: ("!" | "-" | "++" | "--") unary | subscript
 subscript		: range ("[" expression "]")*
-range			: primary (".." primary)?
-primary			: NUMBER | CHAR | STRING | "(" expression ")"
-				| list | variable | call | null
+range			: call (".." call)?
+call			: primary ( "(" arguments? ")" | "." IDENT )*
+primary			: "true" | "false" | NUMBER | CHAR | STRING
+				| "(" expression ")" | list | variable | null
 
 list			: "[" (expression ("," expression)*)? "]"
 variable		: IDENT
-call			: IDENT "(" (expression ("," expression)*)? ")"
 null			: "()"
 
-type 			: BASE_TYPE "[" "]" *
+parameters		: IDENT type? ("," IDENT type?)*
+arguments		: expression ("," expression)*
+
+type 			: "[" type ";" NUMBER "]"
+				| "(" type (";" type)* ")"
+				| BASE_TYPE
 

@@ -19,8 +19,7 @@ variables:
 
   # types
   basetype: int|flt|bln|chr|str|nll
-  modifier: \[\s*(?:{{number}})?\s*\]
-  type: \b(?:{{basetype}})(?:{{modifier}})*\b
+  type: \b(?:{{basetype}})\b
 
   # properties
   property: (?:no_redef|warn_redef|public|private)
@@ -42,9 +41,46 @@ contexts:
     - include: invalid
 
   type:
-    - match: \b{{type}}\b
+    - match: \[
+      scope: punctuation.section.brackets.begin.idk
+      push:
+        - meta_scope: meta.array-type.idk
+
+        - include: type
+
+        - match: \;
+          scope: punctuation.separator.sequence.idk
+          set:
+            - include: number
+
+            - match: \]
+              scope: punctuation.section.brackets.end.idk
+              pop: true
+
+            - include: invalid
+
+        - match: \]
+          scope: punctuation.section.brackets.end.idk
+          pop: true
+
+        - include: invalid
+
+    - match: \(
+      scope: punctuation.section.parens.begin.idk
+      push:
+        - meta_scope: meta.tuple-type.idk
+
+        - include: type
+        - match: \;
+          scope: punctuation.separator.sequence.idk
+        - match: \)
+          scope: punctuation.section.parens.end.idk
+          pop: true
+
+        - include: invalid
+
+    - match: '{{type}}'
       scope: storage.type.idk
-      pop: true
 
   # STATEMENTS
 
@@ -82,11 +118,9 @@ contexts:
         1: entity.name.struct.idk
         2: punctuation.section.brackets.begin.idk
       push:
-        - match: ({{ident}})\s*({{type}})
-          captures:
-            1: meta.field.idk
-            2: storage.type.idk
-
+        - include: type
+        - match: '{{ident}}'
+          scope: meta.field.idk
         - match: \}
           scope: punctuation.section.brackets.end.idk
           pop: true
@@ -128,29 +162,35 @@ contexts:
         - match: \(
           scope: punctuation.section.parens.begin.idk
           set:
-            - match: '({{ident}})\s*({{type}})?'
-              captures:
-                1: variable.parameter.idk
-                2: storage.type.idk
-            - match: \,
-              scope: punctuation.separator.sequence.idk
-            - match: \.
-              scope: keyword.operator.any.idk
+            - match: '{{ident}}'
+              scope: variable.parameter.idk
+              push:
+                # type or no type
+                - include: type
+
+                - match: (\,)|(?=\s*\))
+                  captures:
+                    1: punctuation.separator.sequence.idk
+                  pop: true
+
+                - match: \S|$
+                  fail: start_def_or_var
+
             - match: \.\.\.
               scope: keyword.operator.variadic.idk
             - match: \)
               scope: punctuation.section.parens.end.idk
               set: finish_def
 
-            - include: invalid
+            - match: \S|$
+              fail: start_def_or_var
 
         - include: finish_def
 
   finish_def:
-    - match: ({{type}})?\s*(=|:=)(?!>)
-      captures:
-        1: storage.type.idk
-        2: keyword.operator.assignment.idk
+    - include: type
+    - match: =(?!>)|:=
+      scope: keyword.operator.assignment.idk
       pop: 2
 
     - match: \S|$
@@ -281,6 +321,7 @@ contexts:
   invalid:
     - match: \S
       scope: invalid.idk
+      pop: true
 
   comment:
     - match: '---'

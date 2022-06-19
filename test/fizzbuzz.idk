@@ -11,7 +11,7 @@ main(argc, argv) =
 	-- iter() methods return an iterator
 	-- which is like map() but without 
 	-- actually mapping the new data
-	1..100.iter() => n fizzbuzz(n),
+	1..100 iter() => n fizzbuzz(n),
 
 	0
 
