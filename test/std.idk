@@ -1,5 +1,5 @@
 -- warn for redef of any of these symbols
-!!warn_redef
+!!.warn_redef
 
 -- some signatures
 io [

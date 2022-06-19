@@ -85,7 +85,7 @@ contexts:
   # STATEMENTS
 
   property:
-    - match: \!\!?\s*{{property}}
+    - match: \!\!\.?\s*{{property}}
       scope: punctuation.definition.annotation.idk
 
   application:
@@ -222,7 +222,7 @@ contexts:
       scope: keyword.operator.comparison.idk
     - match: <=|>=|<>|<|>
       scope: keyword.operator.relational.idk
-    - match: \!|&&|\|\||\?\?|\^\^
+    - match: \!|&&|\|\||\^\^
       scope: keyword.operator.logical.idk
     - match: \&|\^|\|
       scope: keyword.operator.bitwise.idk
