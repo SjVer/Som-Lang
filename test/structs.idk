@@ -1,9 +1,9 @@
 #std.io
 
 rect {
-	width int
-	height int
-	color str
+	width int,
+	height int,
+	color str,
 }
 
 rect_new(width, height) =
