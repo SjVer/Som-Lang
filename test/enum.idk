@@ -7,6 +7,6 @@ color [
 
 main() =
 	myred = color::red,
-	myblack = color::other(0, 0, 0),
+	myblack = color::other(0; 0; 0),
 
 	0
