@@ -12,6 +12,6 @@
 	// "cmd": ["~/Coding/Languages/Evi-Lang/bin/evi $file -o $file_path/$file_base_name && $file_path/$file_base_name; rm $file_path/$file_base_name"],
 
 	"file_regex": "^[ ]File \"(...?)\", line ([0-9]*)",
-	"selector": "source.idk",
-	"file_patterns": ["*.idk"]
+	"selector": "source.som",
+	"file_patterns": ["*.som"]
 }

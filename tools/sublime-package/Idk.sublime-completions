@@ -1,5 +1,5 @@
 {
-	"scope": "source.idk",
+	"scope": "source.som",
 
 	"completions": [
 		// { "trigger": "some_trigger", "contents": "some_trigger" },

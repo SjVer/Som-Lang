@@ -2,10 +2,10 @@
 
 ---
 
-name: Idk
-file_extensions: [idk]
-fileTypes: [idk]
-scope: source.idk
+name: Som
+file_extensions: [som]
+fileTypes: [som]
+scope: source.som
 
 variables:
   ident: '[A-Za-z_][A-Za-z_0-9]*''*'
@@ -42,80 +42,80 @@ contexts:
 
   type:
     - match: \[
-      scope: punctuation.section.brackets.begin.idk
+      scope: punctuation.section.brackets.begin.som
       push:
-        - meta_scope: meta.array-type.idk
+        - meta_scope: meta.array-type.som
 
         - include: type
 
         - match: \;
-          scope: punctuation.separator.sequence.idk
+          scope: punctuation.separator.sequence.som
           set:
             - include: number
 
             - match: \]
-              scope: punctuation.section.brackets.end.idk
+              scope: punctuation.section.brackets.end.som
               pop: true
 
             - include: invalid
 
         - match: \]
-          scope: punctuation.section.brackets.end.idk
+          scope: punctuation.section.brackets.end.som
           pop: true
 
         - include: invalid
 
     - match: \(
-      scope: punctuation.section.parens.begin.idk
+      scope: punctuation.section.parens.begin.som
       push:
-        - meta_scope: meta.tuple-type.idk
+        - meta_scope: meta.tuple-type.som
 
         - include: type
         - match: \;
-          scope: punctuation.separator.sequence.idk
+          scope: punctuation.separator.sequence.som
         - match: \)
-          scope: punctuation.section.parens.end.idk
+          scope: punctuation.section.parens.end.som
           pop: true
 
         - include: invalid
 
     - match: '{{type}}'
-      scope: storage.type.idk
+      scope: storage.type.som
 
   # STATEMENTS
 
   property:
     - match: \!\!\.?\s*{{property}}
-      scope: punctuation.definition.annotation.idk
+      scope: punctuation.definition.annotation.som
 
   application:
     - match: \#
-      scope: keyword.import.idk
+      scope: keyword.import.som
       push:
         - match: (?:({{ident}})\s*(\:\:)\s*)*({{ident}})
-          scope: entity.name.namespace.idk
+          scope: entity.name.namespace.som
           # captures:
-            # 1: entity.name.namespace.idk
-            # 2: punctuation.accessor.idk
-            # 3: entity.name.namespace.idk
+            # 1: entity.name.namespace.som
+            # 2: punctuation.accessor.som
+            # 3: entity.name.namespace.som
           pop: true
         - include: invalid
 
   enum_decl:
     - match: ({{ident}})\s*(\[)
       captures:
-        1: entity.name.enum.idk
-        2: punctuation.section.braces.begin.idk
+        1: entity.name.enum.som
+        2: punctuation.section.braces.begin.som
       push:
         - match: '{{ident}}'
-          scope: meta.enum-varant.idk
+          scope: meta.enum-varant.som
 
         - match: \]
-          scope: punctuation.section.braces.end.idk
+          scope: punctuation.section.braces.end.som
           pop: true
 
         - match: \,
-          scope: punctuation.separator.sequence.idk
+          scope: punctuation.separator.sequence.som
 
         - include: type
         - include: invalid
@@ -123,14 +123,14 @@ contexts:
   structdef:
     - match: ({{ident}})\s*(\{)
       captures:
-        1: entity.name.struct.idk
-        2: punctuation.section.brackets.begin.idk
+        1: entity.name.struct.som
+        2: punctuation.section.brackets.begin.som
       push:
         - include: type
         - match: '{{ident}}'
-          scope: meta.field.idk
+          scope: meta.field.som
         - match: \}
-          scope: punctuation.section.brackets.end.idk
+          scope: punctuation.section.brackets.end.som
           pop: true
 
         - include: expression
@@ -163,31 +163,31 @@ contexts:
   definition:
     - match: ({{ident}})\s+({{ident}})|({{ident}})
       captures:
-        1: entity.name.class.idk
-        2: entity.name.function.method.idk
-        3: entity.name.function.idk
+        1: entity.name.class.som
+        2: entity.name.function.method.som
+        3: entity.name.function.som
       push:
         - match: \(
-          scope: punctuation.section.parens.begin.idk
+          scope: punctuation.section.parens.begin.som
           set:
             - match: '{{ident}}'
-              scope: variable.parameter.idk
+              scope: variable.parameter.som
               push:
                 # type or no type
                 - include: type
 
                 - match: (\,)|(?=\s*\))
                   captures:
-                    1: punctuation.separator.sequence.idk
+                    1: punctuation.separator.sequence.som
                   pop: true
 
                 - match: \S|$
                   fail: start_def_or_var
 
             - match: \.\.\.
-              scope: keyword.operator.variadic.idk
+              scope: keyword.operator.variadic.som
             - match: \)
-              scope: punctuation.section.parens.end.idk
+              scope: punctuation.section.parens.end.som
               set: finish_def
 
             - match: \S|$
@@ -198,7 +198,7 @@ contexts:
   finish_def:
     - include: type
     - match: =(?!>)|:=
-      scope: keyword.operator.assignment.idk
+      scope: keyword.operator.assignment.som
       pop: 2
 
     - match: \S|$
@@ -208,70 +208,70 @@ contexts:
 
   keyword:
     - match: \?\?
-      scope: keyword.control.conditional.switch.idk
+      scope: keyword.control.conditional.switch.som
     - match: =>
-      scope: keyword.control.conditional.switch.idk
+      scope: keyword.control.conditional.switch.som
 
     - match: =>
-      scope: keyword.control.loop.for.idk
+      scope: keyword.control.loop.for.som
 
     - match: \?
-      scope: keyword.control.conditional.if.idk
+      scope: keyword.control.conditional.if.som
     - match: ':(?!:)'
-      scope: keyword.control.conditional.else.idk
+      scope: keyword.control.conditional.else.som
 
   operator:
     - match: ->
-      scope: keyword.operator.cast.idk
+      scope: keyword.operator.cast.som
       push: type
     - match: <<|>>
-      scope: keyword.operator.bitwise.shift.idk
+      scope: keyword.operator.bitwise.shift.som
     - match: ==|/=
-      scope: keyword.operator.comparison.idk
+      scope: keyword.operator.comparison.som
     - match: <=|>=|<>|<|>
-      scope: keyword.operator.relational.idk
+      scope: keyword.operator.relational.som
     - match: \!|&&|\|\||\^\^
-      scope: keyword.operator.logical.idk
+      scope: keyword.operator.logical.som
     - match: \&|\^|\|
-      scope: keyword.operator.bitwise.idk
+      scope: keyword.operator.bitwise.som
     - match: \*|/|-|\+|\%
-      scope: keyword.operator.arithmetic.idk
+      scope: keyword.operator.arithmetic.som
 
     - match: \.\.
-      scope: punctuation.definition.range.idk
+      scope: punctuation.definition.range.som
     - match: \.
-      scope: punctuation.accessor.dot.idk
+      scope: punctuation.accessor.dot.som
     - match: \,
-      scope: punctuation.separator.sequence.idk
+      scope: punctuation.separator.sequence.som
 
   grouping:
     - match: \(
-      scope: punctuation.section.parens.begin.idk
+      scope: punctuation.section.parens.begin.som
       push:
         - include: expression
         - match: \)
-          scope: punctuation.section.parens.end.idk
+          scope: punctuation.section.parens.end.som
           pop: true
         - include: invalid
 
   subscript:
     - match: \[
-      scope: punctuation.section.brackets.begin.idk
+      scope: punctuation.section.brackets.begin.som
       push:
         - include: expression
         - match: \]
-          scope: punctuation.section.brackets.end.idk
+          scope: punctuation.section.brackets.end.som
           pop: true
         - include: comments
         - include: invalids
 
   array:
     - match: \[
-      scope: punctuation.section.brackets.begin.idk
+      scope: punctuation.section.brackets.begin.som
       push:
-      - meta_scope: meta.array-elements.idk
+      - meta_scope: meta.array-elements.som
       - match: \]
-        scope: punctuation.section.brackets.end.idk
+        scope: punctuation.section.brackets.end.som
         pop: true
       - include: comment
       - include: expression
@@ -281,13 +281,13 @@ contexts:
 
   number:
     - match: \b{{number}}\b
-      scope: constant.numeric.idk
+      scope: constant.numeric.som
 
   special:
     - match: true|false
-      scope: constant.language.boolean.idk
+      scope: constant.language.boolean.som
     - match: \(\)
-      scope: constant.language.null.idk
+      scope: constant.language.null.som
 
   string-char:
     - match: '\"'
@@ -308,47 +308,47 @@ contexts:
   variable_or_call:
     - match: ({{ident}})\s*(\:\:)
       captures:
-        1: entity.name.enum.idk
-        2: punctuation.accessor.double-colon.idk
+        1: entity.name.enum.som
+        2: punctuation.accessor.double-colon.som
 
     - match: (?:({{ident}})\s+({{ident}})|({{ident}}))\s*(\()
       captures:
-        1: variable.class.idk
-        2: variable.function.method.idk
-        3: variable.function.idk
-        4: punctuation.section.arguments.begin.idk
+        1: variable.class.som
+        2: variable.function.method.som
+        3: variable.function.som
+        4: punctuation.section.arguments.begin.som
       push:
         - include: comment
         - match: \)
-          scope: punctuation.section.arguments.end.idk
+          scope: punctuation.section.arguments.end.som
           pop: 2
         - include: expression
         - include: invalid
 
     - match: '{{ident}}'
-      scope: variable.idk
+      scope: variable.som
       pop: true
 
   # MISC
 
   invalid:
     - match: \S
-      scope: invalid.idk
+      scope: invalid.som
       pop: true
 
   comment:
     - match: '---'
-      scope: punctuation.definition.comment.idk
+      scope: punctuation.definition.comment.som
       push:
         - meta_include_prototype: false
-        - meta_scope: comment.block.idk
+        - meta_scope: comment.block.som
         - match: '---'
           pop: true
 
     - match: '--'
-      scope: punctuation.definition.comment.idk
+      scope: punctuation.definition.comment.som
       push:
-        - meta_scope: comment.line.idk
+        - meta_scope: comment.line.som
         - match: $\n?
           pop: true
 
@@ -369,4 +369,4 @@ contexts:
             (\.((-?\d+)|\*(-?\d+\$)?)?)?                  # precision
             (hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)?          # length modifier
             (\[[^\]]+\]|[am]s|[diouxXDOUeEfFgGaACcSspn%]) # conversion type
-        scope: constant.other.placeholder.idk
+        scope: constant.other.placeholder.som
