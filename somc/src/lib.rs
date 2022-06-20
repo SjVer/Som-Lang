@@ -1,1 +1,1 @@
-extern crate somc_lex;
+use somc_lex;
