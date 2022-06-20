@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 "somc-global" = { path = "../somc-global" }
-"somc-lex" = { path = "../somc-lex" }
+# "somc-lex" = { path = "../somc-lex" }
 
 yansi = "0.5.1"
 json = "0.12.4"

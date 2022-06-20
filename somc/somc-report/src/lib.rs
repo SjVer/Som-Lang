@@ -1,7 +1,6 @@
 mod report;
 pub mod ecode;
 pub mod wcode;
-pub mod lint;
 
 pub use {
 	report::Report,

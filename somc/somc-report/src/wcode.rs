@@ -1,6 +1,6 @@
+use somc_global::{info::report::WCODE_PREFIX, get_cli_arg};
 use num_enum::TryFromPrimitive;
 use convert_case::{Case, Casing};
-use crate::{info::report::WCODE_PREFIX, get_cli_arg};
 
 #[repr(i16)]
 #[derive(Debug, Clone, PartialEq, TryFromPrimitive)]

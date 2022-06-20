@@ -1,5 +1,5 @@
-use crate::deref_source;
-use super::source::Source;
+use super::deref_source;
+use crate::source::Source;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Location {

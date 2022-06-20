@@ -1,13 +1,15 @@
+use crate as somc_global;
+
 static mut MAIN_LIST: json::JsonValue = json::JsonValue::Array(vec![]);
 
 #[macro_export]
 macro_rules! get_lint_mode {
-    () => (crate::get_cli_arg!(lint).unwrap_or(crate::cli::LintMode::None))
+    () => (somc_global::get_cli_arg!(lint).unwrap_or(somc_global::cli::LintMode::None))
 }
 
 #[macro_export]
 macro_rules! lint_mode_is {
-    ($mode:ident) => (crate::get_lint_mode!() == crate::cli::LintMode::$mode)
+    ($mode:ident) => (somc_global::get_lint_mode!() == somc_global::cli::LintMode::$mode)
 }
 
 pub fn append(value: json::JsonValue) {
