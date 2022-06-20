@@ -1,8 +1,11 @@
-program			: (application | section | struct_decl | definition)*
+program			: (application | declaration | definition)*
 
 application		: "#" (IDENT ".")* IDENT
-section 		: IDENT "[" (application | section | definition)* "]"
+declaration		: struct_decl
+				| enum_decl
+
 struct_decl		: IDENT "{" parameters? "}"
+enum_decl		: IDENT "[" variants? "]"
 
 definition 		: func_def | var_def
 func_def		: IDENT "(" parameters? ")" type? "=" expression
@@ -45,10 +48,16 @@ struct			: IDENT "{" arguments? "}"
 variable		: IDENT
 null			: "()"
 
+variants		: variant ("," variant)*
+variant 		: IDENT | IDENT tuple_type | struct_decl
 parameters		: IDENT type? ("," IDENT type?)*
 arguments		: expression ("," expression)*
 
-type 			: "[" type ";" NUMBER "]"
-				| "(" type (";" type)* ")"
+type 			: array_type
+				| tuple_type
+				| BASE_TYPE
+array_type		: "[" type ";" NUMBER "]"
+tuple_type		: "(" type (";" type)* ")"
+
 				| BASE_TYPE
 
