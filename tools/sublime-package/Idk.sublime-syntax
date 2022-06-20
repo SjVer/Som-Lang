@@ -35,7 +35,7 @@ contexts:
     - include: comment
     - include: property
     - include: application
-    - include: section
+    - include: enum_decl
     - include: structdef
     - include: expression
     - include: invalid
@@ -92,7 +92,7 @@ contexts:
     - match: \#
       scope: keyword.import.idk
       push:
-        - match: (?:({{ident}})\s*(\.)\s*)*({{ident}})
+        - match: (?:({{ident}})\s*(\:\:)\s*)*({{ident}})
           scope: entity.name.namespace.idk
           # captures:
             # 1: entity.name.namespace.idk
@@ -101,16 +101,24 @@ contexts:
           pop: true
         - include: invalid
 
-  section:
+  enum_decl:
     - match: ({{ident}})\s*(\[)
       captures:
-        1: entity.name.namespace.idk
+        1: entity.name.enum.idk
         2: punctuation.section.braces.begin.idk
       push:
+        - match: '{{ident}}'
+          scope: meta.enum-varant.idk
+
         - match: \]
           scope: punctuation.section.braces.end.idk
           pop: true
-        - include: main
+
+        - match: \,
+          scope: punctuation.separator.sequence.idk
+
+        - include: type
+        - include: invalid
 
   structdef:
     - match: ({{ident}})\s*(\{)
@@ -209,7 +217,7 @@ contexts:
 
     - match: \?
       scope: keyword.control.conditional.if.idk
-    - match: ':'
+    - match: ':(?!:)'
       scope: keyword.control.conditional.else.idk
 
   operator:
@@ -298,6 +306,11 @@ contexts:
         - include: escaped-char
 
   variable_or_call:
+    - match: ({{ident}})\s*(\:\:)
+      captures:
+        1: entity.name.enum.idk
+        2: punctuation.accessor.double-colon.idk
+
     - match: (?:({{ident}})\s+({{ident}})|({{ident}}))\s*(\()
       captures:
         1: variable.class.idk

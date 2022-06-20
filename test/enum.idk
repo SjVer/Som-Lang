@@ -1,0 +1,12 @@
+color [
+	red,
+	green,
+	blue,
+	other(int; int; int)
+]
+
+main() =
+	myred = color::red,
+	myblack = color::other(0, 0, 0),
+
+	0

@@ -1,5 +1,5 @@
 -- import standard io stuff
-#std.io
+#std::io
 
 -- some variable
 succes = 0

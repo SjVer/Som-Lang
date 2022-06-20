@@ -2,20 +2,15 @@
 !!.warn_redef
 
 -- some signatures
-io [
-	print(fmt str, ...) nll :=
-	println(fmt str, ...) nll :=
+print(fmt str, ...) nll :=
+println(fmt str, ...) nll :=
 
-	open(path str, mode int) int :=
-	close(file int) nll :=
-	read(file int) str :=
-	write(file int, text str) nll :=
-]
+open(path str, mode int) int :=
+close(file int) nll :=
+read(file int) str :=
+write(file int, text str) nll :=
 
-str [
-	display(value .) str :=
-	concat(a str, b str) str :=
-	trim(string str) str :=
-	strip(string str, delim str) str :=
-	split(string str, delim str) str :=
-]
+concat(a str, b str) str :=
+trim(string str) str :=
+strip(string str, delim str) str :=
+split(string str, delim str) str :=

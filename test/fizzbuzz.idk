@@ -1,4 +1,4 @@
-#std.io.println
+#std::io::println
 
 fizzbuzz(n) nll =
 	-- if-elseif-else stuff

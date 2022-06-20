@@ -1,4 +1,4 @@
-#std.io
+#std::io
 
 rect {
 	width int,
