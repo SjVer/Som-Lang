@@ -1,2 +1,2 @@
-# Idk
-some unnamed programming language i think
+# Som
+some programming language i think

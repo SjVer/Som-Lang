@@ -7,13 +7,13 @@ macro_rules! static_string {
 }
 
 pub mod app {
-	static_string!(NAME, "idk");
-	static_string!(FULL_NAME, "IDK (official)");
+	static_string!(NAME, "som");
+	static_string!(FULL_NAME, "SOMC (official)");
 	static_string!(VERSION, env!("CARGO_PKG_VERSION"));
 }
 
 pub mod cli {
-	static_string!(DESCRIPTION, "The Official IDK Compiler");
+	static_string!(DESCRIPTION, "The Official Som Compiler");
 	static_string!(ARG_INFILE, "The file to compile");
 	static_string!(ARG_MUTE, "Mute all warnings");
 	static_string!(ARG_COMPACT, "Produce compact output");

@@ -1,11 +1,11 @@
 [package]
-name = "idkc"
+name = "somc"
 version = "0.1.0"
 edition = "2021"
 
 [workspace]
 members = [
-	"idkc_lex"
+	"somc-lex"
 ]
 
 [dependencies]

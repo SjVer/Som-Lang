@@ -169,7 +169,7 @@ impl Report {
 		// message
 		text.push_str(&Paint::new(format!(": {}\n", self.message)).bold().to_string());
 
-		// add "mqs: " for clearification if debugging
+		// add "som: " for clearification if debugging
 		if cfg!(debug_assertions) {
 			text.insert_str(0, &Color::Green.paint(": ").bold().to_string());
 			text.insert_str(0, &Color::Green.paint(NAME).bold().to_string());
