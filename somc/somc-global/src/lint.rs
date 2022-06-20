@@ -7,7 +7,7 @@ macro_rules! get_lint_mode {
 
 #[macro_export]
 macro_rules! lint_mode_is {
-    ($mode:ident) => (crate::get_lint_mode!() == crate::LintMode::$mode)
+    ($mode:ident) => (crate::get_lint_mode!() == crate::cli::LintMode::$mode)
 }
 
 pub fn append(value: json::JsonValue) {

@@ -1,6 +1,8 @@
-use crate::{get_cli_arg, lint_mode_is};
-use crate::lex::span::Span;
-use crate::info::{report::NOTE_LABEL, app::NAME};
+use somc_global::{
+	get_cli_arg, lint_mode_is,
+	info::{report::NOTE_LABEL, app::NAME}
+};
+use somc_lex::span::Span;
 use std::io::{Write, stderr};
 use yansi::{Color, Paint};
 use json::{object, JsonValue};

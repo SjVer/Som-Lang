@@ -10,7 +10,7 @@ pub use {
 };
 
 use report::Severity;
-use crate::info::report::*;
+use somc_global::info::report::*;
 use yansi::Color;
 
 pub trait ReportableCode {

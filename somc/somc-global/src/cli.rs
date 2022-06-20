@@ -7,7 +7,7 @@ pub static mut CLI_ARGS: Option<CliArgs> = None;
 
 #[macro_export]
 macro_rules! get_cli_arg {
-    ($field:ident) => ( unsafe { crate::CLI_ARGS.clone().unwrap().$field } )
+    ($field:ident) => ( unsafe { crate::cli::CLI_ARGS.clone().unwrap().$field } )
 }
 
 /// struct containing arguments from cli
