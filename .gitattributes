@@ -1,3 +1,3 @@
 tools/** linguist-vendored
 *.som linguist-vendored
-*.som linguist-language=Lua
+*.som linguist-language=Haskell
