@@ -21,7 +21,6 @@ pub struct Lexer {
 	filename: SString,
 }
 
-
 macro_rules! formatted_error_token {
 	($self:ident $code:ident $($arg:tt)*) => {
 		$self.error_token(
