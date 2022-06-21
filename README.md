@@ -6,17 +6,14 @@ Som is a functional programming language that is (should be) easy to use.
 ```haskell
 #std::io
 
+fizzbuzz(n) =
+  n % 15 == 0 ? println("fizzbuzz") :
+	n % 3 == 0 ? println("fizz") :
+	n % 5 == 0 ? println("buzz") :
+	println("%d", n)
+
 main() =
-  1..100.for_each() => (
-    it % 15 == 0 ? (
-      io::println("FizzBuzz")
-    ) : it % 3 == 0 ? (
-      io::println("Fizz")
-    ) : it % 5 == 0 ? (
-      io::println("Buzz")
-    ) : (
-      io::println("%d", it)
-    )
-  ),
+  1..100 for_each() => n fizzbuzz(n),
+  
   0
 ```
