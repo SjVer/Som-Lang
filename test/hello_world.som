@@ -1,18 +1,9 @@
--- import standard io stuff
 #std::io
 
--- some variable
-succes = 0
+-- ========== Som ==========
+-- An easy-to-use functional
+-- programming language :)
 
--- add two numbers
-add(a int, b int) = a + b
-
--- main function
 main(argc, argv) = 
 	println("Hello World!"),
-
-	x = 1,
-	y int = 2.0,
-	println("%d + %d = %d", x, y),
-
-	succes
+	0
