@@ -84,63 +84,87 @@
         <key>name</key>
         <string>constant.numeric.som</string>
       </dict>
+      <key>string</key>
+      <dict>
+        <key>patterns</key>
+        <array>
+          <dict>
+            <key>name</key>
+            <string>string.quoted.double.som</string>
+            <key>begin</key>
+            <string>"</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.string.begin.som</string>
+              </dict>
+            </dict>
+            <key>patterns</key>
+            <array>
+              <dict>
+                <key>include</key>
+                <string>#string_escaped_char</string>
+              </dict>
+              <dict>
+                <key>include</key>
+                <string>#string_placeholder</string>
+              </dict>
+            </array>
+            <key>end</key>
+            <string>"</string>
+            <key>endCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.string.end.som</string>
+              </dict>
+            </dict>
+          </dict>
+          <dict>
+            <key>name</key>
+            <string>string.quoted.single.som</string>
+            <key>begin</key>
+            <string>'</string>
+            <key>beginCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.string.begin.som</string>
+              </dict>
+            </dict>
+            <key>patterns</key>
+            <array>
+              <dict>
+                <key>include</key>
+                <string>#string_escaped_char</string>
+              </dict>
+            </array>
+            <key>end</key>
+            <string>'</string>
+            <key>endCaptures</key>
+            <dict>
+              <key>0</key>
+              <dict>
+                <key>name</key>
+                <string>punctuation.definition.string.end.som</string>
+              </dict>
+            </dict>
+          </dict>
+        </array>
+      </dict>
       <key>operator</key>
       <dict>
         <key>patterns</key>
         <array>
           <dict>
             <key>match</key>
-            <string>&lt;&lt;|&gt;&gt;</string>
-            <key>name</key>
-            <string>keyword.operator.bitwise.shift.som</string>
-          </dict>
-          <dict>
-            <key>match</key>
             <string>==|/=</string>
             <key>name</key>
             <string>keyword.operator.comparison.som</string>
-          </dict>
-          <dict>
-            <key>match</key>
-            <string>&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;</string>
-            <key>name</key>
-            <string>keyword.operator.relational.som</string>
-          </dict>
-          <dict>
-            <key>match</key>
-            <string>\!|&amp;&amp;|\|\||\^\^</string>
-            <key>name</key>
-            <string>keyword.operator.logical.som</string>
-          </dict>
-          <dict>
-            <key>match</key>
-            <string>\&amp;|\^|\|</string>
-            <key>name</key>
-            <string>keyword.operator.bitwise.som</string>
-          </dict>
-          <dict>
-            <key>match</key>
-            <string>\*|/|-|\+|\%</string>
-            <key>name</key>
-            <string>keyword.operator.arithmetic.som</string>
-          </dict>
-          <dict>
-            <key>match</key>
-            <string>\.\.</string>
-            <key>name</key>
-            <string>punctuation.definition.range.som</string>
-          </dict>
-          <dict>
-            <key>match</key>
-            <string>\.</string>
-            <key>name</key>
-            <string>punctuation.accessor.dot.som</string>
-          </dict>
-          <dict>
-            <key>match</key>
-            <string>\,</string>
-            <key>name</key>
-            <string>punctuation.separator.sequence.som</string>
           </dict>
         </array>
       </dict>

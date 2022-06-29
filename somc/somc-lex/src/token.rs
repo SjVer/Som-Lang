@@ -1,5 +1,5 @@
-use super::span::Span;
-use crate::report::ecode::ErrorCode;
+use somc_span::Span;
+use somc_report::ecode::ErrorCode;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TokenKind {
@@ -15,7 +15,7 @@ pub enum TokenKind {
 	LeftParen,
 	RightParen,
 	Semicolon,
-	Colon,
+	// Colon,
 	Comma,
 	Dot,
 	Variadic,
@@ -120,7 +120,7 @@ impl TokenKind {
 				'(' => __somekind!(LeftParen),
 				')' => __somekind!(RightParen),
 				';' => __somekind!(Semicolon),
-				':' => __somekind!(Colon),
+				// ':' => __somekind!(Colon),
 				',' => __somekind!(Comma),
 				'.' => __somekind!(Dot),
 

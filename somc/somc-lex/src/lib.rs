@@ -1,13 +1,8 @@
-pub mod span;
 pub mod token;
-pub mod source;
 
-use span::{Span, Location};
+use somc_span::{Span, Location, Source, deref_source};
 use token::{Token, TokenKind::{self, *}};
-use source::Source;
-use crate::{fmt_error_msg, deref_source};
-use somc_report::ecode::ErrorCode;
-// use crate::runtime::types::Type;
+use somc_report::{ecode::ErrorCode, fmt_error_msg};
 
 use std::string::String as SString;
 

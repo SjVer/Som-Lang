@@ -1,5 +1,4 @@
-use crate::{report::Report, new_formatted_error};
-use std::{collections::HashMap, fs::read_to_string};
+use std::{collections::HashMap, fs::read_to_string, io::ErrorKind};
 
 pub struct Source {
     pub newlines: Vec<usize>,
@@ -69,13 +68,11 @@ impl Sources {
         self.files.get(&file).unwrap()
     }
 
-    pub fn new_source(&mut self, file: String) -> Result<*const Source, Report> {
+    pub fn new_source(&mut self, file: String) -> Result<*const Source, ErrorKind> {
         // read file and
         let contents = match read_to_string(&file) {
             Ok(text) => text,
-            Err(e) => {
-                return Err(new_formatted_error!(CouldNotOpen "file", &file, e.kind()));
-            }
+            Err(e) => { return Err(e.kind()); }
         };
 
         Ok(self.new_raw_source(file, contents))
@@ -95,10 +92,10 @@ pub static mut __SOURCES: Option<Sources> = None;
 macro_rules! SOURCES {
     () => { 
         unsafe { 
-            if let None = crate::lex::source::__SOURCES {
-                crate::lex::source::__SOURCES = Some(crate::lex::source::Sources::default());
+            if let None = somc_span::__SOURCES {
+                somc_span::__SOURCES = Some(somc_span::Sources::default());
             }
-            crate::lex::source::__SOURCES.as_mut().unwrap()
+            somc_span::__SOURCES.as_mut().unwrap()
         }
     };
 }

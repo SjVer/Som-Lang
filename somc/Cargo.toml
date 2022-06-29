@@ -7,6 +7,7 @@ edition = "2021"
 "somc-global" = { path = "./somc-global" }
 "somc-lex" = { path = "./somc-lex" }
 "somc-report" = { path = "./somc-report" }
+"somc-span" = { path = "./somc-span" }
 
 # yansi = "0.5.1"
 # json = "0.12.4"

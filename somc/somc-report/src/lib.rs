@@ -45,9 +45,9 @@ pub fn error(message: impl ToString, code: Option<ecode::ErrorCode>) -> Report {
 #[macro_export]
 macro_rules! new_formatted_error {
 	($code:ident $($arg:tt)*) => {
-		crate::report::error(
-			crate::fmt_error_msg!($code $($arg)*),
-			Some(crate::report::ecode::ErrorCode::$code)
+		somc_report::error(
+			somc_report::fmt_error_msg!($code $($arg)*),
+			Some(somc_report::ecode::ErrorCode::$code)
 		)
 	};
 }

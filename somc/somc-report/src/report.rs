@@ -2,7 +2,7 @@ use somc_global::{
 	get_cli_arg, lint_mode_is,
 	info::{report::NOTE_LABEL, app::NAME}
 };
-use somc_lex::span::Span;
+use somc_span::Span;
 
 use std::io::{Write, stderr};
 use yansi::{Color, Paint};
