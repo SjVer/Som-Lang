@@ -7,9 +7,9 @@ macro_rules! static_string {
 }
 
 pub mod app {
-	static_string!(NAME, "som");
+	static_string!(NAME, "somc");
 	static_string!(FULL_NAME, "SOMC (official)");
-	static_string!(VERSION, env!("CARGO_PKG_VERSION"));
+	static_string!(VERSION, "0.1.0");
 }
 
 pub mod cli {

@@ -71,7 +71,7 @@ impl Path {
 			path.push(segment);
 		}
 
-		path.set_extension("mqs");
+		path.set_extension("som");
 
 		if path.exists() {
 			Ok(path.display().to_string())

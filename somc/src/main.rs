@@ -19,8 +19,6 @@ fn main() {
 		let tokens = Lexer::new(filename.clone(), src).lex();
 		Parser::new().parse(filename.clone(), tokens)?;
 
-		// assemble
-
 		Ok(())
 	};
 

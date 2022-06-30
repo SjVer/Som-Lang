@@ -1,4 +1,4 @@
-use crate::info::cli;
+use crate::info::{cli, app};
 use clap::{Parser, ArgEnum, AppSettings::DeriveDisplayOrder};
 pub use clap::error as claperr;
 
@@ -12,6 +12,7 @@ macro_rules! get_cli_arg {
 
 /// struct containing arguments from cli
 #[derive(Parser, Default, Clone, Debug)]
+#[clap(name = app::NAME)]
 #[clap(version, about, long_about = cli::DESCRIPTION)]
 #[clap(propagate_version = true)]
 #[clap(global_setting(DeriveDisplayOrder))]
