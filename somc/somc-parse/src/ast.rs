@@ -1,49 +1,5 @@
 use somc_lex::token::Token;
 
-// ================ Theory ================
-
-#[derive(Clone, Debug)]
-pub struct TheoryNode {
-	pub token: Token,
-	pub item: TheoryItem
-}
-
-#[derive(Clone, Debug)]
-pub enum TheoryItem {
-	Logical     { lhs: Box<TheoryNode>, rhs: Box<TheoryNode> },
-	Unary     	(Box<TheoryNode>),
-	Implies     { lhs: Box<TheoryNode>, rhs: Box<TheoryNode> },
-	Comparison  { lhs: Box<TheoryNode>, rhs: Box<TheoryNode> },
-	Divisible	{ expr: Box<TheoryNode>, divisor: Box<TheoryNode> },
-	Exists  	(Box<TheoryNode>),
-	Grouping  	(Box<TheoryNode>),
-	Expression 	(ExprNode),
-}
-
-pub trait TheoryVisitor<T> {
-	fn visit(&mut self, node: &TheoryNode) -> T {
-		match &node.item {
-			TheoryItem::Logical		{ lhs, rhs } 	=> self.visit_logical(node, lhs.as_ref(), rhs.as_ref()),
-			TheoryItem::Unary		( expr ) 		=> self.visit_unary(node, expr.as_ref()),
-			TheoryItem::Implies		{ lhs, rhs } 	=> self.visit_implies(node, lhs.as_ref(), rhs.as_ref()),
-			TheoryItem::Comparison	{ lhs, rhs } 	=> self.visit_comparison(node, lhs.as_ref(), rhs.as_ref()),
-			TheoryItem::Divisible	{ expr, divisor } => self.visit_divisible(node, expr.as_ref(), divisor.as_ref()),
-			TheoryItem::Exists		( expr ) 		=> self.visit_exists(node, expr.as_ref()),
-			TheoryItem::Grouping	( expr ) 		=> self.visit_grouping(node, expr.as_ref()),
-			TheoryItem::Expression	( expr ) 		=> self.visit_expression(node, &expr),
-		}
-	}
-	
-	fn visit_logical(&mut self, node: &TheoryNode, lhs: &TheoryNode, rhs: &TheoryNode) -> T;
-	fn visit_unary(&mut self, node: &TheoryNode, expr: &TheoryNode) -> T;
-	fn visit_implies(&mut self, node: &TheoryNode, lhs: &TheoryNode, rhs: &TheoryNode) -> T;
-	fn visit_comparison(&mut self, node: &TheoryNode, lhs: &TheoryNode, rhs: &TheoryNode) -> T;
-	fn visit_divisible(&mut self, node: &TheoryNode, expr: &TheoryNode, divisor: &TheoryNode) -> T;
-	fn visit_exists(&mut self, node: &TheoryNode, expr: &TheoryNode) -> T;
-	fn visit_grouping(&mut self, node: &TheoryNode, expr: &TheoryNode) -> T;
-	fn visit_expression(&mut self, node: &TheoryNode, expr: &ExprNode) -> T;
-}
-
 // ================= Expr =================
 
 #[derive(Clone, Debug)]
