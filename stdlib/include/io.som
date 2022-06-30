@@ -1,0 +1,9 @@
+!!.warn_redef
+
+print(fmt str, ...) nll :=
+println(fmt str, ...) nll :=
+
+open(path str, mode str) int :=
+close(file int) nll :=
+read(file int) str :=
+write(file int, text str) nll :=
