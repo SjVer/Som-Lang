@@ -34,6 +34,13 @@ pub struct Span {
 }
 
 impl Span {
+	pub fn location_to_string(&self) -> String {
+		match self.start.column {
+			Some(c) => format!("{}-{}", self.start.to_string(), c + self.length),
+			None => self.start.to_string(),
+		}
+	}
+
 	pub fn get_line_before(&self) -> Result<&str, ()> {
 		match self.start.line {
 			Some(line) => if line <= 1 {

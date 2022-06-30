@@ -8,16 +8,4 @@ edition = "2021"
 "somc-lex" = { path = "./somc-lex" }
 "somc-report" = { path = "./somc-report" }
 "somc-span" = { path = "./somc-span" }
-
-# yansi = "0.5.1"
-# json = "0.12.4"
-# num_enum = "0.5.7"
-# convert_case = "0.5.0"
-# clap = { version = "3.1.17", default-features = false, features = ["std", "suggestions", "derive", "env"] }
-
-[alias]
-b = "build"
-br = "build --release"
-r = "run --"
-rr = "run --release --"
-rq = "run --quiet --"
+"somc-parse" = { path = "./somc-parse" }

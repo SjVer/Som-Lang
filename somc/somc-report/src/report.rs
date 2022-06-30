@@ -26,8 +26,8 @@ impl Quote {
 
 		let mut text = " ".to_string();
 
-		// "file:line:col"
-		text.push_str(&cyan(self.span.start.to_string()));
+		// "file:line:col-len"
+		text.push_str(&cyan(self.span.location_to_string()));
 		text.push('\n');
 		
 		// no line? return
