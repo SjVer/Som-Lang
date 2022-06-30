@@ -29,14 +29,14 @@ pub enum Literal {
 pub trait ExprVisitor<T> {
 	fn visit(&mut self, node: &ExprNode) -> T {
 		match &node.item {
-			ExprItem::Equality	{ lhs, rhs } 	=> self.visit_equality(node, lhs.as_ref(), rhs.as_ref()),
-			ExprItem::Term		{ lhs, rhs } 	=> self.visit_term(node, lhs.as_ref(), rhs.as_ref()),
-			ExprItem::Factor	{ lhs, rhs } 	=> self.visit_factor(node, lhs.as_ref(), rhs.as_ref()),
-			ExprItem::Unary		( expr ) 	 	=> self.visit_unary(node, expr.as_ref()),
-			ExprItem::Power		{ base, power} 	=> self.visit_power(node, base.as_ref(), power.as_ref()),
-			ExprItem::Grouping	( expr ) 		=> self.visit_grouping(node, expr.as_ref()),
-			ExprItem::Variable	{ path, expr } 	=> self.visit_variable(node, &path, expr.as_ref()),
-			ExprItem::Literal	( literal ) 	=> self.visit_literal(node, &literal),
+			ExprItem::Equality	{ lhs, rhs } => self.visit_equality(node, lhs.as_ref(), rhs.as_ref()),
+			ExprItem::Term		{ lhs, rhs } => self.visit_term(node, lhs.as_ref(), rhs.as_ref()),
+			ExprItem::Factor	{ lhs, rhs } => self.visit_factor(node, lhs.as_ref(), rhs.as_ref()),
+			ExprItem::Unary		( expr ) => self.visit_unary(node, expr.as_ref()),
+			ExprItem::Power		{ base, power} => self.visit_power(node, base.as_ref(), power.as_ref()),
+			ExprItem::Grouping	( expr ) => self.visit_grouping(node, expr.as_ref()),
+			ExprItem::Variable	{ path, expr } => self.visit_variable(node, &path, expr.as_ref()),
+			ExprItem::Literal	( literal ) => self.visit_literal(node, &literal),
 		}
 	}
 	

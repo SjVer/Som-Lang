@@ -1,5 +1,6 @@
 use somc_lex::Lexer;
 use somc_parse::Parser;
+use somc_codegen;
 use somc_span::SOURCES;
 use somc_report::{Report, new_formatted_error};
 use somc_global::{cli::setup, get_cli_arg};

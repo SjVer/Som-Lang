@@ -9,3 +9,4 @@ edition = "2021"
 "somc-report" = { path = "./somc-report" }
 "somc-span" = { path = "./somc-span" }
 "somc-parse" = { path = "./somc-parse" }
+"somc-codegen" = { path = "./somc-codegen" }

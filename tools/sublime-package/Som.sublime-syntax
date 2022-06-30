@@ -18,7 +18,7 @@ variables:
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
   # types
-  basetype: int|flt|bln|chr|str|nll
+  basetype: int|lng|flt|bln|chr|str|nll
   type: \b(?:{{basetype}})\b
 
   # properties
@@ -221,9 +221,9 @@ contexts:
       scope: keyword.control.conditional.else.som
 
   operator:
-    - match: ->
-      scope: keyword.operator.cast.som
-      push: type
+    # - match: ->
+      # scope: keyword.operator.cast.som
+      # push: type
     - match: <<|>>
       scope: keyword.operator.bitwise.shift.som
     - match: ==|/=
@@ -241,7 +241,9 @@ contexts:
       scope: punctuation.definition.range.som
     - match: \.
       scope: punctuation.accessor.dot.som
-    - match: \,
+    - match: ->
+      scope: punctuation.accessor.arrow.som
+    - match: \,|;
       scope: punctuation.separator.sequence.som
 
   grouping:
@@ -311,12 +313,10 @@ contexts:
         1: entity.name.enum.som
         2: punctuation.accessor.double-colon.som
 
-    - match: (?:({{ident}})\s+({{ident}})|({{ident}}))\s*(\()
+    - match: ({{ident}})\s*(\()
       captures:
-        1: variable.class.som
-        2: variable.function.method.som
-        3: variable.function.som
-        4: punctuation.section.arguments.begin.som
+        1: variable.function.som
+        2: punctuation.section.arguments.begin.som
       push:
         - include: comment
         - match: \)
