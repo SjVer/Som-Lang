@@ -1,12 +1,17 @@
-color [
-	red,
-	green,
-	blue,
-	other(int; int; int)
+#std::io::puts
+#std::str::show
+
+!!showable
+Color := [
+	Red
+	Green
+	Blue
+	Other
 ]
 
-main() =
-	myred = color::red,
-	myblack = color::other(0; 0; 0),
-
-	0
+main args =
+	red = color.Red
+	->
+		puts "red is: ",
+		puts show red,
+		0

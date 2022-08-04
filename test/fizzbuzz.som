@@ -1,17 +1,15 @@
-#std::io::println
+#std::io::puts
+#std::str::show
 
-fizzbuzz(n) nll =
-	-- if-elseif-else stuff
-	n % 15 == 0 ? println("fizzbuzz") :
-	n % 3 == 0 ? println("fizz") :
-	n % 5 == 0 ? println("buzz") :
-	()
+fizzbuzz: int -> !
+fizzbuzz n =
+	n % 15 == 0 ? puts "fizzbuzz" :
+	n % 3 == 0 ? puts "fizz" :
+	n % 5 == 0 ? puts "buzz" :
+	puts show n
 
-main(argc, argv) =
-	-- iter() methods return an iterator
-	-- which is like map() but without 
-	-- actually mapping the new data
-	1..100 iter() => n fizzbuzz(n),
-
-	0
-
+main args =
+	ns = 1..100
+	->
+		map ns fizzbuzz,
+		0

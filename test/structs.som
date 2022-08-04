@@ -1,25 +1,30 @@
-#std::io::print
+#std::io::puts
+#std::str::{fmt, show}
 
-rect {
-	width int,
-	height int,
-	color str,
+Rect := {
+	width: int
+	height: int
+	color: str
 }
 
-rect_new(width, height) =
-	rect {
+rect_new: int int -> Rect
+rect_new width height =
+	Rect {
 		width,
 		height,
 		"red"
 	}
 
-rect draw(scale int) = () -- TODO
+rect_show: Rect -> str
+rect_show rect =
+	fmt "{d}x{d} rect with color {s}"
+		rect.width rect.height rect.color
 
-main() =
-	print("Hello, world!\n"),
+main args =
+	my_rect = rect_new 10 5
+	->
+		puts "my rect: ",
+		-- prints "10x5 rect with color red"
+		puts rect_show my_rect,
 
-	my_rect = rect_new(10, 10),
-	my_rect.color = "blue", -- ???
-	my_rect->draw(1),
-
-	0
+		0

@@ -1,9 +1,9 @@
-#std::io
+#std::io::puts
 
 -- ========== Som ==========
 -- An easy-to-use functional
 -- programming language :)
 
-main(argc, argv) = 
-	println("Hello World!"),
+main args = 
+	puts "Hello World!\n",
 	0

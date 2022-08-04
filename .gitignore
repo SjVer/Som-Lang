@@ -3,6 +3,8 @@
 /target/
 **/target/
 
+.vscode/
+
 stdlib/bin/
 
 tools/vscode-extension/node_modules/
