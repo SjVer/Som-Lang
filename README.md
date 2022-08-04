@@ -4,7 +4,7 @@ Som is a functional programming language that is (should be) easy to use.
 
 **FizzBuzz example:**
 ```haskell
-#std::io::#std::io::puts
+#std::io::puts
 #std::str::show
 
 fizzbuzz: int -> !
