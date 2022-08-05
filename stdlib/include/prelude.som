@@ -28,26 +28,35 @@
 
 !!.warn_redef "redefinition may break stdlib"
 
-#std::str::Str
+#std::io::stderr
+#std::str::fmt
 
-File := { filepath: Str }
+-- useful aliases for basic types
+Bln := $i.u.1  -- boolean
+Nyb := $i.u.4  -- nybble
+Byt := $i.u.8  -- byte
+Chr := $i.u.8  -- character
+Int := $i.s.32 -- integer
+Lng := $i.s.64 -- long
+Flt := $f.32   -- float
+Dbl := $f.64   -- double
+Nll := $v      -- null
 
-IOMode := [ Read Write Append ReadWrite ]
+-- terminates the calling process immeddiately with the given status
+!!no_return
+exit: Int -> !
+exit status = ...
 
--- opens the file with the given path and mode
-openf: Str IOMode -> File
-openf path mode = ...
+-- checks if the given condition is true and if it isn't terminates
+-- the calling process with the given error message
+assert: Bln Str -> !
+assert cond msg =
+	cond ? () :
+		putsf stderr fmt "Assertion failed: {}" msg,
+        exit 1
 
-IOMode.Read
-
--- closes the given file
-closef: File -> !
-closef file = ...
-
--- prints the given string to stdout
-puts: Str -> !
-puts string = ...
-
--- writes the given string to the given file
-putsf: File Str -> !
-putsf file string = ...
+-- declaration to enforce correct signature
+-- and warn if the function isn't defined
+!!warn_no_def
+!!no_mangle
+main: Str[] -> !Int

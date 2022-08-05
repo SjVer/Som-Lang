@@ -1,13 +1,13 @@
 #std::io::puts
-#std::str::{fmt, show}
+#std::str::{fmt, show, Str}
 
 Rect := {
-	width: int
-	height: int
-	color: str
+	width: Int
+	height: Int
+	color: Str
 }
 
-rect_new: int int -> Rect
+rect_new: Int Int -> Rect
 rect_new width height =
 	Rect {
 		width,
@@ -15,14 +15,13 @@ rect_new width height =
 		"red"
 	}
 
-rect_show: Rect -> str
+rect_show: Rect -> Str
 rect_show rect =
-	fmt "{d}x{d} rect with color {s}"
-		rect.width rect.height rect.color
+	fmt "{}x{} rect with color {}" rect.width rect.height rect.color
 
 main args =
 	my_rect = rect_new 10 5
-	->
+	=>
 		puts "my rect: ",
 		-- prints "10x5 rect with color red"
 		puts rect_show my_rect,

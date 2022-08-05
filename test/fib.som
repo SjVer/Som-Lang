@@ -2,11 +2,11 @@
 #std::str::show
 
 -- forward decl
-fib: int -> int
+fib: Int -> Int
 
 main args =
 	xs = [1, 2, 3, 4, 5]
-	->
+	=>
 		puts show map xs fib,
 		-- prints "[0, 1, 1, 2, 3]"
 

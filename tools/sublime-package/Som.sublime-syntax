@@ -9,6 +9,7 @@ scope: source.som
 
 variables:
   ident: '[A-Za-z_][A-Za-z_0-9]*''*'
+  Ident: '[A-Z][A-Za-z_0-9]*''*'
 
   # numbers
   decimal: '\b[0-9]+(?:\.[0-9]+)?\b'
@@ -17,12 +18,22 @@ variables:
   hexadecimal: '\b0x[0-9a-fA-F]+\b'
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
-  # types
-  basetype: int|lng|flt|bln|chr|str|nll
-  type: \b(?:{{basetype}})\b
+  # basic types
+  inttype: i\.(s|u)\.[0-9]+
+  floattype: f\.(64|32|16)
+  voidtype: v
+  basictype: \$(?:{{inttype}}|{{floattype}}|{{voidtype}})
 
-  # properties
-  property: (?:no_redef|warn_redef|public|private)
+  # directives
+  directive: '{{ident}}'
+  #     no_redef|warn_redef|
+  #     no_return|
+  #     no_mangle|
+  #     warn_no_def|
+  #     static|
+  #     enabled|disabled|
+  #     llvm_asm|
+  #     unreachable
 
 contexts:
   prototype:
@@ -33,114 +44,152 @@ contexts:
     # The main context is the initial starting point of our syntax.
     # Include other contexts from here (or specify them directly).
     - include: comment
-    - include: property
-    - include: application
-    - include: enum_decl
-    - include: structdef
+    - include: directive
+    - include: import
+    - include: typedef
+    - include: type
+    - include: declaration
+    - include: definition
     - include: expression
     - include: invalid
 
   type:
-    - match: \[
-      scope: punctuation.section.brackets.begin.som
-      push:
-        - meta_scope: meta.array-type.som
-
-        - include: type
-
-        - match: \;
-          scope: punctuation.separator.sequence.som
-          set:
-            - include: number
-
-            - match: \]
-              scope: punctuation.section.brackets.end.som
-              pop: true
-
-            - include: invalid
-
-        - match: \]
-          scope: punctuation.section.brackets.end.som
-          pop: true
-
-        - include: invalid
-
-    - match: \(
+    # tuples
+    - match: \((?!\s*\))
       scope: punctuation.section.parens.begin.som
       push:
         - meta_scope: meta.tuple-type.som
 
         - include: type
-        - match: \;
-          scope: punctuation.separator.sequence.som
         - match: \)
           scope: punctuation.section.parens.end.som
           pop: true
 
         - include: invalid
 
-    - match: '{{type}}'
-      scope: storage.type.som
-
-  # STATEMENTS
-
-  property:
-    - match: \!\!\.?\s*{{property}}
-      scope: punctuation.definition.annotation.som
-
-  application:
-    - match: \#
-      scope: keyword.import.som
+    # structs
+    - match: \{
+      scope: punctuation.section.braces.begin.som
       push:
-        - match: (?:({{ident}})\s*(\:\:)\s*)*({{ident}})
-          scope: entity.name.namespace.som
-          # captures:
-            # 1: entity.name.namespace.som
-            # 2: punctuation.accessor.som
-            # 3: entity.name.namespace.som
-          pop: true
-        - include: invalid
+        - meta_scope: meta.struct-type.som
 
-  enum_decl:
-    - match: ({{ident}})\s*(\[)
-      captures:
-        1: entity.name.enum.som
-        2: punctuation.section.braces.begin.som
-      push:
-        - match: '{{ident}}'
-          scope: meta.enum-varant.som
+        - match: '({{ident}})\s*(:)'
+          captures:
+            1: name.field.som
+            2: punctuation.separator.som
 
-        - match: \]
+        - include: type
+
+        - match: \}
           scope: punctuation.section.braces.end.som
           pop: true
 
-        - match: \,
-          scope: punctuation.separator.sequence.som
-
-        - include: type
-        - include: invalid
-
-  structdef:
-    - match: ({{ident}})\s*(\{)
-      captures:
-        1: entity.name.struct.som
-        2: punctuation.section.brackets.begin.som
+    # enum
+    - match: \[(?=\s*{{Ident}})
+      scope: punctuation.section.brackets.begin.som
       push:
-        - include: type
+        - meta_scope: meta.enum-type.som
+
         - match: '{{ident}}'
-          scope: meta.field.som
-        - match: \}
+          scope: entity.name.constant.som
+
+        - match: \]
           scope: punctuation.section.brackets.end.som
           pop: true
 
-        - include: expression
         - include: invalid
+
+    # effect
+    - match: (?<!!)!(?!!)
+      scope: storage.modifier.effect.som
+
+    # basic types
+    - match: ({{basictype}}|(?<!\.){{Ident}})
+      scope: storage.type.som
+      push:
+        - match: \[\s*\]
+          scope: storage.modifier.array.som
+        - match: ->
+          scope: keyword.other.arrow.som
+        - match: (?=\S)
+          pop: true
+
+  # STATEMENTS
+
+  directive:
+    - match: (\!\!\.?)({{directive}})?
+      scope: meta.directive.som
+      captures:
+        1: punctuation.definition.annotation.som
+        2: variable.annotation.som
+
+  import:
+    - match: \#!?(?={{ident}})
+      scope: keyword.import.som
+      push: import_finish
+
+  import_finish:
+    - meta_scope: meta.import.som
+
+    # normal path segment, might be last
+    - match: '{{ident}}'
+      scope: entity.name.namespace.som
+      set:
+        - match: '::'
+          scope: punctuation.accessor.som
+          set: import_finish
+
+        - match: (?=\S)
+          pop: true
+
+    # start of block which cannot be
+    # followed by another segment
+    - match: \{
+      scope: punctuation.section.braces.begin.som
+      set:
+        - match: \,
+          scope: punctuation.separator.sequence.som
+
+        - match: \}
+          scope: punctuation.section.braces.end.som
+          pop: true
+
+        # we need to push recursively bc `set` is used
+        - match: (?=\S)
+          push: import_finish
+
+    - include: invalid
+
+  typedef:
+    - match: ({{ident}})\s*(:=)
+      captures:
+        1: name.type.som
+        2: keyword.operator.typedef.som
+
+  declaration:
+    - match: ({{ident}})\s*(:)
+      captures:
+        1: entity.name.function.som
+        2: punctuation.separator.som
+
+  definition:
+    - match: '{{ident}}(?=(\s*{{ident}})*\s*=)'
+      scope: name.symbol.som
+      push:
+        - match: '{{ident}}'
+          scope: variable.parameter.som
+        - match: (=)(\s*\.\.\.)?
+          captures:
+            1: keyword.operator.definition.som
+            2: keyword.operator.extern.som
+          pop: true
+
+  # EXPRESSION
 
   expression:
     - include: comment
 
     - include: special
-    - include: keyword
     - include: operator
     - include: grouping
     - include: subscript
@@ -148,82 +197,25 @@ contexts:
     - include: number
     - include: string-char
 
-    - include: definition_or_variable
-
-  # DEFINITION
-
-  definition_or_variable:
-    # variable
-    - match: (?=({{ident}}))
-      branch_point: start_def_or_var
-      branch:
-        - definition
-        - variable_or_call
-
-  definition:
-    - match: ({{ident}})\s+({{ident}})|({{ident}})
-      captures:
-        1: entity.name.class.som
-        2: entity.name.function.method.som
-        3: entity.name.function.som
-      push:
-        - match: \(
-          scope: punctuation.section.parens.begin.som
-          set:
-            - match: '{{ident}}'
-              scope: variable.parameter.som
-              push:
-                # type or no type
-                - include: type
-
-                - match: (\,)|(?=\s*\))
-                  captures:
-                    1: punctuation.separator.sequence.som
-                  pop: true
-
-                - match: \S|$
-                  fail: start_def_or_var
-
-            - match: \.\.\.
-              scope: keyword.operator.variadic.som
-            - match: \)
-              scope: punctuation.section.parens.end.som
-              set: finish_def
-
-            - match: \S|$
-              fail: start_def_or_var
-
-        - include: finish_def
-
-  finish_def:
-    - include: type
-    - match: =(?!>)|:=
-      scope: keyword.operator.assignment.som
-      pop: 2
-
-    - match: \S|$
-      fail: start_def_or_var
-
-  # EXPRESSION
-
-  keyword:
-    - match: \?\?
-      scope: keyword.control.conditional.switch.som
-    - match: =>
-      scope: keyword.control.conditional.switch.som
-
-    - match: =>
-      scope: keyword.control.loop.for.som
-
-    - match: \?
-      scope: keyword.control.conditional.if.som
-    - match: ':(?!:)'
-      scope: keyword.control.conditional.else.som
+    - include: variable
 
   operator:
+    - match: \?\?
+      scope: keyword.operator.conditional.switch.som
+    - match: ->
+      scope: keyword.operator.switch-arm.som
+
+    - match: =>
+      scope: keyword.operator.do.som
+
+    - match: \?
+      scope: keyword.operator.ternary.if.som
+    - match: ':(?!:)'
+      scope: keyword.operator.ternary.else.som
+
     # - match: ->
       # scope: keyword.operator.cast.som
-      # push: type
+
     - match: <<|>>
       scope: keyword.operator.bitwise.shift.som
     - match: ==|/=
@@ -250,11 +242,10 @@ contexts:
     - match: \(
       scope: punctuation.section.parens.begin.som
       push:
-        - include: expression
         - match: \)
           scope: punctuation.section.parens.end.som
           pop: true
-        - include: invalid
+        - include: expression
 
   subscript:
     - match: \[
@@ -307,31 +298,22 @@ contexts:
           pop: true
         - include: escaped-char
 
-  variable_or_call:
+  variable:
     - match: ({{ident}})\s*(\:\:)
       captures:
-        1: entity.name.enum.som
+        1: entity.name.namespace.som
         2: punctuation.accessor.double-colon.som
 
-    - match: ({{ident}})\s*(\()
-      captures:
-        1: variable.function.som
-        2: punctuation.section.arguments.begin.som
-      push:
-        - include: comment
-        - match: \)
-          scope: punctuation.section.arguments.end.som
-          pop: 2
-        - include: expression
-        - include: invalid
+    - match: (?<=\.)({{Ident}})
+      scope: entity.name.constant.som
 
     - match: '{{ident}}'
       scope: variable.som
-      pop: true
 
   # MISC
 
   invalid:
+    - include: comment
     - match: \S
       scope: invalid.som
       pop: true
@@ -353,20 +335,11 @@ contexts:
           pop: true
 
   escaped-char:
-    # - match: \\(?:\\|[abefnrtv\'"?]|[0-3][0-9]{0,2}|[4-7][0-9]?|x[a-fA-F0-9]+|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8})
     - match: \\(?:a|b|e|f|n|r|t|v|\\|\'|\"|0)
-      scope: constant.character.escape.c
+      scope: constant.character.escape.som
     - match: \\.
-      scope: invalid.illegal.unknown-escape.c
+      scope: invalid.illegal.unknown-escape.som
 
   format-specifier:
-      - match: |-
-          (?x)%
-            (\d+\$)?                                      # field (argument #)
-            [#0\- +']*                                    # flags
-            [,;:_]?                                       # separator character (AltiVec)
-            ((-?\d+)|\*(-?\d+\$)?)?                       # minimum field width
-            (\.((-?\d+)|\*(-?\d+\$)?)?)?                  # precision
-            (hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)?          # length modifier
-            (\[[^\]]+\]|[am]s|[diouxXDOUeEfFgGaACcSspn%]) # conversion type
+      - match: \{\}
         scope: constant.other.placeholder.som
