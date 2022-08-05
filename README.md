@@ -7,7 +7,7 @@ Som is a functional programming language that is (should be) easy to use.
 #std::io::puts
 #std::str::show
 
-fizzbuzz: int -> !
+fizzbuzz: Int -> !
 fizzbuzz n =
     n % 15 == 0 ? puts "fizzbuzz" :
     n % 3 == 0 ? puts "fizz" :
@@ -16,7 +16,7 @@ fizzbuzz n =
 
 main args =
     ns = 1..100
-    ->
+    =>
         map ns fizzbuzz,
         0
 ```

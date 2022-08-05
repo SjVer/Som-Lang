@@ -1,7 +1,6 @@
 ---
 	Module std::prelude
-	Standard module implicitly imported by default into all Som modules unless
-	explicitly disabled using the `no_prelude` or `no_stdlib` directive.
+	Standard module containing types and functions for (file) input/output.
 
 	This file is part of the Som standard library.
 
@@ -37,8 +36,6 @@ IOMode := [ Read Write Append ReadWrite ]
 -- opens the file with the given path and mode
 openf: Str IOMode -> File
 openf path mode = ...
-
-IOMode.Read
 
 -- closes the given file
 closef: File -> !

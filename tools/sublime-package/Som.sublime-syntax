@@ -104,7 +104,7 @@ contexts:
       scope: storage.modifier.effect.som
 
     # basic types
-    - match: ({{basictype}}|(?<!\.){{Ident}})
+    - match: ({{basictype}}|(?<!\.){{Ident}})|\.\.\.
       scope: storage.type.som
       push:
         - match: \[\s*\]
@@ -167,6 +167,17 @@ contexts:
         2: keyword.operator.typedef.som
 
   declaration:
+    - match: ({{ident}})\s*(\[)(?=.*\]\s*:)
+      captures:
+        1: entity.name.function.som
+        2: punctuation.section.brackets.begin.som
+
+      embed: generic_embedded
+      escape: (\])\s*(:)?
+      escape_captures:
+        1: punctuation.section.brackets.end.som
+        2: punctuation.separator.som
+
     - match: ({{ident}})\s*(:)
       captures:
         1: entity.name.function.som
@@ -183,6 +194,11 @@ contexts:
             1: keyword.operator.definition.som
             2: keyword.operator.extern.som
           pop: true
+
+  generic_embedded:
+    - include: type
+    - match: \,
+      scope: punctuation.separator.sequence.som
 
   # EXPRESSION
 
