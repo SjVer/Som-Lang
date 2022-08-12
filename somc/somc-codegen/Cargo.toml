@@ -1,7 +1,0 @@
-[package]
-name = "somc-codegen"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-inkwell = "0.0.0"

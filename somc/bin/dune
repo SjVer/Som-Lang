@@ -1,0 +1,4 @@
+(executable
+ (public_name somc)
+ (name main)
+ (libraries somc clap))
