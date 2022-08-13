@@ -2,11 +2,11 @@ SHELL := /bin/bash
 MAKEFLAGS += --no-print-directory
 
 build:
-	clear
-	cd somc && dune build
+	@clear -x
+	@cd somc && dune build
 
 exec: build
-	cd somc && dune exec somc -- $(args)
+	@cd somc && dune exec somc -- $(args)
 
 .PHONY: stdlib
 stdlib:

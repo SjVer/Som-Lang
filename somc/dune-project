@@ -3,6 +3,7 @@
 (name somc)
 
 (generate_opam_files false)
+(using menhir 2.1)
 
 (source
  (github SjVer/Som-Lang))

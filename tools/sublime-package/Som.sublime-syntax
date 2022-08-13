@@ -234,9 +234,9 @@ contexts:
 
     - match: <<|>>
       scope: keyword.operator.bitwise.shift.som
-    - match: ==|/=
+    - match: =|/=
       scope: keyword.operator.comparison.som
-    - match: <=|>=|<>|<|>
+    - match: <=|>=|<|>
       scope: keyword.operator.relational.som
     - match: \!|&&|\|\||\^\^
       scope: keyword.operator.logical.som
