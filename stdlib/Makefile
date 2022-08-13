@@ -1,14 +1,13 @@
 CC = clang
-AR = ar
 
-ARFLAGS = -rc
+LDFLAGS = -shared
 CXXFLAGS = -D COMPILER=\"$(CC)\"
 EXT = .c
 
 SRCDIR = src
 BINDIR = bin
 OBJDIR = $(BINDIR)/obj
-LIB = $(BINDIR)/libsom.a
+LIB = $(BINDIR)/libsom.so
 
 SRC = $(wildcard $(SRCDIR)/*$(EXT))
 OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
@@ -20,7 +19,7 @@ OBJCOUNT = $(foreach v,$(OBJCOUNT_NOPAD),$(shell printf '%02d' $(v)))
 SHELL := /bin/bash
 
 stdlib: $(OBJ) | makedirs
-	@$(AR) $(ARFLAGS) -c $(LIB) $(OBJ)
+	@$(CC) $(LDFLAGS) -o $(LIB) $^
 
 $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 	@mkdir -p $(dir $@)
