@@ -35,7 +35,7 @@ let () =
   
   (* parse args and do main stuff *)
   close();
-  ignore (verbose, mute, file, opt_level);
+  ignore (verbose, mute, opt_level);
 
-  Somc.Parse.test ();
+  Somc.Parse.PrintAst.print_expr_node (Somc.Parse.parse file);
   exit 0

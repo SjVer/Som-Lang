@@ -27,16 +27,16 @@ open Ast
 %token <bool> BOOL
 %token <string> LOWERNAME
 %token <string> UPPERNAME
-%token <string> INTEGER
-%token <string> FLOAT
+%token <int> INTEGER
+%token <float> FLOAT
 %token <char list> CHARACTER
 %token <char list> STRING
 
 %token EOF
 
 // precedence
-// %left PLUS MINUS
-// %left STAR SLASH
+%left PLUS MINUS
+%left STAR SLASH
 %nonassoc NEGATE
 
 %start <Ast.expr_node> prog
@@ -56,7 +56,7 @@ expr:
 ;
 
 term:
-  | MINUS t = term %prec NEGATE { Negate t }
+  | MINUS t = term %prec NEGATE { UnaryOp (Negate, t) }
   | t = term STAR f = factor { BinaryOp (Multiply, t, f) }
   | t = term SLASH f = factor { BinaryOp (Divide, t, f) }
   | f = factor { f }
