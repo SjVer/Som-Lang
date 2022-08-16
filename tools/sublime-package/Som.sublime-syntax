@@ -322,6 +322,9 @@ contexts:
         - include: escaped-char
 
   variable:
+    - match: _(?!{{ident}})
+      scope: constant.language.wildcard.som
+
     - match: ({{ident}})\s*(\:\:)
       captures:
         1: entity.name.namespace.som

@@ -9,7 +9,8 @@ let raise_error e = function
 
 let unclosed what locs = raise_error (Unclosed what) (Some locs)
 
-let mkexpr locs item = {span = span_from_lexlocs locs; item }
+let mknode locs item = {span = span_from_lexlocs locs; item }
+let mkbind patt expr = {patt; expr}
 
 %}
 
@@ -35,6 +36,8 @@ let mkexpr locs item = {span = span_from_lexlocs locs; item }
 %token DOUBLECARET CARET
 %token STAR PLUS MINUS SLASH MODULO HASH
 
+%token UNDERSCORE
+
 %token <string> LOWERNAME
 %token <string> UPPERNAME
 %token <string> PRIMENAME
@@ -47,12 +50,12 @@ let mkexpr locs item = {span = span_from_lexlocs locs; item }
 
 %token EOF
 
-// precedence
-%left PLUS MINUS
-%left STAR SLASH
-// %nonassoc NEGATE
-
 %start <Ast.expr node> prog
+
+/*
+  MAYBE-PROBLEM: definition vs let-binding?
+  is there a syntaxical difference between them?
+*/
 
 %%
 
@@ -62,18 +65,44 @@ prog:
   | expr EOF { $1 }
 ;
 
+// patterns
+
+pattern:
+  // TODO: rn the pattern's loc seems to be that of 
+  // its expr instead (when coming from binding)
+  | LOWERNAME { mknode $sloc (Variable $1) }
+  | UNDERSCORE { mknode $sloc Wildcard }
+;
+
+// expressions
+
 expr:
+  | bindings THICKARROW seq { mknode $sloc (Binding ($1, $3)) }
+  | seq { $1 }
+;
+
+bindings:
+  | binding COMMA bindings { $1 :: $3 }
+  | binding { [$1] }
+;
+
+(* the COMMA between bindings is overruled by `seq` so `term` instead? *)
+binding: pattern EQUAL term { mkbind $1 $3 };
+
+seq:
+  | seq COMMA term { mknode $sloc (Sequence ($1, $3)) }
   | term { $1 }
+;
 
 term:
-  | factor PLUS term { mkexpr $sloc (BinaryOp (Add, $1, $3)) }
-  | factor MINUS term { mkexpr $sloc (BinaryOp (Subtract, $1, $3)) }
+  | factor PLUS term { mknode $sloc (BinaryOp (Add, $1, $3)) }
+  | factor MINUS term { mknode $sloc (BinaryOp (Subtract, $1, $3)) }
   | factor { $1 }
 ;
 
 factor:
-  | cast STAR factor { mkexpr $sloc (BinaryOp (Multiply, $1, $3)) }
-  | cast SLASH factor { mkexpr $sloc (BinaryOp (Divide, $1, $3)) }
+  | cast STAR factor { mknode $sloc (BinaryOp (Multiply, $1, $3)) }
+  | cast SLASH factor { mknode $sloc (BinaryOp (Divide, $1, $3)) }
   | cast { $1 }
 ;
 
@@ -82,8 +111,8 @@ cast:
 ;
 
 unary:
-  | MINUS unary { mkexpr $sloc (UnaryOp (Negate, $2)) }
-  | BANG unary { mkexpr $sloc (UnaryOp (Not, $2)) }
+  | MINUS unary { mknode $sloc (UnaryOp (Negate, $2)) }
+  | BANG unary { mknode $sloc (UnaryOp (Not, $2)) }
   | subscript { $1 }
 ;
 
@@ -92,14 +121,14 @@ subscript:
 ;
 
 primary:
-  | LPAREN expr RPAREN { mkexpr $sloc (Grouping $2) }
+  | LPAREN expr RPAREN { mknode $sloc (Grouping $2) }
   | LPAREN expr error { unclosed "(" $loc($1) }
 
-  | BOOL { mkexpr $sloc (Literal (Bool $1)) }
-  | INTEGER { mkexpr $sloc (Literal (Int $1)) }
-  | FLOAT { mkexpr $sloc (Literal (Float $1)) }
-  | STRING { mkexpr $sloc (Literal (String $1)) }
-  | CHARACTER { mkexpr $sloc (Literal (Char $1)) }
+  | BOOL { mknode $sloc (Literal (Bool $1)) }
+  | INTEGER { mknode $sloc (Literal (Int $1)) }
+  | FLOAT { mknode $sloc (Literal (Float $1)) }
+  | STRING { mknode $sloc (Literal (String $1)) }
+  | CHARACTER { mknode $sloc (Literal (Char $1)) }
 
   | error { raise_error Expected_expression (Some $loc($1))}
 ;

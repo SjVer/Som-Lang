@@ -103,6 +103,8 @@ rule main = parse
   | '%' { MODULO }
   | '#' { HASH }
 
+  | '_' { UNDERSCORE }
+
   | '"' {
     let start_loc = lexbuf.lex_start_p in
     reset_string_buffer ();
