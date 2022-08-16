@@ -1,8 +1,12 @@
 open Ast
+open ANSITerminal
 
-let p i s = print_endline (String.make i '\t' ^ s) 
+let p i str span =
+  print_string [] (String.make i '\t' ^ str);
+  print_string [Foreground Black] (" @" ^ Span.show_span span);
+  print_newline ()
 
-let show_literal_node = function
+let show_literal = function
   | Bool b -> "Bool " ^ string_of_bool b
   | Int i -> "Int " ^ string_of_int i
   | Float f -> "Float " ^ string_of_float f
@@ -21,17 +25,18 @@ let show_un_op = function
   | Not -> "!"
 
 let rec print_expr_node' i = function
-  | Grouping e -> 
-    p i "Grouping";
-    print_expr_node' (i + 1) e
-  | BinaryOp (o, e1, e2) ->
-    p i ("BinaryOp " ^ show_bin_op o);
-    print_expr_node' (i + 1) e1;
-    print_expr_node' (i + 1) e2
-  | UnaryOp (o, e) ->
-    p i ("UnaryOp " ^ show_un_op o);
-    print_expr_node' (i + 1) e
-  | Literal l ->
-    p i ("Literal " ^ show_literal_node l)
+  | { span; item } -> match item with
+    | Grouping e -> 
+      p i "Grouping" span;
+      print_expr_node' (i + 1) e
+    | BinaryOp (o, e1, e2) ->
+      p i ("BinaryOp " ^ show_bin_op o) span;
+      print_expr_node' (i + 1) e1;
+      print_expr_node' (i + 1) e2
+    | UnaryOp (o, e) ->
+      p i ("UnaryOp " ^ show_un_op o) span;
+      print_expr_node' (i + 1) e
+    | Literal l ->
+      p i ("Literal " ^ show_literal l) span
 
 let print_expr_node = print_expr_node' 0

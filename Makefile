@@ -1,19 +1,23 @@
 SHELL := /bin/bash
 MAKEFLAGS += --no-print-directory
+EXE = somc/_build/default/bin/main.exe
 
 build:
 	@clear -x
 	@cd somc && dune build
 
 exec: build
-	@cd somc && dune exec somc -- $(args)
+	@$(EXE) $(args)
+
+test: build
+	@$(EXE) $(args) test/test.som
 
 .PHONY: stdlib
 stdlib:
 	@cd stdlib && make stdlib
 
 install: build stdlib
-	sudo cp somc/_build/default/bin/main.exe /usr/bin/somc
+	sudo cp $(EXE) /usr/bin/somc
 
 	sudo cp stdlib/bin/libsom.so /usr/lib/
 

@@ -1,0 +1,4 @@
+(library
+ (name report)
+ (libraries span ANSITerminal)
+)

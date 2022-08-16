@@ -1,14 +1,21 @@
 module Ast = Ast
 module PrintAst = Print_ast
-module Span = Span
 
-let string_from_position (lexbuf: Lexing.lexbuf) =
-  let pos = lexbuf.lex_curr_p in
-  let fname = if String.length pos.pos_fname > 0 then pos.pos_fname else "<file>" in
-  Printf.sprintf "%s:%d:%d" fname pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1)
+open Report.Error
+open Span
 
 let parse file =
+  (* lexbuf stuff temporary *)
   let lexbuf = Lexing.from_channel (open_in file) in
-  try Parser.prog Lexer.main lexbuf with
-  (* | Lexer.SyntaxError msg -> fprintf stderr "%s: %s\n" (string_from_position lex_buf) msg; exit 1 *)
-  | Parser.Error -> Printf.fprintf stderr "%s: Syntax error\n" (string_from_position lexbuf); exit 1
+  try
+    lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname = file};
+    Parser.prog Lexer.main lexbuf
+  with
+  | Error (e, s) ->
+    Report.report e s;
+    Report.report (Other_error (Could_not_compile file)) None;
+    exit 1
+  | Parser.Error ->
+    let span = span_from_lexbuf lexbuf in
+    Report.report (Syntax_error (Other "parsing failed")) (Some span);
+    exit 1

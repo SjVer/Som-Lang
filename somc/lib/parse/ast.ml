@@ -1,6 +1,6 @@
 type 'a node = {span: Span.span; item: 'a}
 
-type literal_node =
+type literal =
   | Bool of bool
   | Int of int
   | Float of float
@@ -18,8 +18,8 @@ type un_op =
   | Negate
   | Not
 
-type expr_node =
-  | Grouping of expr_node
-  | BinaryOp of bin_op * expr_node * expr_node
-  | UnaryOp of un_op * expr_node
-  | Literal of literal_node
+type expr =
+  | Grouping of expr node
+  | BinaryOp of bin_op * expr node * expr node
+  | UnaryOp of un_op * expr node
+  | Literal of literal

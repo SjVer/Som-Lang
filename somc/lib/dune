@@ -5,5 +5,7 @@
   (libraries
     codegen
     parse
+    span
+    report
   )
 )

@@ -8,8 +8,8 @@ fileTypes: [som]
 scope: source.som
 
 variables:
-  ident: '[A-Za-z_][A-Za-z_0-9]*''*'
-  Ident: '[A-Z][A-Za-z_0-9]*''*'
+  ident: '[A-Za-z_][A-Za-z_0-9]*'
+  Ident: '[A-Z][A-Za-z_0-9]*'
 
   # numbers
   decimal: '\b[0-9]+(?:\.[0-9]+)?\b'
@@ -55,17 +55,11 @@ contexts:
 
   type:
     # tuples
-    - match: \((?!\s*\))
-      scope: punctuation.section.parens.begin.som
-      push:
-        - meta_scope: meta.tuple-type.som
-
-        - include: type
-        - match: \)
-          scope: punctuation.section.parens.end.som
-          pop: true
-
-        - include: invalid
+    - match: (?=\((?!\s*\)))
+      branch_point: open_parens
+      branch:
+        - finish_tuple_type
+        - grouping
 
     # structs
     - match: \{
@@ -113,6 +107,19 @@ contexts:
           scope: keyword.other.arrow.som
         - match: (?=\S)
           pop: true
+
+  finish_tuple_type:
+    - match: \(
+      scope: punctuation.section.parens.begin.som
+      push:
+      - meta_scope: meta.tuple-type.som
+      - include: type
+      - match: \)
+        scope: punctuation.section.parens.end.som
+        pop: open_parens
+
+      - match: \S
+        fail: open_parens
 
   # STATEMENTS
 
@@ -207,13 +214,12 @@ contexts:
 
     - include: special
     - include: operator
-    - include: grouping
+    # - include: grouping
     - include: subscript
     - include: array
     - include: number
-    - include: string-char
-
     - include: variable
+    - include: string-char
 
   operator:
     - match: \?\?
@@ -258,9 +264,10 @@ contexts:
     - match: \(
       scope: punctuation.section.parens.begin.som
       push:
+        - meta_scope: meta.grouping.som
         - match: \)
           scope: punctuation.section.parens.end.som
-          pop: true
+          pop: open_parens
         - include: expression
 
   subscript:
@@ -323,8 +330,11 @@ contexts:
     - match: (?<=\.)({{Ident}})
       scope: entity.name.constant.som
 
-    - match: '{{ident}}'
+    - match: '{{ident}}''*'
       scope: variable.som
+
+    - match: \'{{ident}}(?!')
+      scope: type.variable.som
 
   # MISC
 
@@ -351,7 +361,7 @@ contexts:
           pop: true
 
   escaped-char:
-    - match: \\(?:a|b|e|f|n|r|t|v|\\|\'|\"|0)
+    - match: \\(?:a|b|f|n|r|t|v|\\|\'|\"|0|$)
       scope: constant.character.escape.som
     - match: \\.
       scope: invalid.illegal.unknown-escape.som
