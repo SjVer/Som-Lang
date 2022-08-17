@@ -103,7 +103,7 @@ rule main = parse
   | '%' { MODULO }
   | '#' { HASH }
 
-  | '_' { UNDERSCORE }
+  | '_' { UNDERSCORE } (* TODO: fix? *)
 
   | '"' {
     let start_loc = lexbuf.lex_start_p in

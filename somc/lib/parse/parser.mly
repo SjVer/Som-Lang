@@ -11,10 +11,9 @@ let unclosed what locs = raise_error (Unclosed what) (Some locs)
 
 let mknode locs item = {span = span_from_lexlocs locs; item }
 let mkbind patt expr = {patt; expr}
-
 %}
 
-// tokens
+// ============================ tokens ============================
 
 %token NOTEQUAL COLONEQUAL EQUAL
 %token TRIPLEDOT DOUBLEDOT DOT
@@ -50,85 +49,88 @@ let mkbind patt expr = {patt; expr}
 
 %token EOF
 
+// ========================== precedence ==========================
+
+%left PLUS MINUS
+%left SLASH STAR
+%right CARET
+// %nonassoc ARROW
+%nonassoc prec_unary
+
+// ============================ rules ============================
+
 %start <Ast.expr node> prog
-
-/*
-  MAYBE-PROBLEM: definition vs let-binding?
-  is there a syntaxical difference between them?
-*/
-
 %%
-
-// rules
 
 prog:
   | expr EOF { $1 }
 ;
 
-// patterns
+// =========================== patterns ===========================
 
 pattern:
   // TODO: rn the pattern's loc seems to be that of 
   // its expr instead (when coming from binding)
-  | LOWERNAME { mknode $sloc (Variable $1) }
-  | UNDERSCORE { mknode $sloc Wildcard }
+  | LOWERNAME { mknode $sloc (P_Variable $1) }
+  | UNDERSCORE { mknode $sloc P_Wildcard }
 ;
 
-// expressions
+// ========================== expressions ==========================
 
 expr:
-  | bindings THICKARROW seq { mknode $sloc (Binding ($1, $3)) }
-  | seq { $1 }
+  | bindings THICKARROW seq_expr { mknode $sloc (E_Binding ($1, $3)) }
+  | seq_expr { $1 }
 ;
 
 bindings:
   | binding COMMA bindings { $1 :: $3 }
   | binding { [$1] }
 ;
+%inline binding: pattern EQUAL base_expr { mkbind $1 $3 };
 
-(* the COMMA between bindings is overruled by `seq` so `term` instead? *)
-binding: pattern EQUAL term { mkbind $1 $3 };
+// base expression (sequences and applications)
 
-seq:
-  | seq COMMA term { mknode $sloc (Sequence ($1, $3)) }
-  | term { $1 }
+seq_expr:
+  | seq_expr COMMA base_expr { mknode $sloc (E_Sequence ($1, $3)) }
+  | base_expr { $1 }
 ;
 
-term:
-  | factor PLUS term { mknode $sloc (BinaryOp (Add, $1, $3)) }
-  | factor MINUS term { mknode $sloc (BinaryOp (Subtract, $1, $3)) }
-  | factor { $1 }
+base_expr:
+  | single_expr single_expr+ { mknode $sloc (E_Application (mknode $loc($1) (A_Expr $1), $2)) }
+  | base_expr infix_op base_expr { mknode $sloc (E_Application (mknode $loc($2) $2, [$1; $3])) }
+  | unary_op base_expr %prec prec_unary { mknode $sloc (E_Application (mknode $loc($1) $1, [$2])) }
+  | single_expr { $1 }
 ;
 
-factor:
-  | cast STAR factor { mknode $sloc (BinaryOp (Multiply, $1, $3)) }
-  | cast SLASH factor { mknode $sloc (BinaryOp (Divide, $1, $3)) }
-  | cast { $1 }
+%inline infix_op:
+  | PLUS { A_BinaryOp B_Add }
+  | MINUS { A_BinaryOp B_Subtract }
+  | STAR { A_BinaryOp B_Multiply }
+  | SLASH { A_BinaryOp B_Divide }
+  | CARET { A_BinaryOp B_Power }
+;
+%inline unary_op:
+  | MINUS { A_UnaryOp U_Negate }
+  | BANG { A_UnaryOp U_Not }
 ;
 
-cast:
-  | unary { $1 }
-;
+single_expr:
+  | LPAREN seq_expr RPAREN { mknode $sloc (E_Grouping $2) }
+  | LPAREN seq_expr error { unclosed "(" $loc($1) }
 
-unary:
-  | MINUS unary { mknode $sloc (UnaryOp (Negate, $2)) }
-  | BANG unary { mknode $sloc (UnaryOp (Not, $2)) }
-  | subscript { $1 }
-;
+  | BOOL { mknode $sloc (E_Literal (L_Bool $1)) }
+  | INTEGER { mknode $sloc (E_Literal (L_Int $1)) }
+  | FLOAT { mknode $sloc (E_Literal (L_Float $1)) }
+  | STRING { mknode $sloc (E_Literal (L_String $1)) }
+  | CHARACTER { mknode $sloc (E_Literal (L_Char $1)) }
 
-subscript:
-  | primary { $1 }
-;
-
-primary:
-  | LPAREN expr RPAREN { mknode $sloc (Grouping $2) }
-  | LPAREN expr error { unclosed "(" $loc($1) }
-
-  | BOOL { mknode $sloc (Literal (Bool $1)) }
-  | INTEGER { mknode $sloc (Literal (Int $1)) }
-  | FLOAT { mknode $sloc (Literal (Float $1)) }
-  | STRING { mknode $sloc (Literal (String $1)) }
-  | CHARACTER { mknode $sloc (Literal (Char $1)) }
+  | variable { mknode $sloc $1 }
 
   | error { raise_error Expected_expression (Some $loc($1))}
+;
+
+// literal-ish expression
+
+variable:
+  | LOWERNAME { E_Ident $1 }
 ;
