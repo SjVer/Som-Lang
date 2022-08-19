@@ -7,6 +7,8 @@ open Span
 open ANSITerminal
 open Util
 
+let has_reported = ref false
+
 let report_single_line_span span lines digits =
   (* print line before *)
   if span.start.line >= 2 then begin
@@ -30,9 +32,9 @@ let report_single_line_span span lines digits =
   (* print marking *)
   report_marking digits line span
 
-let report_double_line_span _ _ _ = ()
+let report_double_line_span _ _ _ = ignore
 
-let report_multi_line_span _ _ _ = ()
+let report_multi_line_span _ _ _ = ignore
 
 let report_span span =
   let lines = read_lines span.file in
@@ -49,7 +51,16 @@ let report_span span =
     | Multi_line -> report_multi_line_span
   in report_fn span lines digits
 
-let report error span =
+let report_note note =
+  prerr_string [Bold] " note: ";
+  String.concat "\n       " (String.split_on_char '\n' note)
+    |> prerr_endline
+
+let report error span notes =
+  (* print leading newline if not the firs report *)
+  if !has_reported then prerr_newline ()
+  else has_reported := true;
+
   (* print "somekindof error[code]: msg" *)
   let (header, msg) = get_error_header_and_msg error in
   prerr_string red header;
@@ -62,6 +73,11 @@ let report error span =
   prerr_newline ();
   
   (* print span if given *)
-  match span with
-    | Some span -> report_span span
+  let print_tail = List.length notes > 0 in
+  begin match span with
+    | Some span -> report_span span print_tail
     | None -> ()
+  end;
+
+  (* print notes *)
+  List.iter report_note notes

@@ -7,7 +7,7 @@ Rect := {
 	color: Str
 }
 
-rect_new: Int Int -> Rect
+rect_new: Int -> Int -> Rect
 rect_new width height =
 	Rect {
 		width,

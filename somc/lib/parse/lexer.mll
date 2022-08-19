@@ -105,6 +105,14 @@ rule main = parse
 
   | '_' { UNDERSCORE } (* TODO: fix? ocaml does it this way tho. *)
 
+  | "$i." ('s'|'u' as s) '.' (digit+ as w) { BUILTINITY (s = 's', int_of_string w) }
+  | "$f." ("64"|"32"|"16" as w) { BUILTINFTY (int_of_string w) }
+  | "$v" { BUILTINVTY }
+  | "$" (alpha | '.')* alpha {
+    raise_error (curr_span lexbuf) (Invalid_builtin_type (Lexing.lexeme lexbuf))
+    ["a valid builtin type is one of the following:\n$i.(s|u).<int>, $f.(64|32|16), $v"]
+  }
+
   | '"' {
     let start_loc = lexbuf.lex_start_p in
     reset_string_buffer ();
@@ -117,7 +125,7 @@ rule main = parse
   | "'" '\\' backslash_escapes "'"
     { CHARACTER (char_for_backslash (Lexing.lexeme_char lexbuf 2)) }
   | "'" '\\' (_ as c)
-    { raise_error (curr_span lexbuf) (Illegal_escape c) }
+    { raise_error (curr_span lexbuf) (Illegal_escape c) [] }
 
   | "true" { BOOL true }
   | "false" { BOOL false }
@@ -129,7 +137,7 @@ rule main = parse
   | "'" (lower_name as ident) { PRIMENAME ident }
 
   | eof { EOF }
-  | _ { raise_error (curr_span lexbuf) (Unexpected_character (Lexing.lexeme lexbuf)) }
+  | _ { raise_error (curr_span lexbuf) (Unexpected_character (Lexing.lexeme lexbuf)) [] }
 
 and simple_comment = parse
   | '\n' { Lexing.new_line lexbuf }
@@ -154,13 +162,13 @@ and string = parse
     string lexbuf
   }
   | '\\' (_ as c) {
-    raise_error (curr_span lexbuf) (Illegal_escape c)
+    raise_error (curr_span lexbuf) (Illegal_escape c) []
     (* warning lexbuf (Printf.sprintf "illegal backslash escape in string: `\\%c'" c); *)
     (* store_string_char '\\'; *)
     (* store_string_char c; *)
     (* string lexbuf *)
   }
-  | eof { raise_error (curr_span lexbuf) Unterminated_string }
+  | eof { raise_error (curr_span lexbuf) Unterminated_string [] }
   | '\n' {
     store_string_char '\n';
     incr_loc lexbuf 0;

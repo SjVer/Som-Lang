@@ -23,7 +23,7 @@ let explain_ecode code =
     Printf.printf "Error E%03d: %s\n" code name;
     exit 0
   | None ->
-    R.report (E.Other_error (E.Cannot_explain code)) None;
+    R.report (E.Other_error (E.Cannot_explain code)) None [];
     exit 1
 
 (* entrypoint *)

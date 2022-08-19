@@ -30,6 +30,13 @@ let show_un_op = function
   | U_Negate -> "-"
   | U_Not -> "!"
 
+let show_builtin_type = function
+  | T_B_Int (s, w) ->
+    Printf.sprintf "$i.%c.%d"
+    (if s then 's' else 'u') w
+  | T_B_Float w -> Printf.sprintf "$f.%d" w
+  | T_B_Void -> "$v"
+
 let rec print_expr_node' i = function
   | { span; item } -> match item with
 
@@ -52,8 +59,13 @@ let rec print_expr_node' i = function
 
     | E_Application (a, es) ->
       p i "E_Application" span;
-      print_appl_node (i + 1) a;
+      print_appl_node' (i + 1) a;
       List.iter (print_expr_node' (i + 1)) es
+
+    | E_Cast (e, t) ->
+      p i "E_Cast" span;
+      print_expr_node' (i + 1) e;
+      print_type_node' (i + 1) t
 
     | E_Literal l ->
       p i ("E_Literal " ^ show_literal l) span
@@ -61,10 +73,43 @@ let rec print_expr_node' i = function
     | E_Ident v ->
       p i ("E_Ident " ^ v) span
 
-and print_appl_node i node =
+and print_appl_node' i node =
   let { span; item } = node in match item with
   | A_Expr e -> p i "A_Expr" span; print_expr_node' (i + 1) e
   | A_BinaryOp o -> p i ("A_BinaryOp " ^ show_bin_op o) span
   | A_UnaryOp o -> p i ("A_UnaryOp " ^ show_un_op o) span
 
+and print_type_node' i node =
+  let { span; item } = node in match item with
+  | T_Grouping t ->
+    p i "T_Grouping" span;
+    print_type_node' (i + 1) t
+
+  | T_Any ->
+    p i "T_Any" span
+
+  | T_Var s ->
+    p i ("T_Var '" ^s) span
+  
+  | T_Function (e, r) ->
+    p i "T_Function" span;
+    print_type_node' (i + 1) e;
+    print_type_node' (i + 1) r
+  
+  | T_Tuple ts ->
+    p i "T_Tuple" span;
+    List.iter (print_type_node' (i + 1)) ts
+
+  | T_Constr (t, ts) ->
+    p i ("T_Constr " ^ t) span;
+    List.iter (print_type_node' (i + 1)) ts;
+  
+  | T_Alias (t, n) ->
+    p i ("T_Alias '" ^ n.item) span;
+    print_type_node' (i + 1) t
+
+  | T_Builtin t ->
+    p i ("T_Builtin " ^ show_builtin_type t) span
+
 let print_expr_node = print_expr_node' 0
+let print_type_node = print_type_node' 0

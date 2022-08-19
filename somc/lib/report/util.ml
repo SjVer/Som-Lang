@@ -26,8 +26,9 @@ let report_lineno digits line =
   (* print " lineno | " *)
   prerr_string cyan (f " %*d │ " digits line)
 
-let report_marking digits line span =
-  prerr_string cyan (String.make digits ' ' ^ "  ╵ ");
+let report_marking digits line span print_tail =
+  let tail = if print_tail then "  │ " else "  ╵ " in
+  prerr_string cyan (String.make digits ' ' ^ tail);
 
   (* padding before "^~~~~" *)
   let ln_before = String.sub line 0 (span.start.col - 1) in

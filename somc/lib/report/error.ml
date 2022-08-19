@@ -7,18 +7,21 @@ type lexing_error =
   | Illegal_escape of char (*+sequence*)
   | Unterminated_string
   | Invalid_literal of string
+  | Invalid_builtin_type of string
 
 let get_lexing_error_msg = function
   | Unexpected_character w  -> f "unexpected character '%s'" w
   | Illegal_escape w        -> f "illegal escape sequence '\\%c'" w
-  | Unterminated_string     -> "unterminated string"
+  | Unterminated_string     -> f "unterminated string"
   | Invalid_literal w       -> f "invalid literal '%s'" w
+  | Invalid_builtin_type w  -> f "invalid builtin type '%s'" w
 
 type syntax_error =
   | Expected of string (*+token*)
-  | Unexpected of string (*+token*)
+  | Unexpected (*+token*)
   | Expected_toplevel
   | Expected_expression
+  | Expected_type
   | Unclosed of string (*+token*)
   | Use_of_unbound of string (*+symbol*)
   | Duplicate_parameter of string
@@ -26,9 +29,10 @@ type syntax_error =
 
 let get_syntax_error_msg = function
   | Expected w            -> f "expected '%s'" w
-  | Unexpected w          -> f "unexpected '%s'" w
+  | Unexpected            -> f "unexpected token"
   | Expected_toplevel     -> f "expected top-level"
   | Expected_expression   -> f "expected expression"
+  | Expected_type         -> f "expected type"
   | Unclosed w            -> f "unclosed '%s'" w
   | Use_of_unbound w      -> f "use of unbound value `%s`" w
   | Duplicate_parameter w -> f "duplicate parameter `%s`" w
@@ -58,6 +62,8 @@ let get_error_header_and_msg = function
   | Syntax_error e -> "syntax error", get_syntax_error_msg e
   | Other_error e -> "error", get_other_error_msg e
 
-exception Error of error * Span.span option
+type note = string
 
-let raise_error err span = raise (Error (err, span))
+exception Error of error * Span.span option * note list
+
+let raise_error err span notes = raise (Error (err, span, notes))

@@ -1,8 +1,6 @@
-#std::io::puts
+-- hello_world.som
 
--- ========== Som ==========
--- An easy-to-use functional
--- programming language :)
+#std::io::puts
 
 main args = 
 	puts "Hello World!\n",
