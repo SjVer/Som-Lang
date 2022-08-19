@@ -103,7 +103,7 @@ rule main = parse
   | '%' { MODULO }
   | '#' { HASH }
 
-  | '_' { UNDERSCORE } (* TODO: fix? *)
+  | '_' { UNDERSCORE } (* TODO: fix? ocaml does it this way tho. *)
 
   | '"' {
     let start_loc = lexbuf.lex_start_p in
@@ -127,7 +127,6 @@ rule main = parse
   | (lower_name prime*) as name { LOWERNAME name }
   | upper_name as name { UPPERNAME name }
   | "'" (lower_name as ident) { PRIMENAME ident }
-
 
   | eof { EOF }
   | _ { raise_error (curr_span lexbuf) (Unexpected_character (Lexing.lexeme lexbuf)) }

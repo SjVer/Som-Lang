@@ -1,6 +1,8 @@
 module Error = Error
+module Codes = Codes
 
 open Error
+open Codes
 open Span
 open ANSITerminal
 open Util
@@ -33,7 +35,6 @@ let report_double_line_span _ _ _ = ()
 let report_multi_line_span _ _ _ = ()
 
 let report_span span =
-  let cyan = [Bold; Foreground Cyan] in
   let lines = read_lines span.file in
   let digits = String.length (string_of_int span.start.line) in
 
@@ -49,9 +50,14 @@ let report_span span =
   in report_fn span lines digits
 
 let report error span =
-  (* print "somekindof error: msg" *)
+  (* print "somekindof error[code]: msg" *)
   let (header, msg) = get_error_header_and_msg error in
-  prerr_string [Bold; Foreground Red] header;
+  prerr_string red header;
+
+  begin match error with Other_error _ -> () | _ ->
+  prerr_string red (f "[E%03d]" (int_from_error error))
+  end;
+
   prerr_string [Bold] (": " ^ msg);
   prerr_newline ();
   

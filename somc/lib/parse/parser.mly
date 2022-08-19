@@ -115,8 +115,8 @@ base_expr:
 ;
 
 single_expr:
-  | LPAREN seq_expr RPAREN { mknode $sloc (E_Grouping $2) }
-  | LPAREN seq_expr error { unclosed "(" $loc($1) }
+  | LPAREN expr RPAREN { mknode $sloc (E_Grouping $2) }
+  | LPAREN expr error { unclosed "(" $loc($1) }
 
   | BOOL { mknode $sloc (E_Literal (L_Bool $1)) }
   | INTEGER { mknode $sloc (E_Literal (L_Int $1)) }
@@ -126,7 +126,7 @@ single_expr:
 
   | variable { mknode $sloc $1 }
 
-  | error { raise_error Expected_expression (Some $loc($1))}
+  // | error { raise_error Expected_expression (Some $loc($1))}
 ;
 
 // literal-ish expression

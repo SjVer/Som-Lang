@@ -2,7 +2,10 @@ SHELL := /bin/bash
 MAKEFLAGS += --no-print-directory
 EXE = somc/_build/default/bin/main.exe
 
-build:
+gen_codes_ml:
+	@python3 gen_codes_ml.py
+
+build: gen_codes_ml
 	@clear -x
 	@cd somc && dune build
 
