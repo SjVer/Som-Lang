@@ -59,4 +59,4 @@ assert cond msg =
 -- and warn if the function isn't defined
 !!warn_no_def
 !!no_mangle
-main: Str[] -> !Int
+main: [Str] -> !Int

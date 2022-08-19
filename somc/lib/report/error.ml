@@ -28,7 +28,7 @@ type syntax_error =
   | Other of string (*+syntax error*)
 
 let get_syntax_error_msg = function
-  | Expected w            -> f "expected '%s'" w
+  | Expected w            -> f "expected %s" w
   | Unexpected            -> f "unexpected token"
   | Expected_toplevel     -> f "expected top-level"
   | Expected_expression   -> f "expected expression"

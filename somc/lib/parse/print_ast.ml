@@ -6,110 +6,147 @@ let p i str span =
   print_string [Foreground Black] (" @" ^ Span.show_span span);
   print_newline ()
 
-(** temp. function *)
-let show_pattern = function
-  | { span = _; item } -> match item with
-    | P_Variable name -> "P_Variable " ^ name
-    | P_Wildcard -> "P_Wildcard"
+(** show functions *)
 
 let show_literal = function
-  | L_Bool b -> "Bool " ^ string_of_bool b
-  | L_Int i -> "Int " ^ string_of_int i
-  | L_Float f -> "Float " ^ string_of_float f
-  | L_Char c -> "Char '" ^ String.make 1 c ^ "'"
-  | L_String s -> "String \"" ^ String.escaped s ^ "\""
+  | LI_Bool b -> "Bool " ^ string_of_bool b
+  | LI_Int i -> "Int " ^ string_of_int i
+  | LI_Float f -> "Float " ^ string_of_float f
+  | LI_Char c -> "Char '" ^ String.make 1 c ^ "'"
+  | LI_String s -> "String \"" ^ String.escaped s ^ "\""
 
 let show_bin_op = function
-  | B_Add -> "+"
-  | B_Subtract -> "-"
-  | B_Multiply -> "*"
-  | B_Divide -> "/"
-  | B_Power -> "^"
+  | BI_Add -> "+"
+  | BI_Subtract -> "-"
+  | BI_Multiply -> "*"
+  | BI_Divide -> "/"
+  | BI_Power -> "^"
 
 let show_un_op = function
-  | U_Negate -> "-"
-  | U_Not -> "!"
+  | UN_Negate -> "-"
+  | UN_Not -> "!"
 
 let show_builtin_type = function
-  | T_B_Int (s, w) ->
+  | BT_Int (s, w) ->
     Printf.sprintf "$i.%c.%d"
     (if s then 's' else 'u') w
-  | T_B_Float w -> Printf.sprintf "$f.%d" w
-  | T_B_Void -> "$v"
+  | BT_Float w -> Printf.sprintf "$f.%d" w
+  | BT_Void -> "$v"
 
-let rec print_expr_node' i = function
-  | { span; item } -> match item with
+(* print functions *)
 
-    | E_Grouping e -> 
-      p i "E_Grouping" span;
-      print_expr_node' (i + 1) e
+let rec print_expr_node' i node =
+  let { span; item } = node in match item with
+  | EX_Grouping e -> 
+    p i "EX_Grouping" span;
+    print_expr_node' (i + 1) e
 
-    | E_Binding (bindings, e) ->
-      p i "E_Binding" span;
-      List.iter begin fun { patt; expr } ->
-        p (i + 1) (show_pattern patt) expr.span;
-        print_expr_node' (i + 2) expr
-      end bindings;
-      print_expr_node' (i + 1) e
+  | EX_Binding (bindings, e) ->
+    p i "EX_Binding" span;
+    List.iter begin fun { patt; expr } ->
+      print_patt_node' (i + 1) patt;
+      print_expr_node' (i + 2) expr
+    end bindings;
+    print_expr_node' (i + 1) e
 
-    | E_Sequence (e1, e2) ->
-      p i "E_Sequence" span;
-      print_expr_node' (i + 1) e1;
-      print_expr_node' (i + 1) e2
+  | EX_Sequence (e1, e2) ->
+    p i "EX_Sequence" span;
+    print_expr_node' (i + 1) e1;
+    print_expr_node' (i + 1) e2
 
-    | E_Application (a, es) ->
-      p i "E_Application" span;
-      print_appl_node' (i + 1) a;
-      List.iter (print_expr_node' (i + 1)) es
+  | EX_Application (a, es) ->
+    p i "EX_Application" span;
+    print_appl_node' (i + 1) a;
+    List.iter (print_expr_node' (i + 1)) es
 
-    | E_Cast (e, t) ->
-      p i "E_Cast" span;
-      print_expr_node' (i + 1) e;
-      print_type_node' (i + 1) t
+  (* | EX_Cast (e, t) ->
+    p i "EX_Cast" span;
+    print_expr_node' (i + 1) e;
+    print_type_node' (i + 1) t *)
 
-    | E_Literal l ->
-      p i ("E_Literal " ^ show_literal l) span
-    
-    | E_Ident v ->
-      p i ("E_Ident " ^ v) span
+  | EX_Literal l ->
+    p i ("EX_Literal " ^ show_literal l) span
+  
+  | EX_Ident v ->
+    p i ("EX_Ident " ^ v) span
 
 and print_appl_node' i node =
   let { span; item } = node in match item with
-  | A_Expr e -> p i "A_Expr" span; print_expr_node' (i + 1) e
-  | A_BinaryOp o -> p i ("A_BinaryOp " ^ show_bin_op o) span
-  | A_UnaryOp o -> p i ("A_UnaryOp " ^ show_un_op o) span
+  | AP_Expr e -> p i "AP_Expr" span; print_expr_node' (i + 1) e
+  | AP_BinaryOp o -> p i ("AP_BinaryOp " ^ show_bin_op o) span
+  | AP_UnaryOp o -> p i ("AP_UnaryOp " ^ show_un_op o) span
+
+and print_patt_node' i node =
+  let { span; item } = node in match item with
+  | PA_Variable n ->
+    p i ("PA_Variable " ^ n) span;
+  
+  | PA_Wildcard ->
+    p i "PA_Wildcard" span
 
 and print_type_node' i node =
   let { span; item } = node in match item with
-  | T_Grouping t ->
-    p i "T_Grouping" span;
+  | TY_Grouping t ->
+    p i "TY_Grouping" span;
     print_type_node' (i + 1) t
 
-  | T_Any ->
-    p i "T_Any" span
+  | TY_Any ->
+    p i "TY_Any" span
 
-  | T_Var s ->
-    p i ("T_Var '" ^s) span
+  | TY_Var s ->
+    p i ("TY_Var '" ^s) span
+
+  | TY_Effect t ->
+    p i "TY_Effect" span;
+    if Option.is_some t
+    then print_type_node' (i + 1) (Option.get t)
   
-  | T_Function (e, r) ->
-    p i "T_Function" span;
-    print_type_node' (i + 1) e;
+  | TY_Function (ts, r) ->
+    p i "TY_Function" span;
+    List.iter (print_type_node' (i + 1)) ts;
     print_type_node' (i + 1) r
   
-  | T_Tuple ts ->
-    p i "T_Tuple" span;
+  | TY_Tuple ts ->
+    p i "TY_Tuple" span;
     List.iter (print_type_node' (i + 1)) ts
 
-  | T_Constr (t, ts) ->
-    p i ("T_Constr " ^ t) span;
-    List.iter (print_type_node' (i + 1)) ts;
-  
-  | T_Alias (t, n) ->
-    p i ("T_Alias '" ^ n.item) span;
+  | TY_List t ->
+    p i "TY_List" span;
     print_type_node' (i + 1) t
 
-  | T_Builtin t ->
-    p i ("T_Builtin " ^ show_builtin_type t) span
+  | TY_Constr (a, t) ->
+    p i ("TY_Constr " ^ t) span;
+    if Option.is_some a
+    then print_type_node' (i + 1) (Option.get a);
+  
+  | TY_Alias (t, n) ->
+    p i ("TY_Alias '" ^ n.item) span;
+    print_type_node' (i + 1) t
+
+  | TY_Builtin t ->
+    p i ("TY_Builtin " ^ show_builtin_type t) span
+
+and print_toplevel_node' i node =
+  let { span; item } = node in match item with
+  | TL_Declaration (n, t) ->
+    p i ("TL_Declaration " ^ n) span;
+    print_type_node' (i + 1) t
+  
+  | TL_Definition { patt; expr } ->
+    p i "TL_Declaration" span;
+    print_patt_node' (i + 1) patt;
+    print_expr_node' (i + 1) expr
+
+(* helper functions *)
 
 let print_expr_node = print_expr_node' 0
 let print_type_node = print_type_node' 0
+let print_toplevel_node = print_toplevel_node' 0
+let rec print_toplevel nodes =
+  match nodes with
+  | [] -> ()
+  | [n] -> print_toplevel_node n
+  | n :: ns ->
+    print_toplevel_node n;
+    print_newline ();
+    print_toplevel ns 

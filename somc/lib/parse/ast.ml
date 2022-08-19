@@ -1,23 +1,29 @@
 type 'a node = {span: Span.span; item: 'a}
 
+(* ====================== Toplevel ===================== *)
+
+and toplevel =
+  | TL_Declaration of string * typ node (** `string: typ` *)
+  | TL_Definition of value_binding (** `patt = expr` *)
+
 (* ====================== Pattern ====================== *)
 
 (** TODO: add pattern matching like as in
     github.com/ocaml/ocaml/blob/trunk/parsing/parsetree.mli#L219 *)
 and pattern =
-  | P_Variable of string
-  | P_Wildcard
+  | PA_Variable of string
+  | PA_Wildcard
 
 (* ===================== Expression ===================== *)
 
 and expr =
-  | E_Grouping of expr node (** `(expr)` *)
-  | E_Binding of value_binding list * expr node (** `pattern = expr, ... => expr` *)
-  | E_Sequence of expr node * expr node (** `expr, expr` *)
-  | E_Application of applicant node * expr node list (** `applicant expr ...` *)
-  | E_Cast of expr node * typ node (** `expr -> typ` *)
-  | E_Literal of literal (** `literal` *)
-  | E_Ident of string (** `variable` TODO: allow shit like `Foo.bar` *)
+  | EX_Grouping of expr node (** `(expr)` *)
+  | EX_Binding of value_binding list * expr node (** `pattern = expr, ... => expr` *)
+  | EX_Sequence of expr node * expr node (** `expr, expr` *)
+  | EX_Application of applicant node * expr node list (** `applicant expr ...` *)
+  (* | EX_Cast of expr node * typ node (** `expr -> typ` *) *)
+  | EX_Literal of literal (** `literal` *)
+  | EX_Ident of string (** `variable` TODO: allow shit like `Foo.bar` *)
   
 and value_binding =
   {
@@ -26,41 +32,43 @@ and value_binding =
   }
 
 and applicant =
-  | A_Expr of expr node
-  | A_BinaryOp of bin_op
-  | A_UnaryOp of un_op
+  | AP_Expr of expr node
+  | AP_BinaryOp of bin_op
+  | AP_UnaryOp of un_op
   
 and bin_op =
-  | B_Add
-  | B_Subtract
-  | B_Multiply
-  | B_Divide
-  | B_Power
+  | BI_Add
+  | BI_Subtract
+  | BI_Multiply
+  | BI_Divide
+  | BI_Power
 
 and un_op =
-  | U_Negate
-  | U_Not
+  | UN_Negate
+  | UN_Not
 
 and literal =
-  | L_Bool of bool
-  | L_Int of int
-  | L_Float of float
-  | L_Char of char
-  | L_String of string
+  | LI_Bool of bool
+  | LI_Int of int
+  | LI_Float of float
+  | LI_Char of char
+  | LI_String of string
 
 (* ======================== Type ======================== *)
 
 and typ =
-  | T_Grouping of typ node (** `(typ)` *)
-  | T_Any (** `_` *)
-  | T_Var of string (** `'string` *)
-  | T_Function of typ node * typ node (** `typ -> typ` *)
-  | T_Tuple of typ node list (** `(typ; list; ...)` *)
-  | T_Constr of string * typ node list (** `string` | `(typ, list, ...) string`*)
-  | T_Alias of typ node * string node (** `typ := 'string` *)
-  | T_Builtin of builtin_typ (** `$llvm_typ` *)
+  | TY_Grouping of typ node (** `(typ)` *)
+  | TY_Any (** `_` *)
+  | TY_Var of string (** `'string` *)
+  | TY_Effect of typ node option (** `!typ` *)
+  | TY_Function of typ node list * typ node (** `typ, ... -> typ` *)
+  | TY_Tuple of typ node list (** `typ; ...` *)
+  | TY_List of typ node (** `[typ]` *)
+  | TY_Constr of typ node option * string (** `string` | `typ string`*)
+  | TY_Alias of typ node * string node (** `typ := 'string` *)
+  | TY_Builtin of builtin_typ (** `$llvm_typ` *)
 
 and builtin_typ =
-  | T_B_Int of bool * int (* `$i.bool.int` *)
-  | T_B_Float of int (* `$f.int` *)
-  | T_B_Void (* `$v` *)
+  | BT_Int of bool * int (* `$i.bool.int` *)
+  | BT_Float of int (* `$f.int` *)
+  | BT_Void (* `$v` *)

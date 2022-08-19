@@ -11,7 +11,7 @@ fizzbuzz: NiceInt -> !
 
 -- `main` returns an effect carrying an integer
 !!no_mangle
-main: Str[] -> !Int
+main: [Str] -> !Int
 main args =
 	ns = 1..100
 	=>

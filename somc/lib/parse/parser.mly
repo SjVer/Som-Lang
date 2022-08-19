@@ -6,9 +6,10 @@ open Span
 
 let raise_error e locs notes = raise_error (Syntax_error e) (Some (span_from_lexlocs locs)) notes
 
-let unclosed s e locs =
+let unclosed s e what locs =
   raise_error (Unclosed s) locs
-  [Printf.sprintf "try adding '%s' after the enclosed code" e]
+  [Printf.sprintf "try adding '%s' after the enclosed %s" what e]
+let expected what locs = raise_error (Expected what) locs []
 
 let mknode locs item = {span = span_from_lexlocs locs; item }
 let mkbind patt expr = {patt; expr}
@@ -63,12 +64,29 @@ let mkbind patt expr = {patt; expr}
 
 // ============================ rules ============================
 
-%start <Ast.expr node> prog
+%start <Ast.toplevel node list> prog
 %%
 
 prog:
-  | expr EOF { $1 }
-  // | expr error { expected "EOF" $loc($2) }
+  | toplevel* EOF { $1 }
+  | toplevel* error { expected "EOF" $loc($2) }
+;
+
+// =========================== toplevel ===========================
+
+toplevel:
+  | declaration { $1 }
+  | definition { $1 }
+;
+
+declaration:
+  | LOWERNAME COLON typ { mknode $sloc (TL_Declaration ($1, $3)) }
+  | LOWERNAME COLON error { expected "type" $loc($3) }
+;
+
+definition:
+  | pattern EQUAL expr { mknode $sloc (TL_Definition (mkbind $1 $3)) }
+  | pattern EQUAL error { expected "expression" $loc($3) }
 ;
 
 // =========================== patterns ===========================
@@ -76,14 +94,14 @@ prog:
 pattern:
   // TODO: rn the pattern's loc seems to be that of 
   // its expr instead (when coming from binding)
-  | LOWERNAME { mknode $sloc (P_Variable $1) }
-  | UNDERSCORE { mknode $sloc P_Wildcard }
+  | LOWERNAME { mknode $sloc (PA_Variable $1) }
+  | UNDERSCORE { mknode $sloc PA_Wildcard }
 ;
 
 // ========================== expressions ==========================
 
 expr:
-  | bindings THICKARROW seq_expr { mknode $sloc (E_Binding ($1, $3)) }
+  | bindings THICKARROW seq_expr { mknode $sloc (EX_Binding ($1, $3)) }
   | seq_expr { $1 }
 
   | error { raise_error Expected_expression $loc($1) [] }
@@ -98,41 +116,41 @@ bindings:
 // base expression (sequences and applications)
 
 seq_expr:
-  | seq_expr COMMA base_expr { mknode $sloc (E_Sequence ($1, $3)) }
+  | seq_expr COMMA base_expr { mknode $sloc (EX_Sequence ($1, $3)) }
   | base_expr { $1 }
 ;
 
 base_expr:
-  | single_expr single_expr+ { mknode $sloc (E_Application (mknode $loc($1) (A_Expr $1), $2)) }
-  | base_expr infix_op base_expr { mknode $sloc (E_Application (mknode $loc($2) $2, [$1; $3])) }
-  | base_expr ARROW type_ { mknode $sloc (E_Cast ($1, $3))}
-  | unary_op base_expr %prec prec_unary { mknode $sloc (E_Application (mknode $loc($1) $1, [$2])) }
+  | single_expr single_expr+ { mknode $sloc (EX_Application (mknode $loc($1) (AP_Expr $1), $2)) }
+  | base_expr infix_op base_expr { mknode $sloc (EX_Application (mknode $loc($2) $2, [$1; $3])) }
+  // | base_expr ARROW typ { mknode $sloc (EX_Cast ($1, $3))}
+  | unary_op base_expr %prec prec_unary { mknode $sloc (EX_Application (mknode $loc($1) $1, [$2])) }
   | single_expr { $1 }
 
   | error { raise_error Expected_expression $loc($1) [] }
 ;
 
 %inline infix_op:
-  | PLUS { A_BinaryOp B_Add }
-  | MINUS { A_BinaryOp B_Subtract }
-  | STAR { A_BinaryOp B_Multiply }
-  | SLASH { A_BinaryOp B_Divide }
-  | CARET { A_BinaryOp B_Power }
+  | PLUS { AP_BinaryOp BI_Add }
+  | MINUS { AP_BinaryOp BI_Subtract }
+  | STAR { AP_BinaryOp BI_Multiply }
+  | SLASH { AP_BinaryOp BI_Divide }
+  | CARET { AP_BinaryOp BI_Power }
 ;
 %inline unary_op:
-  | MINUS { A_UnaryOp U_Negate }
-  | BANG { A_UnaryOp U_Not }
+  | MINUS { AP_UnaryOp UN_Negate }
+  | BANG { AP_UnaryOp UN_Not }
 ;
 
 single_expr:
-  | LPAREN expr RPAREN { mknode $sloc (E_Grouping $2) }
-  | LPAREN expr error { unclosed "(" ")" $loc($1) }
+  | LPAREN expr RPAREN { mknode $sloc (EX_Grouping $2) }
+  | LPAREN expr error { unclosed "(" ")" "expression" $loc($1) }
 
-  | BOOL { mknode $sloc (E_Literal (L_Bool $1)) }
-  | INTEGER { mknode $sloc (E_Literal (L_Int $1)) }
-  | FLOAT { mknode $sloc (E_Literal (L_Float $1)) }
-  | STRING { mknode $sloc (E_Literal (L_String $1)) }
-  | CHARACTER { mknode $sloc (E_Literal (L_Char $1)) }
+  | BOOL { mknode $sloc (EX_Literal (LI_Bool $1)) }
+  | INTEGER { mknode $sloc (EX_Literal (LI_Int $1)) }
+  | FLOAT { mknode $sloc (EX_Literal (LI_Float $1)) }
+  | STRING { mknode $sloc (EX_Literal (LI_String $1)) }
+  | CHARACTER { mknode $sloc (EX_Literal (LI_Char $1)) }
 
   | variable { mknode $sloc $1 }
 ;
@@ -140,46 +158,57 @@ single_expr:
 // literal-ish expression
 
 %inline variable:
-  | LOWERNAME { E_Ident $1 }
+  | LOWERNAME { EX_Ident $1 }
 ;
 
 // ============================= types =============================
 
-type_:
+typ:
   | alias_type { $1 }
   | error { raise_error Expected_type $loc($1) [] }
 ;
 
 alias_type:
   | function_type { $1 }
-  | alias_type COLONEQUAL PRIMENAME { mknode $sloc (T_Alias ($1, mknode $loc($3) $3)) }
+  | alias_type COLONEQUAL PRIMENAME { mknode $sloc (TY_Alias ($1, mknode $loc($3) $3)) }
 ;
 
 function_type:
-  | tuple_type %prec ARROW { $1 }
-  | function_type ARROW tuple_type { mknode $sloc (T_Function ($1, $3)) }
+  | function_type_args ARROW function_type { mknode $sloc (TY_Function ($1, $3)) }
+  | tuple_type { $1 }
+;
+
+function_type_args:
+  | tuple_type COMMA function_type_args { $1 :: $3 }
+  | tuple_type { [$1] }
 ;
 
 tuple_type:
-  | atomic_type { $1 }
+  | separated_nonempty_list(SEMICOLON, effect_type) {
+    match $1 with [t] -> t
+    | _ -> mknode $sloc (TY_Tuple ($1))
+  }
   | error { raise_error Expected_type $loc($1) [] }
 ;
 
-atomic_type:
-  | LPAREN type_ RPAREN { mknode $sloc (T_Grouping $2) }
-  | LPAREN type_ error { unclosed "(" ")" $loc($1) }
-
-  | BUILTINITY { let (s, w) = $1 in mknode $sloc (T_Builtin (T_B_Int (s, w))) }
-  | BUILTINFTY { mknode $sloc (T_Builtin (T_B_Float $1)) }
-  | BUILTINVTY { mknode $sloc (T_Builtin T_B_Void) }
-
-  | UNDERSCORE { mknode $sloc T_Any }
-  | PRIMENAME { mknode $sloc (T_Var $1) }
-  | type_params UPPERNAME { mknode $sloc (T_Constr ($2, $1)) }
+effect_type:
+  | atomic_type { $1 }
+  | BANG atomic_type { mknode $sloc (TY_Effect (Some $2)) }
+  | BANG { mknode $sloc (TY_Effect None) }
 ;
 
-%inline type_params:
-  | /* empty */ { [] }
-  | atomic_type { [$1] }
-  // TODO: parse multiple args: `(T1; ...; Tn)`
+atomic_type:
+  | LPAREN typ RPAREN { mknode $sloc (TY_Grouping $2) }
+  | LPAREN typ error { unclosed "(" ")" "type" $loc($1) }
+
+  | LBRACKET typ RBRACKET { mknode $sloc (TY_List $2) }
+  | LBRACKET typ error { unclosed "[" "]" "type" $loc($1) }
+
+  | BUILTINITY { let (s, w) = $1 in mknode $sloc (TY_Builtin (BT_Int (s, w))) }
+  | BUILTINFTY { mknode $sloc (TY_Builtin (BT_Float $1)) }
+  | BUILTINVTY { mknode $sloc (TY_Builtin BT_Void) }
+
+  | UNDERSCORE { mknode $sloc TY_Any }
+  | PRIMENAME { mknode $sloc (TY_Var $1) }
+  | atomic_type? UPPERNAME { mknode $sloc (TY_Constr ($1, $2)) }
 ;

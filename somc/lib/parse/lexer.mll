@@ -41,7 +41,7 @@ let char_for_backslash = function
 }
 
 let prime = '\''
-let alpha = ['a'-'z' 'A'-'Z' '0'-'9']
+let alpha = ['a'-'z' 'A'-'Z' '0'-'9' '_']
 let digit = ['0'-'9']
 
 let lower_name = (['a'-'z'] alpha*)

@@ -54,13 +54,6 @@ contexts:
     - include: invalid
 
   type:
-    # tuples
-    - match: (?=\((?!\s*\)))
-      branch_point: open_parens
-      branch:
-        - finish_tuple_type
-        - grouping
-
     # structs
     - match: \{
       scope: punctuation.section.braces.begin.som
@@ -101,10 +94,15 @@ contexts:
     - match: ({{basictype}}|(?<!\.){{Ident}})|\.\.\.
       scope: storage.type.som
       push:
-        - match: \[\s*\]
-          scope: storage.modifier.array.som
         - match: ->
           scope: keyword.other.arrow.som
+        - match: ;
+          scope: keyword.other.semicolon.som
+
+        - match: \[\s*\]
+          scope: storage.modifier.array.som
+          pop: true
+
         - match: (?=\S)
           pop: true
 
@@ -214,7 +212,7 @@ contexts:
 
     - include: special
     - include: operator
-    # - include: grouping
+    - include: grouping
     - include: subscript
     - include: array
     - include: number
@@ -267,8 +265,7 @@ contexts:
         - meta_scope: meta.grouping.som
         - match: \)
           scope: punctuation.section.parens.end.som
-          pop: open_parens
-        - include: type
+          pop: true
         - include: expression
 
   subscript:

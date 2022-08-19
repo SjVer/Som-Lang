@@ -28,7 +28,7 @@
 
 !!.warn_redef "redefinition may break stdlib"
 
-Str := $i.u.8[]
+Str := [$i.u.8]
 
 !!fmt_variadic 0
 fmt: Str ... -> Str

@@ -54,5 +54,5 @@ let () =
   close();
   ignore (verbose, mute, opt_level);
 
-  Somc.Parse.PrintAst.print_expr_node (Somc.Parse.parse file);
+  Somc.Parse.PrintAst.print_toplevel (Somc.Parse.parse file);
   exit 0
