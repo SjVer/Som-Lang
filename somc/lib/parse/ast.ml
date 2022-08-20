@@ -5,7 +5,28 @@ type 'a node = {span: Span.span; item: 'a}
 and toplevel =
   | TL_Declaration of string * typ node (** `string: typ` *)
   | TL_Definition of value_binding (** `patt = expr` *)
+  | TL_Import of import (** `#import` *)
 
+and value_binding =
+  {
+    patt: pattern node;
+    expr: expr node;
+  }
+  
+(* ======================= Import ======================= *)
+
+and import =
+  {
+    path: string node list;
+    kind: import_kind node;
+  } 
+    
+and import_kind =
+  | IK_Simple (** `path` *)
+  | IK_Glob (** `path::*` *)
+  | IK_Rename of string (** `path => string` *)
+  | IK_Nested of import node list (** `path::{import, list}` *)
+  
 (* ====================== Pattern ====================== *)
 
 (** TODO: add pattern matching like as in
@@ -25,11 +46,6 @@ and expr =
   | EX_Literal of literal (** `literal` *)
   | EX_Ident of string (** `variable` TODO: allow shit like `Foo.bar` *)
   
-and value_binding =
-  {
-    patt: pattern node;
-    expr: expr node;
-  }
 
 and applicant =
   | AP_Expr of expr node
@@ -65,7 +81,7 @@ and typ =
   | TY_Tuple of typ node list (** `typ; ...` *)
   | TY_List of typ node (** `[typ]` *)
   | TY_Constr of typ node option * string (** `string` | `typ string`*)
-  | TY_Alias of typ node * string node (** `typ := 'string` *)
+  | TY_Alias of typ node * string node (** `typ => 'string` *)
   | TY_Builtin of builtin_typ (** `$llvm_typ` *)
 
 and builtin_typ =

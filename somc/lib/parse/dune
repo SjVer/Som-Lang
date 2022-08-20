@@ -3,5 +3,5 @@
  (libraries report span ANSITerminal)
 )
 
-(menhir (modules parser))
+(menhir (modules parser) (flags --explain))
 (ocamllex lexer)

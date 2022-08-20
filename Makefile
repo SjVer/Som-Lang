@@ -2,6 +2,8 @@ SHELL := /bin/bash
 MAKEFLAGS += --no-print-directory
 EXE = somc/_build/default/bin/main.exe
 
+.DEFAULT_GOAL := build
+
 gen_codes_ml:
 	@python3 gen_codes_ml.py
 
@@ -26,3 +28,7 @@ install: build stdlib
 
 	sudo cp tools/bash-completion.sh /usr/share/bash-completion/completions/somc
 	source ~/.bashrc
+
+clean:
+	@cd somc && dune clean
+	@cd stdlib && make clean

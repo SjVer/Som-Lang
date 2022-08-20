@@ -90,6 +90,7 @@ contexts:
     - match: (?<!!)!(?!!)
       scope: storage.modifier.effect.som
 
+
     # basic types
     - match: ({{basictype}}|(?<!\.){{Ident}})|\.\.\.
       scope: storage.type.som
@@ -97,12 +98,7 @@ contexts:
         - match: ->
           scope: keyword.other.arrow.som
         - match: ;
-          scope: keyword.other.semicolon.som
-
-        - match: \[\s*\]
-          scope: storage.modifier.array.som
-          pop: true
-
+          scope: punctuation.separator.sequence.som
         - match: (?=\S)
           pop: true
 
@@ -129,17 +125,27 @@ contexts:
         2: variable.annotation.som
 
   import:
-    - match: \#!?(?={{ident}})
+    - match: \#\s*!?\s*(?={{ident}})
       scope: keyword.import.som
       push: import_finish
 
   import_finish:
     - meta_scope: meta.import.som
 
+    - match: (?<=::)\*
+      scope: keyword.other.glob.som
+      pop: true
+
     # normal path segment, might be last
     - match: '{{ident}}'
       scope: entity.name.namespace.som
       set:
+        - match: (=>)\s*({{ident}})
+          captures:
+            1: keyword.operator.as.som
+            2: entity.name.namespace.som
+          pop: true
+
         - match: '::'
           scope: punctuation.accessor.som
           set: import_finish

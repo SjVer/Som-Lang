@@ -33,6 +33,11 @@ let show_builtin_type = function
   | BT_Float w -> Printf.sprintf "$f.%d" w
   | BT_Void -> "$v"
 
+let rec show_path = function
+  | [] -> ""
+  | [p] -> p.item
+  | p :: ps -> p.item ^ "::" ^ show_path ps
+
 (* print functions *)
 
 let rec print_expr_node' i node =
@@ -126,6 +131,18 @@ and print_type_node' i node =
   | TY_Builtin t ->
     p i ("TY_Builtin " ^ show_builtin_type t) span
 
+and print_import_kind_node' i node =
+  let {span; item} = node in match item with
+  | IK_Simple -> p i "IK_Simple" span
+  | IK_Glob -> p i "IK_Glob" span
+  | IK_Rename n -> p i ("IK_Rename " ^ n) span
+  | IK_Nested is -> p i "IK_Nested" span;
+    List.iter (
+      fun {span; item = {path; kind}} ->
+        p (i + 1) (show_path path) span;
+        print_import_kind_node' (i + 2) kind
+      ) is
+
 and print_toplevel_node' i node =
   let { span; item } = node in match item with
   | TL_Declaration (n, t) ->
@@ -136,6 +153,10 @@ and print_toplevel_node' i node =
     p i "TL_Declaration" span;
     print_patt_node' (i + 1) patt;
     print_expr_node' (i + 1) expr
+
+  | TL_Import {path; kind} ->
+    p i ("TL_Import " ^ show_path path) span;
+    print_import_kind_node' (i + 1) kind
 
 (* helper functions *)
 

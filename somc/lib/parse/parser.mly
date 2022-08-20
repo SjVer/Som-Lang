@@ -13,6 +13,7 @@ let expected what locs = raise_error (Expected what) locs []
 
 let mknode locs item = {span = span_from_lexlocs locs; item }
 let mkbind patt expr = {patt; expr}
+let mkimp path kind = {path; kind}
 %}
 
 // ============================ tokens ============================
@@ -46,11 +47,11 @@ let mkbind patt expr = {patt; expr}
 %token <string> UPPERNAME
 %token <string> PRIMENAME
 
-%token <bool> BOOL [@recover.expr false]
-%token <int> INTEGER [@recover.expr 0]
-%token <float> FLOAT [@recover.expr 0.0]
-%token <char> CHARACTER [@recover.expr ' ']
-%token <string> STRING [@recover.expr ""]
+%token <bool> BOOL
+%token <int> INTEGER
+%token <float> FLOAT
+%token <char> CHARACTER
+%token <string> STRING
 
 %token EOF
 
@@ -59,34 +60,78 @@ let mkbind patt expr = {patt; expr}
 %left PLUS MINUS
 %left SLASH STAR
 %right CARET
-%nonassoc ARROW
+// %nonassoc ARROW
 %nonassoc prec_unary
 
-// ============================ rules ============================
+%left p
+
+// =========================== helpers ===========================
 
 %start <Ast.toplevel node list> prog
 %%
 
+%inline snl(s, X): separated_nonempty_list(s, X) { $1 }
+
+// ============================ rules ============================
+
 prog:
   | toplevel* EOF { $1 }
-  | toplevel* error { expected "EOF" $loc($2) }
+  | toplevel* error { expected "toplevel statement" $loc($2) }
 ;
 
 // =========================== toplevel ===========================
 
 toplevel:
+  | import { $1 }
   | declaration { $1 }
   | definition { $1 }
 ;
 
-declaration:
-  | LOWERNAME COLON typ { mknode $sloc (TL_Declaration ($1, $3)) }
-  | LOWERNAME COLON error { expected "type" $loc($3) }
+import:
+  | HASH import_body { mknode $sloc (TL_Import $2) }
+  | HASH error { expected "a path" $loc($2) }
 ;
 
+import_body:
+  | snl(DOUBLECOLON, path_segment) noncolon_import_kind { mkimp $1 $2 }
+  | list(path_segment DOUBLECOLON {$1}) colon_import_kind { mkimp $1 $2 }
+;
+// don't question the mess. accept that it (and nothing else) works.
+%inline path_segment: LOWERNAME { mknode $sloc $1 };
+%inline noncolon_import_kind:
+  | /* empty */ { mknode $sloc IK_Simple }
+  | THICKARROW UPPERNAME { mknode $sloc (IK_Rename $2) }
+  | THICKARROW LOWERNAME { mknode $sloc (IK_Rename $2) }
+;
+%inline colon_import_kind:
+  | STAR { mknode $sloc IK_Glob }
+
+  | LBRACE snl(COMMA, import_body { mknode $sloc $1 }) RBRACE
+    { mknode $sloc (IK_Nested $2) }
+  | LBRACE snl(COMMA, import_body) error
+    { unclosed "{" "}" "nested imports" $loc($3) }
+;
+
+declaration:
+  | LOWERNAME COLON typ { mknode $sloc (TL_Declaration ($1, $3)) }
+  | LOWERNAME COLON error { expected "a type" $loc($3) }
+;
+
+// TODO: the following is amb. 
+// ```
+//    f = x
+//    g = y
+// ```
+// right now it is parsed as:
+//    (decl f: x g)
+//    (error `=`: "expected toplevel statement")
+// solutions:
+//    add prefix symbol before defs (e.g. "let")
+//    add suffix symbol after defs/exprs (e.g. ";")
+//    smth else?
 definition:
   | pattern EQUAL expr { mknode $sloc (TL_Definition (mkbind $1 $3)) }
-  | pattern EQUAL error { expected "expression" $loc($3) }
+  | pattern EQUAL error { expected "an expression" $loc($3) }
 ;
 
 // =========================== patterns ===========================
@@ -121,10 +166,13 @@ seq_expr:
 ;
 
 base_expr:
-  | single_expr single_expr+ { mknode $sloc (EX_Application (mknode $loc($1) (AP_Expr $1), $2)) }
-  | base_expr infix_op base_expr { mknode $sloc (EX_Application (mknode $loc($2) $2, [$1; $3])) }
+  | single_expr single_expr+
+    { mknode $sloc (EX_Application (mknode $loc($1) (AP_Expr $1), $2)) }
+  | base_expr infix_op base_expr
+    { mknode $sloc (EX_Application (mknode $loc($2) $2, [$1; $3])) }
+  | unary_op base_expr %prec prec_unary
+    { mknode $sloc (EX_Application (mknode $loc($1) $1, [$2])) }
   // | base_expr ARROW typ { mknode $sloc (EX_Cast ($1, $3))}
-  | unary_op base_expr %prec prec_unary { mknode $sloc (EX_Application (mknode $loc($1) $1, [$2])) }
   | single_expr { $1 }
 
   | error { raise_error Expected_expression $loc($1) [] }
@@ -170,7 +218,8 @@ typ:
 
 alias_type:
   | function_type { $1 }
-  | alias_type COLONEQUAL PRIMENAME { mknode $sloc (TY_Alias ($1, mknode $loc($3) $3)) }
+  | alias_type THICKARROW PRIMENAME
+    { mknode $sloc (TY_Alias ($1, mknode $loc($3) $3)) }
 ;
 
 function_type:
@@ -184,7 +233,7 @@ function_type_args:
 ;
 
 tuple_type:
-  | separated_nonempty_list(SEMICOLON, effect_type) {
+  | snl(SEMICOLON, effect_type) {
     match $1 with [t] -> t
     | _ -> mknode $sloc (TY_Tuple ($1))
   }
@@ -202,7 +251,7 @@ atomic_type:
   | LPAREN typ error { unclosed "(" ")" "type" $loc($1) }
 
   | LBRACKET typ RBRACKET { mknode $sloc (TY_List $2) }
-  | LBRACKET typ error { unclosed "[" "]" "type" $loc($1) }
+  | LBRACKET typ error { unclosed "[" "]" "list type" $loc($1) }
 
   | BUILTINITY { let (s, w) = $1 in mknode $sloc (TY_Builtin (BT_Int (s, w))) }
   | BUILTINFTY { mknode $sloc (TY_Builtin (BT_Float $1)) }
