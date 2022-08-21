@@ -16,6 +16,6 @@ let parse file =
     Report.report (Other_error (Could_not_compile file)) None [];
     exit 1
   | Parser.Error ->
-    let span = span_from_lexbuf lexbuf in
+    let span = span_from_lexbuf lexbuf false in
     Report.report (Syntax_error Unexpected) (Some span) [];
     exit 1

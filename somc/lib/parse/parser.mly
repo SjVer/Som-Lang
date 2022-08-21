@@ -4,14 +4,17 @@ open Report.Error
 open Span
 
 
-let raise_error e locs notes = raise_error (Syntax_error e) (Some (span_from_lexlocs locs)) notes
+let raise_error e locs notes =
+  let s = span_from_lexlocs locs false in
+  raise_error (Syntax_error e) (Some s) notes
 
 let unclosed s e what locs =
   raise_error (Unclosed s) locs
   [Printf.sprintf "try adding '%s' after the enclosed %s" what e]
 let expected what locs = raise_error (Expected what) locs []
 
-let mknode locs item = {span = span_from_lexlocs locs; item }
+let mknode locs item = {span = span_from_lexlocs locs false; item }
+let mkgnode locs item = {span = span_from_lexlocs locs true; item }
 let mkbind patt expr = {patt; expr}
 let mkimp path kind = {path; kind}
 %}
@@ -30,13 +33,13 @@ let mkimp path kind = {path; kind}
 
 %token DOUBLEBANG BANG
 %token DOUBLEQUESTION QUESTION
-%token ARROW
-%token THICKARROW
+%token ARROW THICKARROW
+%token BACKSLASH HASH
 
 %token DOUBLEPIPE PIPE
 %token DOUBLEAMPERSAND AMPERSAND
 %token DOUBLECARET CARET
-%token STAR PLUS MINUS SLASH MODULO HASH
+%token STAR PLUS MINUS SLASH MODULO
 
 %token UNDERSCORE
 %token <bool * int> BUILTINITY
@@ -83,33 +86,13 @@ prog:
 
 toplevel:
   | import { $1 }
-  | declaration { $1 }
   | definition { $1 }
+  | declaration { $1 }
 ;
 
 import:
   | HASH import_body { mknode $sloc (TL_Import $2) }
   | HASH error { expected "a path" $loc($2) }
-;
-
-import_body:
-  | snl(DOUBLECOLON, path_segment) noncolon_import_kind { mkimp $1 $2 }
-  | list(path_segment DOUBLECOLON {$1}) colon_import_kind { mkimp $1 $2 }
-;
-// don't question the mess. accept that it (and nothing else) works.
-%inline path_segment: LOWERNAME { mknode $sloc $1 };
-%inline noncolon_import_kind:
-  | /* empty */ { mknode $sloc IK_Simple }
-  | THICKARROW UPPERNAME { mknode $sloc (IK_Rename $2) }
-  | THICKARROW LOWERNAME { mknode $sloc (IK_Rename $2) }
-;
-%inline colon_import_kind:
-  | STAR { mknode $sloc IK_Glob }
-
-  | LBRACE snl(COMMA, import_body { mknode $sloc $1 }) RBRACE
-    { mknode $sloc (IK_Nested $2) }
-  | LBRACE snl(COMMA, import_body) error
-    { unclosed "{" "}" "nested imports" $loc($3) }
 ;
 
 declaration:
@@ -130,33 +113,81 @@ declaration:
 //    add suffix symbol after defs/exprs (e.g. ";")
 //    smth else?
 definition:
-  | pattern EQUAL expr { mknode $sloc (TL_Definition (mkbind $1 $3)) }
-  | pattern EQUAL error { expected "an expression" $loc($3) }
+  | binding { mknode $sloc (TL_Definition $1) }
+;
+
+// ======================== import helpers ========================
+
+import_body:
+  // don't question the mess. accept that it (and nothing else) works.
+  | snl(DOUBLECOLON, path_segment) noncolon_import_kind { mkimp $1 $2 }
+  | list(path_segment DOUBLECOLON {$1}) colon_import_kind { mkimp $1 $2 }
+;
+
+%inline path_segment: LOWERNAME { mknode $sloc $1 };
+
+%inline noncolon_import_kind:
+  | /* empty */ { mknode $sloc IK_Simple }
+
+  | THICKARROW UPPERNAME { mknode $sloc (IK_Rename $2) }
+  | THICKARROW LOWERNAME { mknode $sloc (IK_Rename $2) }
+  | THICKARROW error { expected "an identifier" $loc($2) }
+;
+
+%inline colon_import_kind:
+  | STAR { mknode $sloc IK_Glob }
+
+  | LBRACE snl(COMMA, import_body { mknode $sloc $1 }) RBRACE
+    { mknode $sloc (IK_Nested $2) }
+  | LBRACE snl(COMMA, import_body) error
+    { unclosed "{" "}" "nested imports" $loc($3) }
+;
+
+// ======================== binding helpers =======================
+
+binding:
+  | var_pattern strict_binding { mkbind $1 $2 }
+;
+
+strict_binding:
+  | simple_pattern fun_binding { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
+  | EQUAL expr { $2 }
+;
+
+fun_binding: strict_binding { $1 };
+
+lambda_def:
+  | THICKARROW expr { $2 }
+  | simple_pattern lambda_def { mkgnode $sloc (EX_Lambda (mkbind $1 $2))}
 ;
 
 // =========================== patterns ===========================
 
-pattern:
+pattern: simple_pattern { $1 };
+
+simple_pattern:
   // TODO: rn the pattern's loc seems to be that of 
   // its expr instead (when coming from binding)
-  | LOWERNAME { mknode $sloc (PA_Variable $1) }
+  | var_pattern { $1 }
   | UNDERSCORE { mknode $sloc PA_Wildcard }
 ;
+
+var_pattern: LOWERNAME { mknode $sloc (PA_Variable $1) };
 
 // ========================== expressions ==========================
 
 expr:
-  | bindings THICKARROW seq_expr { mknode $sloc (EX_Binding ($1, $3)) }
+  | bindings_expr THICKARROW expr { mknode $sloc (EX_Binding ($1, $3)) }
+  | BACKSLASH simple_pattern lambda_def { mknode $sloc (EX_Lambda (mkbind $2 $3)) }
   | seq_expr { $1 }
 
   | error { raise_error Expected_expression $loc($1) [] }
 ;
 
-bindings:
-  | binding COMMA bindings { $1 :: $3 }
+bindings_expr:
+  | binding COMMA bindings_expr { $1 :: $3 }
   | binding { [$1] }
 ;
-%inline binding: pattern EQUAL base_expr { mkbind $1 $3 };
 
 // base expression (sequences and applications)
 
@@ -199,6 +230,7 @@ single_expr:
   | FLOAT { mknode $sloc (EX_Literal (LI_Float $1)) }
   | STRING { mknode $sloc (EX_Literal (LI_String $1)) }
   | CHARACTER { mknode $sloc (EX_Literal (LI_Char $1)) }
+  | EMPTYPARENS { mknode $sloc (EX_Literal LI_Nil) }
 
   | variable { mknode $sloc $1 }
 ;

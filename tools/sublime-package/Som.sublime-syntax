@@ -218,6 +218,7 @@ contexts:
 
     - include: special
     - include: operator
+    - include: lambda
     - include: grouping
     - include: subscript
     - include: array
@@ -263,6 +264,16 @@ contexts:
       scope: punctuation.accessor.arrow.som
     - match: \,|;
       scope: punctuation.separator.sequence.som
+
+  lambda:
+    - match: \\
+      scope: keyword.other.lambda.som
+      push:
+        - match: '{{ident}}'
+          scope: variable.parameter.lambda.som
+        - match: =>
+          scope: keyword.operator.definition.som
+          pop: true
 
   grouping:
     - match: \(

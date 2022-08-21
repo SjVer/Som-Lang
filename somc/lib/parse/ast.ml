@@ -39,9 +39,10 @@ and pattern =
 
 and expr =
   | EX_Grouping of expr node (** `(expr)` *)
-  | EX_Binding of value_binding list * expr node (** `pattern = expr, ... => expr` *)
+  | EX_Binding of value_binding list * expr node (** `patt = expr, ... => expr` *)
+  | EX_Lambda of value_binding (** `\patt => expr` *)
   | EX_Sequence of expr node * expr node (** `expr, expr` *)
-  | EX_Application of applicant node * expr node list (** `applicant expr ...` *)
+  | EX_Application of applicant node * expr node list (** `appl expr ...` *)
   (* | EX_Cast of expr node * typ node (** `expr -> typ` *) *)
   | EX_Literal of literal (** `literal` *)
   | EX_Ident of string (** `variable` TODO: allow shit like `Foo.bar` *)
@@ -69,6 +70,7 @@ and literal =
   | LI_Float of float
   | LI_Char of char
   | LI_String of string
+  | LI_Nil
 
 (* ======================== Type ======================== *)
 

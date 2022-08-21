@@ -9,7 +9,7 @@ let raise_error span e =
 let curr_span lexbuf = 
   let s = Lexing.lexeme_start_p lexbuf in
   let e = Lexing.lexeme_end_p lexbuf in
-  span_from_lexlocs (s, e)
+  span_from_lexlocs (s, e) false
 
 let incr_loc lexbuf delta =
   let pos = lexbuf.Lexing.lex_curr_p in
@@ -87,8 +87,11 @@ rule main = parse
   | '!' { BANG }
   | "??" { DOUBLEQUESTION }
   | '?' { QUESTION }
+
   | "->" { ARROW }
   | "=>" { THICKARROW }
+  | '#' { HASH }
+  | '\\' { BACKSLASH }
 
   | "||" { DOUBLEPIPE }
   | '|' { PIPE }
@@ -101,7 +104,6 @@ rule main = parse
   | '-' { MINUS }
   | '/' { SLASH }
   | '%' { MODULO }
-  | '#' { HASH }
 
   | '_' { UNDERSCORE } (* TODO: fix? ocaml does it this way tho. *)
 

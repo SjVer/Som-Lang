@@ -3,7 +3,7 @@ open ANSITerminal
 
 let p i str span =
   print_string [] (String.make i '\t' ^ str);
-  print_string [Foreground Black] (" @" ^ Span.show_span span);
+  print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
   print_newline ()
 
 (** show functions *)
@@ -14,6 +14,7 @@ let show_literal = function
   | LI_Float f -> "Float " ^ string_of_float f
   | LI_Char c -> "Char '" ^ String.make 1 c ^ "'"
   | LI_String s -> "String \"" ^ String.escaped s ^ "\""
+  | LI_Nil -> "Nil"
 
 let show_bin_op = function
   | BI_Add -> "+"
@@ -53,6 +54,11 @@ let rec print_expr_node' i node =
       print_expr_node' (i + 2) expr
     end bindings;
     print_expr_node' (i + 1) e
+
+  | EX_Lambda {patt; expr} ->
+    p i "EX_Lambda" span;
+    print_patt_node' (i + 1) patt;
+    print_expr_node' (i + 1) expr
 
   | EX_Sequence (e1, e2) ->
     p i "EX_Sequence" span;
@@ -150,7 +156,7 @@ and print_toplevel_node' i node =
     print_type_node' (i + 1) t
   
   | TL_Definition { patt; expr } ->
-    p i "TL_Declaration" span;
+    p i "TL_Definition" span;
     print_patt_node' (i + 1) patt;
     print_expr_node' (i + 1) expr
 
