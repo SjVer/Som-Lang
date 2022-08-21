@@ -43,10 +43,9 @@ and expr =
   | EX_Lambda of value_binding (** `\patt => expr` *)
   | EX_Sequence of expr node * expr node (** `expr, expr` *)
   | EX_Application of applicant node * expr node list (** `appl expr ...` *)
-  (* | EX_Cast of expr node * typ node (** `expr -> typ` *) *)
+  | EX_Tuple of expr node list (** `expr; expr; ...` *)
   | EX_Literal of literal (** `literal` *)
-  | EX_Ident of string (** `variable` TODO: allow shit like `Foo.bar` *)
-  
+  | EX_Identifier of string (** `variable` TODO: allow shit like `Foo.bar` *)
 
 and applicant =
   | AP_Expr of expr node
@@ -83,10 +82,26 @@ and typ =
   | TY_Tuple of typ node list (** `typ; ...` *)
   | TY_List of typ node (** `[typ]` *)
   | TY_Constr of typ node option * string (** `string` | `typ string`*)
-  | TY_Alias of typ node * string node (** `typ => 'string` *)
   | TY_Builtin of builtin_typ (** `$llvm_typ` *)
 
 and builtin_typ =
   | BT_Int of bool * int (* `$i.bool.int` *)
   | BT_Float of int (* `$f.int` *)
   | BT_Void (* `$v` *)
+
+(* ===================== Directive ===================== *)
+
+(* and directive =
+  {
+    (* TODO: enum instead of string *)
+    id: string node;
+    arg: directive_arg node option;
+  }
+
+and directive_arg =
+  | DA_Bool of bool
+  | DA_Integer of int
+  | DA_Float of float
+  | DA_String of string
+  | DA_Identifier of string
+*)

@@ -41,59 +41,34 @@ let rec show_path = function
 
 (* print functions *)
 
-let rec print_expr_node' i node =
-  let { span; item } = node in match item with
-  | EX_Grouping e -> 
-    p i "EX_Grouping" span;
-    print_expr_node' (i + 1) e
+(*
+let rec print_directive' i dir =
+  let { id; arg } = dir in begin
+    let { item; span } = id in p i item span
+  end; match arg with
+  | None -> ()
+  | Some { item; span } ->
+    match item with
+    | DA_Bool b -> p i ("DA_Bool " ^ string_of_bool b) span
+    | DA_Integer v -> p i ("DA_Integer " ^ string_of_int v) span
+    | DA_Float f -> p i ("DA_Float " ^ string_of_float f) span
+    | DA_String s -> p i ("DA_String \"" ^ String.escaped s ^ "\"") span
+    | DA_Identifier n -> p i ("DA_Identifier " ^ n) span
+*)
 
-  | EX_Binding (bindings, e) ->
-    p i "EX_Binding" span;
-    List.iter begin fun { patt; expr } ->
-      print_patt_node' (i + 1) patt;
-      print_expr_node' (i + 2) expr
-    end bindings;
-    print_expr_node' (i + 1) e
-
-  | EX_Lambda {patt; expr} ->
-    p i "EX_Lambda" span;
-    print_patt_node' (i + 1) patt;
-    print_expr_node' (i + 1) expr
-
-  | EX_Sequence (e1, e2) ->
-    p i "EX_Sequence" span;
-    print_expr_node' (i + 1) e1;
-    print_expr_node' (i + 1) e2
-
-  | EX_Application (a, es) ->
-    p i "EX_Application" span;
-    print_appl_node' (i + 1) a;
-    List.iter (print_expr_node' (i + 1)) es
-
-  (* | EX_Cast (e, t) ->
-    p i "EX_Cast" span;
-    print_expr_node' (i + 1) e;
-    print_type_node' (i + 1) t *)
-
-  | EX_Literal l ->
-    p i ("EX_Literal " ^ show_literal l) span
-  
-  | EX_Ident v ->
-    p i ("EX_Ident " ^ v) span
-
-and print_appl_node' i node =
-  let { span; item } = node in match item with
-  | AP_Expr e -> p i "AP_Expr" span; print_expr_node' (i + 1) e
-  | AP_BinaryOp o -> p i ("AP_BinaryOp " ^ show_bin_op o) span
-  | AP_UnaryOp o -> p i ("AP_UnaryOp " ^ show_un_op o) span
-
-and print_patt_node' i node =
+let rec print_patt_node' i node =
   let { span; item } = node in match item with
   | PA_Variable n ->
     p i ("PA_Variable " ^ n) span;
   
   | PA_Wildcard ->
     p i "PA_Wildcard" span
+  
+and print_appl_node' i node =
+  let { span; item } = node in match item with
+  | AP_Expr e -> p i "AP_Expr" span; print_expr_node' (i + 1) e
+  | AP_BinaryOp o -> p i ("AP_BinaryOp " ^ show_bin_op o) span
+  | AP_UnaryOp o -> p i ("AP_UnaryOp " ^ show_un_op o) span
 
 and print_type_node' i node =
   let { span; item } = node in match item with
@@ -130,12 +105,47 @@ and print_type_node' i node =
     if Option.is_some a
     then print_type_node' (i + 1) (Option.get a);
   
-  | TY_Alias (t, n) ->
-    p i ("TY_Alias '" ^ n.item) span;
-    print_type_node' (i + 1) t
-
   | TY_Builtin t ->
     p i ("TY_Builtin " ^ show_builtin_type t) span
+
+and print_expr_node' i node =
+  let { span; item } = node in match item with
+  | EX_Grouping e -> 
+    p i "EX_Grouping" span;
+    print_expr_node' (i + 1) e
+
+  | EX_Binding (bindings, e) ->
+    p i "EX_Binding" span;
+    List.iter begin fun { patt; expr } ->
+      print_patt_node' (i + 1) patt;
+      print_expr_node' (i + 2) expr
+    end bindings;
+    print_expr_node' (i + 1) e
+
+  | EX_Lambda {patt; expr} ->
+    p i "EX_Lambda" span;
+    print_patt_node' (i + 1) patt;
+    print_expr_node' (i + 1) expr
+
+  | EX_Sequence (e1, e2) ->
+    p i "EX_Sequence" span;
+    print_expr_node' (i + 1) e1;
+    print_expr_node' (i + 1) e2
+
+  | EX_Application (a, es) ->
+    p i "EX_Application" span;
+    print_appl_node' (i + 1) a;
+    List.iter (print_expr_node' (i + 1)) es
+
+  | EX_Tuple es ->
+    p i "EX_Tuple" span;
+    List.iter (print_expr_node' (i + 1)) es
+
+  | EX_Literal l ->
+    p i ("EX_Literal " ^ show_literal l) span
+  
+  | EX_Identifier v ->
+    p i ("EX_Identifier " ^ v) span
 
 and print_import_kind_node' i node =
   let {span; item} = node in match item with
@@ -169,6 +179,7 @@ and print_toplevel_node' i node =
 let print_expr_node = print_expr_node' 0
 let print_type_node = print_type_node' 0
 let print_toplevel_node = print_toplevel_node' 0
+
 let rec print_toplevel nodes =
   match nodes with
   | [] -> ()

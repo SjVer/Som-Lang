@@ -1,7 +1,11 @@
 (library
- (name parse)
- (libraries report span ANSITerminal)
+  (name parse)
+  (libraries report span ANSITerminal)
 )
 
-(menhir (modules parser) (flags --explain))
+(menhir
+  (modules parser)
+  (flags --explain)
+)
+
 (ocamllex lexer)

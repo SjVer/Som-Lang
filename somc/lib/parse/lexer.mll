@@ -44,8 +44,8 @@ let prime = '\''
 let alpha = ['a'-'z' 'A'-'Z' '0'-'9' '_']
 let digit = ['0'-'9']
 
-let lower_name = (['a'-'z'] alpha*)
-let upper_name = (['A'-'Z'] alpha*)
+let lower_name = '_'? ['a'-'z'] alpha*
+let upper_name = '_'? ['A'-'Z'] alpha*
 
 let b_int = '0' ('b'|'B') ('0' | '1')+
 let o_int = '0' ('c'|'C') ['0'-'7']+
@@ -105,8 +105,6 @@ rule main = parse
   | '/' { SLASH }
   | '%' { MODULO }
 
-  | '_' { UNDERSCORE } (* TODO: fix? ocaml does it this way tho. *)
-
   | "$i." ('s'|'u' as s) '.' (digit+ as w) { BUILTINITY (s = 's', int_of_string w) }
   | "$f." ("64"|"32"|"16" as w) { BUILTINFTY (int_of_string w) }
   | "$v" { BUILTINVTY }
@@ -137,6 +135,8 @@ rule main = parse
   | (lower_name prime*) as name { LOWERNAME name }
   | upper_name as name { UPPERNAME name }
   | "'" (lower_name as ident) { PRIMENAME ident }
+
+  | '_' { UNDERSCORE }
 
   | eof { EOF }
   | _ { raise_error (curr_span lexbuf) (Unexpected_character (Lexing.lexeme lexbuf)) [] }

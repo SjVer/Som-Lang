@@ -3,7 +3,6 @@ open Ast
 open Report.Error
 open Span
 
-
 let raise_error e locs notes =
   let s = span_from_lexlocs locs false in
   raise_error (Syntax_error e) (Some s) notes
@@ -18,6 +17,7 @@ let mkgnode locs item = {span = span_from_lexlocs locs true; item }
 let mkbind patt expr = {patt; expr}
 let mkimp path kind = {path; kind}
 %}
+// let mkdir id arg = {id; arg}
 
 // ============================ tokens ============================
 
@@ -63,23 +63,34 @@ let mkimp path kind = {path; kind}
 %left PLUS MINUS
 %left SLASH STAR
 %right CARET
-// %nonassoc ARROW
 %nonassoc prec_unary
-
-%left p
 
 // =========================== helpers ===========================
 
 %start <Ast.toplevel node list> prog
 %%
 
-%inline snl(s, X): separated_nonempty_list(s, X) { $1 }
+// separated non-empty list
+%inline snel(SEP, X): separated_nonempty_list(SEP, X) { $1 }
+
+// separated non-trivial list (at least 2 elements)
+sntl(SEP, X):
+  | sntl(SEP, X) SEP X { $1 @ [$3] }
+  | X SEP X { [$1; $3] }
+;
+
+// separated semi-non-trivial list (at least 1 element but with SEP at end)
+ssntl(SEP, X):
+  | sntl(SEP, X) SEP X { $1 @ [$3] }
+  | X SEP X { [$1; $3] }
+  | X SEP { [$1] }
+;
 
 // ============================ rules ============================
 
 prog:
   | toplevel* EOF { $1 }
-  | toplevel* error { expected "toplevel statement" $loc($2) }
+  | toplevel* error { expected "a toplevel statement" $loc($2) }
 ;
 
 // =========================== toplevel ===========================
@@ -88,6 +99,7 @@ toplevel:
   | import { $1 }
   | definition { $1 }
   | declaration { $1 }
+  // | global_directive { mknode $sloc (TL_Directive $1) }
 ;
 
 import:
@@ -120,7 +132,7 @@ definition:
 
 import_body:
   // don't question the mess. accept that it (and nothing else) works.
-  | snl(DOUBLECOLON, path_segment) noncolon_import_kind { mkimp $1 $2 }
+  | snel(DOUBLECOLON, path_segment) noncolon_import_kind { mkimp $1 $2 }
   | list(path_segment DOUBLECOLON {$1}) colon_import_kind { mkimp $1 $2 }
 ;
 
@@ -137,9 +149,9 @@ import_body:
 %inline colon_import_kind:
   | STAR { mknode $sloc IK_Glob }
 
-  | LBRACE snl(COMMA, import_body { mknode $sloc $1 }) RBRACE
+  | LBRACE snel(COMMA, import_body { mknode $sloc $1 }) RBRACE
     { mknode $sloc (IK_Nested $2) }
-  | LBRACE snl(COMMA, import_body) error
+  | LBRACE snel(COMMA, import_body) error
     { unclosed "{" "}" "nested imports" $loc($3) }
 ;
 
@@ -181,7 +193,7 @@ expr:
   | BACKSLASH simple_pattern lambda_def { mknode $sloc (EX_Lambda (mkbind $2 $3)) }
   | seq_expr { $1 }
 
-  | error { raise_error Expected_expression $loc($1) [] }
+  | error { expected "an expression" $sloc }
 ;
 
 bindings_expr:
@@ -192,7 +204,12 @@ bindings_expr:
 // base expression (sequences and applications)
 
 seq_expr:
-  | seq_expr COMMA base_expr { mknode $sloc (EX_Sequence ($1, $3)) }
+  | seq_expr COMMA tuple_expr { mknode $sloc (EX_Sequence ($1, $3)) }
+  | tuple_expr { $1 }
+;
+
+tuple_expr:
+  | ssntl(SEMICOLON, base_expr) { mknode $sloc (EX_Tuple $1) }
   | base_expr { $1 }
 ;
 
@@ -206,7 +223,7 @@ base_expr:
   // | base_expr ARROW typ { mknode $sloc (EX_Cast ($1, $3))}
   | single_expr { $1 }
 
-  | error { raise_error Expected_expression $loc($1) [] }
+  | error { expected "an expression" $sloc }
 ;
 
 %inline infix_op:
@@ -233,25 +250,21 @@ single_expr:
   | EMPTYPARENS { mknode $sloc (EX_Literal LI_Nil) }
 
   | variable { mknode $sloc $1 }
+
+  // | directive { mknode $sloc (EX_Directive $1) }
 ;
 
 // literal-ish expression
 
 %inline variable:
-  | LOWERNAME { EX_Ident $1 }
+  | LOWERNAME { EX_Identifier $1 }
 ;
 
 // ============================= types =============================
 
 typ:
-  | alias_type { $1 }
-  | error { raise_error Expected_type $loc($1) [] }
-;
-
-alias_type:
   | function_type { $1 }
-  | alias_type THICKARROW PRIMENAME
-    { mknode $sloc (TY_Alias ($1, mknode $loc($3) $3)) }
+  | error { expected "a type" $sloc }
 ;
 
 function_type:
@@ -265,17 +278,16 @@ function_type_args:
 ;
 
 tuple_type:
-  | snl(SEMICOLON, effect_type) {
-    match $1 with [t] -> t
-    | _ -> mknode $sloc (TY_Tuple ($1))
-  }
-  | error { raise_error Expected_type $loc($1) [] }
+  | ssntl(SEMICOLON, effect_type) { mknode $sloc (TY_Tuple ($1)) }
+  | effect_type { $1 }
 ;
 
 effect_type:
   | atomic_type { $1 }
   | BANG atomic_type { mknode $sloc (TY_Effect (Some $2)) }
   | BANG { mknode $sloc (TY_Effect None) }
+
+  | error { expected "a type" $sloc }
 ;
 
 atomic_type:
@@ -293,3 +305,36 @@ atomic_type:
   | PRIMENAME { mknode $sloc (TY_Var $1) }
   | atomic_type? UPPERNAME { mknode $sloc (TY_Constr ($1, $2)) }
 ;
+
+// =========================== directives ===========================
+
+/*
+global_directive: DOUBLEBANG DOT directive_body;
+
+directive: DOUBLEBANG directive_body;
+
+directive_body:
+  | directive_id directive_arg? { mkdir $1 $2 }
+  | error { expected "a directive" $sloc }
+;
+
+%inline directive_id:
+  LOWERNAME {
+    (*
+    TODO: get name and find out how many args it needs
+          and handle that in directive_body?
+
+    PS: id node is `mknode $sloc $1`
+    *)
+  }
+;
+
+%inline directive_arg:
+  | BOOL      { mknode $sloc (DA_Bool $1) }
+  | INTEGER   { mknode $sloc (DA_Integer $1) }
+  | FLOAT     { mknode $sloc (DA_Float $1) }
+  | STRING    { mknode $sloc (DA_String $1) }
+  | LOWERNAME { mknode $sloc (DA_Identifier $1) }
+  | UPPERNAME { mknode $sloc (DA_Identifier $1) }
+;
+*/

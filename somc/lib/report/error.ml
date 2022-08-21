@@ -19,9 +19,6 @@ let get_lexing_error_msg = function
 type syntax_error =
   | Expected of string (*+token*)
   | Unexpected (*+token*)
-  | Expected_toplevel
-  | Expected_expression
-  | Expected_type
   | Unclosed of string (*+token*)
   | Use_of_unbound of string (*+symbol*)
   | Duplicate_parameter of string
@@ -30,9 +27,6 @@ type syntax_error =
 let get_syntax_error_msg = function
   | Expected w            -> f "expected %s" w
   | Unexpected            -> f "unexpected token"
-  | Expected_toplevel     -> f "expected top-level"
-  | Expected_expression   -> f "expected expression"
-  | Expected_type         -> f "expected type"
   | Unclosed w            -> f "unclosed '%s'" w
   | Use_of_unbound w      -> f "use of unbound value `%s`" w
   | Duplicate_parameter w -> f "duplicate parameter `%s`" w

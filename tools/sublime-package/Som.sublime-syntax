@@ -90,9 +90,8 @@ contexts:
     - match: (?<!!)!(?!!)
       scope: storage.modifier.effect.som
 
-
     # basic types
-    - match: ({{basictype}}|(?<!\.){{Ident}})|\.\.\.
+    - match: '{{basictype}}|((?<!\.){{Ident}})|''{{ident}}(?!'')|\.\.\.'
       scope: storage.type.som
       push:
         - match: ->
@@ -283,7 +282,9 @@ contexts:
         - match: \)
           scope: punctuation.section.parens.end.som
           pop: true
+        - include: type
         - include: expression
+        - include: invalid
 
   subscript:
     - match: \[
@@ -351,9 +352,6 @@ contexts:
     - match: '{{ident}}''*'
       scope: variable.som
 
-    - match: \'{{ident}}(?!')
-      scope: type.variable.som
-
   # MISC
 
   invalid:
@@ -385,5 +383,5 @@ contexts:
       scope: invalid.illegal.unknown-escape.som
 
   format-specifier:
-      - match: \{\}
+      - match: \%(d|s|f|c)
         scope: constant.other.placeholder.som
