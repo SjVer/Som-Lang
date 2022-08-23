@@ -4,13 +4,21 @@ type 'a node = {span: Span.span; item: 'a}
 
 and toplevel =
   | TL_Declaration of string * typ node (** `string: typ` *)
-  | TL_Definition of value_binding (** `patt = expr` *)
+  | TL_Definition of value_binding (** `patt = expr;;` *)
+  | TL_Type_Definition of type_definition (** `string := type;;` *)
   | TL_Import of import (** `#import` *)
 
 and value_binding =
   {
     patt: pattern node;
     expr: expr node;
+  }
+
+and type_definition =
+  {
+    name: string node;
+    params: string node list;
+    typ: typ node;
   }
   
 (* ======================= Import ======================= *)
@@ -23,7 +31,7 @@ and import =
     
 and import_kind =
   | IK_Simple (** `path` *)
-  | IK_Glob (** `path::*` *)
+  | IK_Glob (** `path::*` *)  
   | IK_Rename of string (** `path => string` *)
   | IK_Nested of import node list (** `path::{import, list}` *)
   
@@ -74,9 +82,12 @@ and literal =
 (* ======================== Type ======================== *)
 
 and typ =
+  (* typedef-only *)
+  | TY_Variant of (string node * typ node option) list
+  (* generic *)
   | TY_Grouping of typ node (** `(typ)` *)
   | TY_Any (** `_` *)
-  | TY_Var of string (** `'string` *)
+  | TY_Variable of string (** `'string` *)
   | TY_Effect of typ node option (** `!typ` *)
   | TY_Function of typ node list * typ node (** `typ, ... -> typ` *)
   | TY_Tuple of typ node list (** `typ; ...` *)

@@ -66,13 +66,14 @@ rule main = parse
   | ":=" { COLONEQUAL }
   | '=' { EQUAL }
 
-  | "..." { TRIPLEDOT }
-  | ".." { DOUBLEDOT }
+  | "..." { TRP_DOT }
+  | ".." { DBL_DOT }
   | '.' { DOT }
 
-  | "::" { DOUBLECOLON }
+  | "::" { DBL_COLON }
   | ':' { COLON }
   | ',' { COMMA }
+  | ";;" { DBL_SEMICOLON }
   | ';' { SEMICOLON }
 
   | "()" { EMPTYPARENS }
@@ -83,9 +84,9 @@ rule main = parse
   | '{' { LBRACE }
   | '}' { RBRACE }
 
-  | "!!" { DOUBLEBANG }
+  | "!!" { DBL_BANG }
   | '!' { BANG }
-  | "??" { DOUBLEQUESTION }
+  | "??" { DBL_QUESTION }
   | '?' { QUESTION }
 
   | "->" { ARROW }
@@ -93,11 +94,11 @@ rule main = parse
   | '#' { HASH }
   | '\\' { BACKSLASH }
 
-  | "||" { DOUBLEPIPE }
+  | "||" { DBL_PIPE }
   | '|' { PIPE }
-  | "&&" { DOUBLEAMPERSAND }
+  | "&&" { DBL_AMPERSAND }
   | '&' { AMPERSAND }
-  | "^^" { DOUBLECARET }
+  | "^^" { DBL_CARET }
   | '^' { CARET }
   | '*' { STAR }
   | '+' { PLUS }

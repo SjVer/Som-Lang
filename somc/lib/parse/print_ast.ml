@@ -41,21 +41,6 @@ let rec show_path = function
 
 (* print functions *)
 
-(*
-let rec print_directive' i dir =
-  let { id; arg } = dir in begin
-    let { item; span } = id in p i item span
-  end; match arg with
-  | None -> ()
-  | Some { item; span } ->
-    match item with
-    | DA_Bool b -> p i ("DA_Bool " ^ string_of_bool b) span
-    | DA_Integer v -> p i ("DA_Integer " ^ string_of_int v) span
-    | DA_Float f -> p i ("DA_Float " ^ string_of_float f) span
-    | DA_String s -> p i ("DA_String \"" ^ String.escaped s ^ "\"") span
-    | DA_Identifier n -> p i ("DA_Identifier " ^ n) span
-*)
-
 let rec print_patt_node' i node =
   let { span; item } = node in match item with
   | PA_Variable n ->
@@ -72,6 +57,14 @@ and print_appl_node' i node =
 
 and print_type_node' i node =
   let { span; item } = node in match item with
+  | TY_Variant cs ->
+    p i "TY_Variant" span;
+    let f (s, t) = begin
+      p (i + 1) s.item s.span;
+      if Option.is_some t
+      then print_type_node' (i + 2) (Option.get t)
+    end in List.iter f cs
+
   | TY_Grouping t ->
     p i "TY_Grouping" span;
     print_type_node' (i + 1) t
@@ -79,8 +72,8 @@ and print_type_node' i node =
   | TY_Any ->
     p i "TY_Any" span
 
-  | TY_Var s ->
-    p i ("TY_Var '" ^s) span
+  | TY_Variable s ->
+    p i ("TY_Variable '" ^s) span
 
   | TY_Effect t ->
     p i "TY_Effect" span;
@@ -169,6 +162,15 @@ and print_toplevel_node' i node =
     p i "TL_Definition" span;
     print_patt_node' (i + 1) patt;
     print_expr_node' (i + 1) expr
+
+  | TL_Type_Definition d ->
+    let rec join = function
+    | [] -> ""
+    | [v] -> "'" ^ v.item
+    | v :: vs -> "'" ^ v.item ^ " " ^ join vs
+    in let name = join d.params ^ " " ^ d.name.item in
+    p i ("TL_Type_Definition " ^ name) span;
+    print_type_node' (i + 1) d.typ
 
   | TL_Import {path; kind} ->
     p i ("TL_Import " ^ show_path path) span;

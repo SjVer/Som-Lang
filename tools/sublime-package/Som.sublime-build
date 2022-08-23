@@ -9,9 +9,10 @@
 
 	// "env": {"CLICOLOR_FORCE": "1"},
 
-	// "cmd": ["~/Coding/Languages/Evi-Lang/bin/evi $file -o $file_path/$file_base_name && $file_path/$file_base_name; rm $file_path/$file_base_name"],
+	// "cmd": ["/usr/bin/somc $file -o $file_path/$file_base_name && $file_path/$file_base_name; rm $file_path/$file_base_name"],
+	"cmd": ["/usr/bin/somc $file"],
 
-	"file_regex": "^[ ]File \"(...?)\", line ([0-9]*)",
+	// "file_regex": ".*\n (.+):([0-9]*)",
 	"selector": "source.som",
 	"file_patterns": ["*.som"]
 }

@@ -16,29 +16,30 @@ let mknode locs item = {span = span_from_lexlocs locs false; item }
 let mkgnode locs item = {span = span_from_lexlocs locs true; item }
 let mkbind patt expr = {patt; expr}
 let mkimp path kind = {path; kind}
+let mktypdecl name params typ = {name; params; typ}
 %}
 // let mkdir id arg = {id; arg}
 
 // ============================ tokens ============================
 
 %token NOTEQUAL COLONEQUAL EQUAL
-%token TRIPLEDOT DOUBLEDOT DOT
-%token DOUBLECOLON COLON
+%token TRP_DOT DBL_DOT DOT
+%token DBL_COLON COLON
 %token COMMA
-%token SEMICOLON
-
+%token DBL_SEMICOLON SEMICOLON
+ 
 %token EMPTYPARENS LPAREN RPAREN
 %token LBRACKET RBRACKET
 %token LBRACE RBRACE
 
-%token DOUBLEBANG BANG
-%token DOUBLEQUESTION QUESTION
+%token DBL_BANG BANG
+%token DBL_QUESTION QUESTION
 %token ARROW THICKARROW
 %token BACKSLASH HASH
 
-%token DOUBLEPIPE PIPE
-%token DOUBLEAMPERSAND AMPERSAND
-%token DOUBLECARET CARET
+%token DBL_PIPE PIPE
+%token DBL_AMPERSAND AMPERSAND
+%token DBL_CARET CARET
 %token STAR PLUS MINUS SLASH MODULO
 
 %token UNDERSCORE
@@ -97,8 +98,9 @@ prog:
 
 toplevel:
   | import { $1 }
-  | definition { $1 }
-  | declaration { $1 }
+  | declaration DBL_SEMICOLON { $1 }
+  | definition DBL_SEMICOLON { $1 }
+  | type_definition DBL_SEMICOLON { $1 }
   // | global_directive { mknode $sloc (TL_Directive $1) }
 ;
 
@@ -109,31 +111,28 @@ import:
 
 declaration:
   | LOWERNAME COLON typ { mknode $sloc (TL_Declaration ($1, $3)) }
-  | LOWERNAME COLON error { expected "a type" $loc($3) }
 ;
 
-// TODO: the following is amb. 
-// ```
-//    f = x
-//    g = y
-// ```
-// right now it is parsed as:
-//    (decl f: x g)
-//    (error `=`: "expected toplevel statement")
-// solutions:
-//    add prefix symbol before defs (e.g. "let")
-//    add suffix symbol after defs/exprs (e.g. ";")
-//    smth else?
 definition:
-  | binding { mknode $sloc (TL_Definition $1) }
+  | binding(expr) { mknode $sloc (TL_Definition $1) }
+;
+
+type_definition:
+  | list(PRIMENAME { mknode $sloc $1}) UPPERNAME COLONEQUAL type_definition_body
+    { mknode $sloc (TL_Type_Definition (mktypdecl (mknode $loc($2) $2) $1 $4)) }
+;
+
+type_definition_body:
+  | variant_type { $1 }
+  | typ { $1 }
 ;
 
 // ======================== import helpers ========================
 
 import_body:
   // don't question the mess. accept that it (and nothing else) works.
-  | snel(DOUBLECOLON, path_segment) noncolon_import_kind { mkimp $1 $2 }
-  | list(path_segment DOUBLECOLON {$1}) colon_import_kind { mkimp $1 $2 }
+  | snel(DBL_COLON, path_segment) noncolon_import_kind { mkimp $1 $2 }
+  | list(path_segment DBL_COLON {$1}) colon_import_kind { mkimp $1 $2 }
 ;
 
 %inline path_segment: LOWERNAME { mknode $sloc $1 };
@@ -157,16 +156,16 @@ import_body:
 
 // ======================== binding helpers =======================
 
-binding:
-  | var_pattern strict_binding { mkbind $1 $2 }
+binding(EXPR):
+  | var_pattern strict_binding(EXPR) { mkbind $1 $2 }
 ;
 
-strict_binding:
-  | simple_pattern fun_binding { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
-  | EQUAL expr { $2 }
+strict_binding(EXPR):
+  | simple_pattern fun_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
+  | EQUAL EXPR { $2 }
 ;
 
-fun_binding: strict_binding { $1 };
+fun_binding(EXPR): strict_binding(EXPR) { $1 };
 
 lambda_def:
   | THICKARROW expr { $2 }
@@ -197,8 +196,8 @@ expr:
 ;
 
 bindings_expr:
-  | binding COMMA bindings_expr { $1 :: $3 }
-  | binding { [$1] }
+  | binding(base_expr) COMMA bindings_expr { $1 :: $3 }
+  | binding(base_expr) { [$1] }
 ;
 
 // base expression (sequences and applications)
@@ -262,9 +261,18 @@ single_expr:
 
 // ============================= types =============================
 
+// typedef-only
+
+variant_type:
+  | PIPE? snel(PIPE, LOWERNAME typ? { mknode $loc($1) $1, $2 })
+    { mknode $sloc (TY_Variant $2) }
+;
+
+// generic
+
 typ:
   | function_type { $1 }
-  | error { expected "a type" $sloc }
+  // | error { expected "a type" $sloc }
 ;
 
 function_type:
@@ -283,10 +291,9 @@ tuple_type:
 ;
 
 effect_type:
-  | atomic_type { $1 }
   | BANG atomic_type { mknode $sloc (TY_Effect (Some $2)) }
   | BANG { mknode $sloc (TY_Effect None) }
-
+  | atomic_type { $1 }
   | error { expected "a type" $sloc }
 ;
 
@@ -302,16 +309,16 @@ atomic_type:
   | BUILTINVTY { mknode $sloc (TY_Builtin BT_Void) }
 
   | UNDERSCORE { mknode $sloc TY_Any }
-  | PRIMENAME { mknode $sloc (TY_Var $1) }
+  | PRIMENAME { mknode $sloc (TY_Variable $1) }
   | atomic_type? UPPERNAME { mknode $sloc (TY_Constr ($1, $2)) }
 ;
 
 // =========================== directives ===========================
 
 /*
-global_directive: DOUBLEBANG DOT directive_body;
+global_directive: DBL_BANG DOT directive_body;
 
-directive: DOUBLEBANG directive_body;
+directive: DBL_BANG directive_body;
 
 directive_body:
   | directive_id directive_arg? { mkdir $1 $2 }

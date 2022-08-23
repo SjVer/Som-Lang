@@ -29,22 +29,22 @@
 
 #std::str::Str
 
-File := { filepath: Str }
+File := { filepath: Str };;
 
-IOMode := [ Read Write Append ReadWrite ]
+IOMode := [ read write append read_write ];;
 
 -- opens the file with the given path and mode
-openf: Str IOMode -> File
-openf path mode = ...
+openf: Str -> IOMode -> File;;
+openf path mode = ...;;
 
 -- closes the given file
-closef: File -> !
-closef file = ...
+closef: File -> !;;
+closef file = ...;;
 
 -- prints the given string to stdout
-puts: Str -> !
-puts string = ...
+puts: Str -> !;;
+puts string = ...;;
 
 -- writes the given string to the given file
-putsf: File Str -> !
-putsf file string = ...
+putsf: File -> Str -> !;;
+putsf file string = ...;;

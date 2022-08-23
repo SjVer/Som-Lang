@@ -5,7 +5,7 @@ Rect := {
 	width: Int
 	height: Int
 	color: Str
-}
+};;
 
 rect_new: Int -> Int -> Rect
 rect_new width height =
@@ -13,11 +13,11 @@ rect_new width height =
 		width,
 		height,
 		"red"
-	}
+	};;
 
 rect_show: Rect -> Str
 rect_show rect =
-	fmt "{}x{} rect with color {}" rect.width rect.height rect.color
+	fmt "{}x{} rect with color {}" rect.width rect.height rect.color;;
 
 main args =
 	my_rect = rect_new 10 5
@@ -26,4 +26,4 @@ main args =
 		-- prints "10x5 rect with color red"
 		puts rect_show my_rect,
 
-		0
+		0;;

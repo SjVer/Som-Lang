@@ -2,16 +2,28 @@
 #std::str::show
 
 !!showable
+Numbers := [
+	zero -- = 0
+	one -- = 1
+	two -- = 2
+	three -- = 3
+	four -- = 4
+];;
+
+!!showable
 Color := [
-	Red
-	Green
-	Blue
-	Other
-]
+	red = 0xff; 0x00; 0x00
+	green = 0x00; 0xff; 0x00
+	blue = 0x00; 0x00; 0xff
+];;
 
 main args =
-	red = color.Red
+	two = Numbers.two,
+	red = Color.red
 	->
+		puts "two is: ",
+		puts show two,
+
 		puts "red is: ",
 		puts show red,
-		0
+		0;;

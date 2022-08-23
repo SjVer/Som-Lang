@@ -2,7 +2,7 @@
 #std::str::show
 
 -- forward decl
-fib: Int -> Int
+fib: Int -> Int;;
 
 main args =
 	xs = [1, 2, 3, 4, 5]
@@ -10,9 +10,9 @@ main args =
 		puts show map xs fib,
 		-- prints "[0, 1, 1, 2, 3]"
 
-		0
+		0;;
 
 fib n = n ??
 	0 -> 0,
 	1 -> 1,
-	_ -> fib (n - 1) + fib (n - 2)
+	_ -> fib (n - 1) + fib (n - 2);;

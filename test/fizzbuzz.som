@@ -4,23 +4,23 @@
 
 -- define a custom integer type
 -- of 69 bits just bc we can
-NiceInt := $i.s.69
+NiceInt := $i.s.69;;
 
 -- forward declaration
-fizzbuzz: NiceInt -> !
+fizzbuzz: NiceInt -> !;;
 
 -- `main` returns an effect carrying an integer
 !!no_mangle
-main: [Str] -> !Int
+main: Str List -> !Int;;
 main args =
 	ns = 1..100
 	=>
-		map ns fizzbuzz,
-		0
+		map fizzbuzz ns,
+		0;;
 
 -- simple fizzbuzz impl
 fizzbuzz n =
 	n % 15 = 0 ? puts "fizzbuzz" :
 	n % 3 = 0 ? puts "fizz" :
 	n % 5 = 0 ? puts "buzz" :
-	puts (show n)
+	puts (show n);;

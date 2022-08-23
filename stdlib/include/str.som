@@ -28,18 +28,18 @@
 
 !!.warn_redef "redefinition may break stdlib"
 
-Str := [$i.u.8]
+Str := $i.u.8 Array;;
 
 !!fmt_variadic 0
-fmt: Str ... -> Str
-fmt f args = ...
+fmt: Str ... -> Str;;
+fmt f args = ...;;
 
-show[V]: V -> Str
+show[V]: V -> Str;;
 
-show[Str] v = v
-show[Bln] v = v ? "true" : "false"
-show[Int] v = ...
+show[Str] v = v;;
+show[Bln] v = v ? "true" : "false";;
+show[Int] v = ...;;
 -- etc...
 
 -- idk abt this one
--- cast['T, Str] v = show v
+-- cast['a, Str] v = show v;;
