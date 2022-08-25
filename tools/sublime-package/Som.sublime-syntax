@@ -54,7 +54,7 @@ contexts:
       scope: storage.modifier.effect.som
 
     # basic types
-    - match: '{{basictype}}|({{uname}}(?!\.))|{{pname}}|\.\.\.'
+    - match: '{{basictype}}|{{uname}}|{{pname}}|\.\.\.'
       scope: storage.type.som
       push:
         - match: ->
@@ -150,7 +150,7 @@ contexts:
         - include: typedef_enum
 
         - include: typedef_variant
-        - include: typedef_variant_aux
+        # - include: typedef_variant_aux
 
         - match: (?=\S)
           pop: true
@@ -198,24 +198,28 @@ contexts:
     - match: \|
       scope: punctuation.separator.variant-definition.som
       set:
-        - match: '{{lname}}'
+        - match: '{{uname}}'
           scope: entity.name.type.variant.som
           set:
             - meta_scope: meta.variant-type.som
 
+            - match: ':'
+              scope: punctuation.separator.constructor-type.som
+
             - include: typedef_variant
             - include: type
+
             - match: (?=\S)
               pop: true
 
-  typedef_variant_aux:
-    - match: ({{lname}})(?!\s*::)
-      scope: entity.name.type.variant
-      set:
-        - include: typedef_variant
-        - include: type
-        - match: (?=\S)
-          pop: true
+  # typedef_variant_aux:
+  #   - match: ({{lname}})(?!\s*::)
+  #     scope: entity.name.type.variant
+  #     set:
+  #       - include: typedef_variant
+  #       - include: type
+  #       - match: (?=\S)
+  #         pop: true
 
   declaration:
     - match: ({{lname}})\s*(\[)(?=.*\]\s*:(?!:))
@@ -299,11 +303,9 @@ contexts:
 
     - match: \.\.
       scope: punctuation.definition.range.som
-    - match: \.
-      scope: punctuation.accessor.dot.som
     - match: ->
       scope: punctuation.accessor.arrow.som
-    - match: \,|;
+    - match: \,|;|\.
       scope: punctuation.separator.sequence.som
 
   lambda:
@@ -403,10 +405,10 @@ contexts:
         1: entity.name.namespace.som
         2: punctuation.accessor.double-colon.som
 
-    - match: ({{uname}})(\.)
-      captures:
-        1: entity.name.enum.som
-        2: punctuation.accessor.dot.som
+    # - match: ({{uname}})(\.)
+    #   captures:
+    #     1: entity.name.enum.som
+    #     2: punctuation.accessor.dot.som
 
     # - match: (?<=\.)({{uname}})
       # scope: entity.name.constant.som

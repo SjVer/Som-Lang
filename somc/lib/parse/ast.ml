@@ -52,6 +52,7 @@ and expr =
   | EX_Sequence of expr node * expr node (** `expr, expr` *)
   | EX_Application of applicant node * expr node list (** `appl expr ...` *)
   | EX_Tuple of expr node list (** `expr; expr; ...` *)
+  | EX_Construct of string node * expr node option (** `String expr` *)
   | EX_Literal of literal (** `literal` *)
   | EX_Identifier of string (** `variable` TODO: allow shit like `Foo.bar` *)
 
@@ -92,7 +93,7 @@ and typ =
   | TY_Function of typ node list * typ node (** `typ, ... -> typ` *)
   | TY_Tuple of typ node list (** `typ; ...` *)
   | TY_List of typ node (** `[typ]` *)
-  | TY_Constr of typ node option * string (** `string` | `typ string`*)
+  | TY_Construct of typ node option * string (** `string` | `typ string`*)
   | TY_Builtin of builtin_typ (** `$llvm_typ` *)
 
 and builtin_typ =

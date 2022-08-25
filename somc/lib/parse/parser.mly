@@ -17,6 +17,20 @@ let mkgnode locs item = {span = span_from_lexlocs locs true; item }
 let mkbind patt expr = {patt; expr}
 let mkimp path kind = {path; kind}
 let mktypdecl name params typ = {name; params; typ}
+
+let rec mkglist endlocs = function
+  | [] -> 
+    let empty = mkgnode endlocs "Empty"
+    in mkgnode endlocs (EX_Construct (empty, None))
+  | (l, e) :: es ->
+    let cons = mkgnode l "Cons" in
+    let cons_tuple = EX_Tuple [e; mkglist endlocs es] in
+    let expr = EX_Construct (cons, Some (mkgnode l cons_tuple)) in
+    mkgnode l expr
+
+(** if set to true, grouping nodes will be produced
+    otherwise the encased nodes will be passed through *)
+let grp raw group = if false then group else raw
 %}
 // let mkdir id arg = {id; arg}
 
@@ -98,10 +112,15 @@ prog:
 
 toplevel:
   | import { $1 }
-  | declaration DBL_SEMICOLON { $1 }
-  | definition DBL_SEMICOLON { $1 }
-  | type_definition DBL_SEMICOLON { $1 }
+  | declaration dot { $1 }
+  | definition dot { $1 }
+  | type_definition dot { $1 }
   // | global_directive { mknode $sloc (TL_Directive $1) }
+;
+
+dot:
+  | DOT {}
+  | error { expected "a terminating '.'" $sloc }
 ;
 
 import:
@@ -213,6 +232,8 @@ tuple_expr:
 ;
 
 base_expr:
+  | UPPERNAME single_expr?
+    { mknode $sloc (EX_Construct (mknode $loc($1) $1, $2)) }
   | single_expr single_expr+
     { mknode $sloc (EX_Application (mknode $loc($1) (AP_Expr $1), $2)) }
   | base_expr infix_op base_expr
@@ -238,8 +259,11 @@ base_expr:
 ;
 
 single_expr:
-  | LPAREN expr RPAREN { mknode $sloc (EX_Grouping $2) }
+  | LPAREN expr RPAREN { grp $2 (mknode $sloc (EX_Grouping $2)) }
   | LPAREN expr error { unclosed "(" ")" "expression" $loc($1) }
+
+  | LBRACKET list_body RBRACKET { mkglist $loc($3) $2 }
+  | LBRACKET list_body error { unclosed "[" "]" "list" $loc($1) }
 
   | BOOL { mknode $sloc (EX_Literal (LI_Bool $1)) }
   | INTEGER { mknode $sloc (EX_Literal (LI_Int $1)) }
@@ -253,6 +277,10 @@ single_expr:
   // | directive { mknode $sloc (EX_Directive $1) }
 ;
 
+%inline list_body:
+  | separated_list(COMMA, tuple_expr { $sloc, $1 }) { $1 }
+;
+
 // literal-ish expression
 
 %inline variable:
@@ -264,8 +292,18 @@ single_expr:
 // typedef-only
 
 variant_type:
-  | PIPE? snel(PIPE, LOWERNAME typ? { mknode $loc($1) $1, $2 })
+  // rule below would allow variants without leading PIPE but
+  // it doesn't work bc it doesn't allow `typ` to take over if this fails
+  // | UPPERNAME option(COLON typ { $2 }) PIPE snel(PIPE, variant_constructor)
+  //   { mknode $sloc (TY_Variant ((mknode $loc($1) $1, $2) :: $4)) }
+  | PIPE snel(PIPE, variant_constructor)
     { mknode $sloc (TY_Variant $2) }
+  | PIPE { mknode $sloc (TY_Variant []) }
+;
+
+%inline variant_constructor:
+  UPPERNAME option(COLON typ { $2 })
+    { mknode $loc($1) $1, $2 }
 ;
 
 // generic
@@ -298,7 +336,7 @@ effect_type:
 ;
 
 atomic_type:
-  | LPAREN typ RPAREN { mknode $sloc (TY_Grouping $2) }
+  | LPAREN typ RPAREN { grp $2 (mknode $sloc (TY_Grouping $2)) }
   | LPAREN typ error { unclosed "(" ")" "type" $loc($1) }
 
   | LBRACKET typ RBRACKET { mknode $sloc (TY_List $2) }
@@ -310,7 +348,7 @@ atomic_type:
 
   | UNDERSCORE { mknode $sloc TY_Any }
   | PRIMENAME { mknode $sloc (TY_Variable $1) }
-  | atomic_type? UPPERNAME { mknode $sloc (TY_Constr ($1, $2)) }
+  | atomic_type? UPPERNAME { mknode $sloc (TY_Construct ($1, $2)) }
 ;
 
 // =========================== directives ===========================

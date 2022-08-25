@@ -93,8 +93,8 @@ and print_type_node' i node =
     p i "TY_List" span;
     print_type_node' (i + 1) t
 
-  | TY_Constr (a, t) ->
-    p i ("TY_Constr " ^ t) span;
+  | TY_Construct (a, t) ->
+    p i ("TY_Construct " ^ t) span;
     if Option.is_some a
     then print_type_node' (i + 1) (Option.get a);
   
@@ -134,6 +134,11 @@ and print_expr_node' i node =
     p i "EX_Tuple" span;
     List.iter (print_expr_node' (i + 1)) es
 
+  | EX_Construct (n, e) ->
+    p i ("EX_Construct " ^ n.item) span;
+    if Option.is_some e
+    then print_expr_node' (i + 1) (Option.get e)
+
   | EX_Literal l ->
     p i ("EX_Literal " ^ show_literal l) span
   
@@ -166,9 +171,8 @@ and print_toplevel_node' i node =
   | TL_Type_Definition d ->
     let rec join = function
     | [] -> ""
-    | [v] -> "'" ^ v.item
     | v :: vs -> "'" ^ v.item ^ " " ^ join vs
-    in let name = join d.params ^ " " ^ d.name.item in
+    in let name = join d.params ^ d.name.item in
     p i ("TL_Type_Definition " ^ name) span;
     print_type_node' (i + 1) d.typ
 
