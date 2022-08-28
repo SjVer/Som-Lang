@@ -5,7 +5,8 @@
   (libraries
     codegen
     parse
-    span
     report
+    span
+    typing
   )
 )

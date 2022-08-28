@@ -1,5 +1,3 @@
--- 'a List := | Empty | Cons: 'a; 'a List.
-
-some_list = Cons (1; Cons (2; Cons (3; Empty))).
-
-some_list = [1, 2, 3].
+main args =
+  std::io::puts "Hello World!",
+  0.

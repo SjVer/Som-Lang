@@ -18,12 +18,15 @@ let mkbind patt expr = {patt; expr}
 let mkimp path kind = {path; kind}
 let mktypdecl name params typ = {name; params; typ}
 
+let empty_constr = Ident.from_list ["std"; "list"; "Empty"]
+let const_constr = Ident.from_list ["std"; "list"; "Cons"]
+
 let rec mkglist endlocs = function
   | [] -> 
-    let empty = mkgnode endlocs "Empty"
+    let empty = mkgnode endlocs empty_constr
     in mkgnode endlocs (EX_Construct (empty, None))
   | (l, e) :: es ->
-    let cons = mkgnode l "Cons" in
+    let cons = mkgnode l const_constr in
     let cons_tuple = EX_Tuple [e; mkglist endlocs es] in
     let expr = EX_Construct (cons, Some (mkgnode l cons_tuple)) in
     mkgnode l expr
@@ -232,8 +235,8 @@ tuple_expr:
 ;
 
 base_expr:
-  | UPPERNAME single_expr?
-    { mknode $sloc (EX_Construct (mknode $loc($1) $1, $2)) }
+  | upper_longident single_expr?
+    { mknode $sloc (EX_Construct ($1, $2)) }
   | single_expr single_expr+
     { mknode $sloc (EX_Application (mknode $loc($1) (AP_Expr $1), $2)) }
   | base_expr infix_op base_expr
@@ -272,19 +275,13 @@ single_expr:
   | CHARACTER { mknode $sloc (EX_Literal (LI_Char $1)) }
   | EMPTYPARENS { mknode $sloc (EX_Literal LI_Nil) }
 
-  | variable { mknode $sloc $1 }
+  | lower_longident { mknode $sloc (EX_Identifier $1) }
 
   // | directive { mknode $sloc (EX_Directive $1) }
 ;
 
 %inline list_body:
-  | separated_list(COMMA, tuple_expr { $sloc, $1 }) { $1 }
-;
-
-// literal-ish expression
-
-%inline variable:
-  | LOWERNAME { EX_Identifier $1 }
+  separated_list(COMMA, tuple_expr { $sloc, $1 }) { $1 }
 ;
 
 // ============================= types =============================
@@ -383,3 +380,14 @@ directive_body:
   | UPPERNAME { mknode $sloc (DA_Identifier $1) }
 ;
 */
+
+// =========================== longident ===========================
+
+%inline upper_longident: longident_body(UPPERNAME) { mknode $sloc $1 }
+%inline lower_longident: longident_body(LOWERNAME) { mknode $sloc $1 }
+
+longident_body(FINAL):
+  | longident_body(LOWERNAME) DBL_COLON FINAL { Ident.Cons ($1, $3) } 
+  // | longident_body(LOWERNAME) DBL_COLON error { expected "an identifer" $loc($3) } 
+  | FINAL { Ident.Ident $1 }
+;

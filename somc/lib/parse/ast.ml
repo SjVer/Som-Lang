@@ -1,4 +1,8 @@
-type 'a node = {span: Span.span; item: 'a}
+type 'a node =
+  {
+    span: Span.span;
+    item: 'a
+  }
 
 (* ====================== Toplevel ===================== *)
 
@@ -52,9 +56,9 @@ and expr =
   | EX_Sequence of expr node * expr node (** `expr, expr` *)
   | EX_Application of applicant node * expr node list (** `appl expr ...` *)
   | EX_Tuple of expr node list (** `expr; expr; ...` *)
-  | EX_Construct of string node * expr node option (** `String expr` *)
+  | EX_Construct of Ident.t node * expr node option (** `String expr` *)
   | EX_Literal of literal (** `literal` *)
-  | EX_Identifier of string (** `variable` TODO: allow shit like `Foo.bar` *)
+  | EX_Identifier of Ident.t node (** `variable` *)
 
 and applicant =
   | AP_Expr of expr node

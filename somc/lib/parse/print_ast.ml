@@ -135,15 +135,15 @@ and print_expr_node' i node =
     List.iter (print_expr_node' (i + 1)) es
 
   | EX_Construct (n, e) ->
-    p i ("EX_Construct " ^ n.item) span;
+    p i ("EX_Construct " ^ Ident.to_string n.item) span;
     if Option.is_some e
     then print_expr_node' (i + 1) (Option.get e)
 
   | EX_Literal l ->
     p i ("EX_Literal " ^ show_literal l) span
   
-  | EX_Identifier v ->
-    p i ("EX_Identifier " ^ v) span
+  | EX_Identifier {span = _; item = id} ->
+    p i ("EX_Identifier " ^ Ident.to_string id) span
 
 and print_import_kind_node' i node =
   let {span; item} = node in match item with
