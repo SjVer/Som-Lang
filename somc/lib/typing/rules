@@ -14,17 +14,18 @@ generalize:
   and applies the resulting substitution
   to env and t, yielding env1 and t1.
   then it generalizes t1 to a type scheme
-  s (generalizing type variables in t1,
-  but not generalizing type variables that
-  are also in env1 as they are constrained
-  by outside code). it then returns env1
-  and x bound to type scheme s.
+  s (including type variables in t1, but
+  not including type variables that are
+  also in env1 as they are constrained by
+  outside code). it then returns env1 and
+  x bound to type scheme s.
 
   pseudocode:
   generalize(C, env, x : t):
     unify C -> subst
     subst(env, t) -> env1, t1
     t1 -> (type scheme) s
+      e.g. 'a -> 'b to 'a 'b . 'a -> 'b
     return env1, x : s
 
 instantiate:
