@@ -1,4 +1,6 @@
-type 'a node =
+type ast = toplevel node list
+
+and 'a node =
   {
     span: Span.span;
     item: 'a

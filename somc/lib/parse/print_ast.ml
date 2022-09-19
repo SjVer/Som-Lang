@@ -16,7 +16,7 @@ let show_literal = function
   | LI_String s -> "String \"" ^ String.escaped s ^ "\""
   | LI_Nil -> "Nil"
 
-let show_bin_op = function
+(* let show_bin_op = function
   | BI_Add -> "+"
   | BI_Subtract -> "-"
   | BI_Multiply -> "*"
@@ -25,7 +25,7 @@ let show_bin_op = function
 
 let show_un_op = function
   | UN_Negate -> "-"
-  | UN_Not -> "!"
+  | UN_Not -> "!" *)
 
 let show_builtin_type = function
   | BT_Int (s, w) ->
@@ -49,11 +49,11 @@ let rec print_patt_node' i node =
   | PA_Wildcard ->
     p i "PA_Wildcard" span
   
-and print_appl_node' i node =
+(* and print_appl_node' i node =
   let { span; item } = node in match item with
   | AP_Expr e -> p i "AP_Expr" span; print_expr_node' (i + 1) e
   | AP_BinaryOp o -> p i ("AP_BinaryOp " ^ show_bin_op o) span
-  | AP_UnaryOp o -> p i ("AP_UnaryOp " ^ show_un_op o) span
+  | AP_UnaryOp o -> p i ("AP_UnaryOp " ^ show_un_op o) span *)
 
 and print_type_node' i node =
   let { span; item } = node in match item with
@@ -127,7 +127,7 @@ and print_expr_node' i node =
 
   | EX_Application (a, es) ->
     p i "EX_Application" span;
-    print_appl_node' (i + 1) a;
+    print_expr_node' (i + 1) a;
     List.iter (print_expr_node' (i + 1)) es
 
   | EX_Tuple es ->

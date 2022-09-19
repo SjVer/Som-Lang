@@ -17,6 +17,9 @@ let mkgnode locs item = {span = span_from_lexlocs locs true; item }
 let mkbind patt expr = {patt; expr}
 let mkimp path kind = {path; kind}
 let mktypdecl name params typ = {name; params; typ}
+let mkgop locs name = 
+  let identif = Ident.from_list ["std"; "ops"; name]
+  in EX_Identifier (mkgnode locs identif)
 
 let empty_constr = Ident.from_list ["std"; "list"; "Empty"]
 let const_constr = Ident.from_list ["std"; "list"; "Cons"]
@@ -85,7 +88,7 @@ let grp raw group = if false then group else raw
 
 // =========================== helpers ===========================
 
-%start <Ast.toplevel node list> prog
+%start <Ast.ast> prog
 %%
 
 // separated non-empty list
@@ -140,7 +143,7 @@ definition:
 ;
 
 type_definition:
-  | list(PRIMENAME { mknode $sloc $1}) UPPERNAME COLONEQUAL type_definition_body
+  | list(PRIMENAME { mknode $sloc $1}) UPPERNAME EQUAL type_definition_body
     { mknode $sloc (TL_Type_Definition (mktypdecl (mknode $loc($2) $2) $1 $4)) }
 ;
 
@@ -238,11 +241,11 @@ base_expr:
   | upper_longident single_expr?
     { mknode $sloc (EX_Construct ($1, $2)) }
   | single_expr single_expr+
-    { mknode $sloc (EX_Application (mknode $loc($1) (AP_Expr $1), $2)) }
+    { mknode $sloc (EX_Application ($1, $2)) }
   | base_expr infix_op base_expr
-    { mknode $sloc (EX_Application (mknode $loc($2) $2, [$1; $3])) }
+    { mknode $sloc (EX_Application (mkgnode $loc($2) $2, [$1; $3])) }
   | unary_op base_expr %prec prec_unary
-    { mknode $sloc (EX_Application (mknode $loc($1) $1, [$2])) }
+    { mknode $sloc (EX_Application (mkgnode $loc($1) $1, [$2])) }
   // | base_expr ARROW typ { mknode $sloc (EX_Cast ($1, $3))}
   | single_expr { $1 }
 
@@ -250,15 +253,15 @@ base_expr:
 ;
 
 %inline infix_op:
-  | PLUS { AP_BinaryOp BI_Add }
-  | MINUS { AP_BinaryOp BI_Subtract }
-  | STAR { AP_BinaryOp BI_Multiply }
-  | SLASH { AP_BinaryOp BI_Divide }
-  | CARET { AP_BinaryOp BI_Power }
+  | PLUS  { mkgop $sloc "add" (* AP_BinaryOp BI_Add *) }
+  | MINUS { mkgop $sloc "sub" (* AP_BinaryOp BI_Subtract *) }
+  | STAR  { mkgop $sloc "mul" (* AP_BinaryOp BI_Multiply *) }
+  | SLASH { mkgop $sloc "div" (* AP_BinaryOp BI_Divide *) }
+  | CARET { mkgop $sloc "pow" (* AP_BinaryOp BI_Power *) }
 ;
 %inline unary_op:
-  | MINUS { AP_UnaryOp UN_Negate }
-  | BANG { AP_UnaryOp UN_Not }
+  | MINUS { mkgop $sloc "neg" (* AP_UnaryOp UN_Negate *) }
+  | BANG  { mkgop $sloc "not" (* AP_UnaryOp UN_Not *) }
 ;
 
 single_expr:

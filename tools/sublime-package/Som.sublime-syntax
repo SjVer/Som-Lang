@@ -140,7 +140,7 @@ contexts:
     - include: invalid
 
   typedef:
-    - match: ({{pname}}\s*)*({{uname}})\s*(:=)
+    - match: ({{pname}}\s*)*({{uname}})\s*(=)
       captures:
         1: variable.parameter.type.som
         2: name.type.som

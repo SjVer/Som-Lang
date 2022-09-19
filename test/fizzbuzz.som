@@ -4,7 +4,7 @@
 
 -- define a custom integer type
 -- of 69 bits just bc we can
-NiceInt := $i.s.69.
+NiceInt = $i.s.69.
 
 -- forward declaration
 fizzbuzz: NiceInt -> !.

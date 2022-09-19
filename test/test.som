@@ -1,3 +1,6 @@
-main args =
-  std::io::puts "Hello World!",
-  0.
+-- type definition
+'a IO = !'a.
+
+-- definition
+add x y = x + y.
+

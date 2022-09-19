@@ -2,6 +2,8 @@ let f = Util.f
 
 (* comments after variants for gen_codes_ml.py *)
 
+(* Lexing errors *)
+
 type lexing_error =
   | Unexpected_character of string
   | Illegal_escape of char (*+sequence*)
@@ -15,6 +17,8 @@ let get_lexing_error_msg = function
   | Unterminated_string     -> f "unterminated string"
   | Invalid_literal w       -> f "invalid literal '%s'" w
   | Invalid_builtin_type w  -> f "invalid builtin type '%s'" w
+
+(* Syntax errors *)
 
 type syntax_error =
   | Expected of string (*+token*)
@@ -32,6 +36,18 @@ let get_syntax_error_msg = function
   | Duplicate_parameter w -> f "duplicate parameter `%s`" w
   | Other w               -> w
 
+(* Type errors *)
+
+type type_error =
+  | Expected of string * string (*+a different type*)
+  | Could_not_infer (*+type*)
+
+let get_type_error_msg = function
+  | Expected (e, g)    -> f "expected type `%s` but found type `%s`" e g
+  | Could_not_infer    -> f "could not infer type"
+
+(* Other errors *)
+
 type other_error =
   | Could_not_open of string (*+file*)
   | Could_not_compile of string (*+file*)
@@ -46,15 +62,19 @@ let get_other_error_msg = function
   | Failed_to_import w  -> f "failed to import module `%s`" w
   | Cannot_explain w    -> f "cannot explain invalid error code E%03d" w
 
+(* Types *)
+
 type error =
   | Lexing_error of lexing_error
   | Syntax_error of syntax_error
+  | Type_error of type_error
   | Other_error of other_error
 
 let get_error_header_and_msg = function
   | Lexing_error e -> "lexing error", get_lexing_error_msg e
   | Syntax_error e -> "syntax error", get_syntax_error_msg e
-  | Other_error e -> "error", get_other_error_msg e
+  | Type_error e   -> "type error",   get_type_error_msg e
+  | Other_error e  -> "error",        get_other_error_msg e
 
 type note = string
 
