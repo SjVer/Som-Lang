@@ -54,13 +54,13 @@ and expr =
   | EX_Binding of value_binding list * expr node (** `patt = expr, ... => expr` *)
   | EX_Lambda of value_binding (** `\patt => expr` *)
   | EX_Sequence of expr node * expr node (** `expr, expr` *)
-  | EX_Application of applicant node * expr node list (** `appl expr ...` *)
+  | EX_Application of expr node * expr node list (** `appl expr ...` *)
   | EX_Tuple of expr node list (** `expr; expr; ...` *)
   | EX_Construct of Ident.t node * expr node option (** `String expr` *)
   | EX_Literal of literal (** `literal` *)
   | EX_Identifier of Ident.t node (** `variable` *)
 
-and applicant =
+(* and applicant =
   | AP_Expr of expr node
   | AP_BinaryOp of bin_op
   | AP_UnaryOp of un_op
@@ -74,7 +74,7 @@ and bin_op =
 
 and un_op =
   | UN_Negate
-  | UN_Not
+  | UN_Not *)
 
 and literal =
   | LI_Bool of bool
