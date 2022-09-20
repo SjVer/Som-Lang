@@ -19,8 +19,8 @@ let opt_typ = enum "optimization level" ["-0", O0; "-1", O1; "-2", O2; "-3", O3;
 (* explain given error code *)
 let explain_ecode code =
   match C.error_name_from_int code with
-  | Some name ->
-    Printf.printf "Error E%03d: %s\n" code name;
+  | Some (kind, name) ->
+    Printf.printf "%s error E%03d: %s\n" kind code name;
     exit 0
   | None ->
     R.report (E.Other_error (E.Cannot_explain code)) None [];

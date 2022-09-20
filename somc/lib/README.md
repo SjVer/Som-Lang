@@ -8,6 +8,10 @@ Responsible for translating ??? into LLVM IR and generating the final binary.
 
 Responsible for opening, lexing and parsing source files into an AST.
 
+## refine/
+
+Responsible for desugaring, constant folding and closure conversion.
+
 ## report/
 
 Responsible for generating and printing/reporting diagnostics.

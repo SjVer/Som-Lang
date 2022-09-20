@@ -12,12 +12,12 @@ ERR_TO_INT_BODY_FMT = "  | {name}{underscore} -> {index}\n"
 ANY_TO_INT_DECL_FMT = "\nlet int_from_error = function\n"
 ANY_TO_INT_BODY_FMT = "  | {uppername}_error e -> int_from_{name}_error e\n"
 FROM_INT_DECL_FMT = "\nlet error_name_from_int = function\n"
-FROM_INT_BODY_FMT = "  | {index} -> Some \"{name}\"\n"
+FROM_INT_BODY_FMT = "  | {index} -> Some (\"{kind}\", \"{name}\")\n"
 FROM_INT_TAIL_FMT = "  | _ -> None"
 
 ENUM_REGEX = r"type (\w+)_error =\n(.*?)\nlet"
 VARIANT_REGEX = r"\s*(\w+)(?: (.*?)\n)?"
-PROPERTIES_REGEX = r"^(of [^\(\*]*)?(?:\(\*\+(.*?)\*\))?.*$"
+PROPERTIES_REGEX = r"^(of [^\(]*)?(?:\(\*\+(.*?)\*\))?.*$"
 
 class Variant:
     index: int
@@ -60,8 +60,8 @@ def print_enums(enums: List[Enum]):
         print(f"  {e.name} error: ({len(e.variants)} variants)")
 
         for v in e.variants:
-            has_value = "_" if v.has_value else ""
-            print(f"    {v.index}: {v.name} {has_value} \"{v.extra_text}\"")
+            has_value = " _" if v.has_value else ""
+            print(f"    {v.index}: {v.name}{has_value} \"{v.extra_text}\"")
 
         print()
 
@@ -99,12 +99,13 @@ def generate_file(enums: List[Enum]):
 
             txt += FROM_INT_BODY_FMT.format(
                 index = v.index,
+                kind = e.name,
                 name = name
             )
     txt += FROM_INT_TAIL_FMT
     
-    print("output:\n")
-    print("  " + "  ".join(txt.splitlines(True)) + "\n")
+    # print("output:\n")
+    # print("  " + "  ".join(txt.splitlines(True)) + "\n")
     return txt
 
 def main():
