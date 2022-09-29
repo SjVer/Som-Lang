@@ -94,6 +94,11 @@ rule main = parse
   | '#' { HASH }
   | '\\' { BACKSLASH }
 
+  | "<=" { LESSEREQUAL }
+  | '<' { LESSER }
+  | ">=" { GREATEREQUAL }
+  | '>' { GREATER }
+
   | "||" { DBL_PIPE }
   | '|' { PIPE }
   | "&&" { DBL_AMPERSAND }

@@ -20,7 +20,7 @@ let opt_typ = enum "optimization level" ["-0", O0; "-1", O1; "-2", O2; "-3", O3;
 let explain_ecode code =
   match C.error_name_from_int code with
   | Some (kind, name) ->
-    Printf.printf "%s error E%03d: %s\n" kind code name;
+    Printf.printf "%s error E%03d:%s\n" kind code name;
     exit 0
   | None ->
     R.report (E.Other_error (E.Cannot_explain code)) None [];
@@ -31,13 +31,38 @@ let () =
   description "Official Som compiler";
 
   (* named args *)
-  let verbose   = flag ~set_long: "verbose" ~set_short: 'v' ~description: "Produce verbose output"  false in
-  let mute      = flag ~set_long: "mute"    ~set_short: 'm' ~description: "Mute all warnings"       false in
-  let opt_level = optional opt_typ ~short: 'O' ~placeholder: "O3" ~description: "Set optimization level" () in
-  let explain   = optional_int ~long: "explain" ~placeholder: "CODE" ~description: "Explain the given error code" () in
+  let verbose = flag
+    ~set_long:"verbose"
+    ~set_short:'v'
+    ~description:"Produce verbose output"
+    false in
+  let mute = flag
+    ~set_long:"mute"
+    ~set_short:'m'
+    ~description:"Mute all warnings"
+    false in
+  let opt_level = optional opt_typ
+    ~short:'O'
+    ~placeholder:"O3"
+    ~description:"Set optimization level"
+    () in
+  let explain = optional_int
+    ~long:"explain"
+    ~placeholder:"CODE"
+    ~description:"Explain the given error code"
+    () in
+  let passes = list_string
+    ~long:"pass"
+    ~short:'p'
+    ~placeholder:"PASS"
+    ~description:"Run pass PASS on the llvm IR"
+    () in
   
   (* unnamed args *)
-  let file = mandatory_string ~placeholder: "FILE" ~description: "File to compile" () in
+  let file = mandatory_string
+    ~placeholder:"FILE"
+    ~description:"File to compile"
+    () in
   
   (* check hidden args *)
   if has_arg "--help" "-h"    then exit_after (help ());
@@ -48,11 +73,11 @@ let () =
   if Option.is_some explain then explain_ecode (Option.get explain);
 
   (* unwrap opt_level Option *)
-  (* let opt_level' = match opt_level with Some o -> o | None -> O3 in *)
+  let opt_level' = match opt_level with Some o -> o | None -> O3 in
   
   (* parse args and do main stuff *)
   close();
-  ignore (verbose, mute, opt_level);
+  ignore (verbose, mute, opt_level', passes);
 
   Somc.Parse.PrintAst.print_toplevel (Somc.Parse.parse file);
   exit 0

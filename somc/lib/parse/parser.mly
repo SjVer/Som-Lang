@@ -60,6 +60,7 @@ let grp raw group = if false then group else raw
 %token DBL_PIPE PIPE
 %token DBL_AMPERSAND AMPERSAND
 %token DBL_CARET CARET
+%token GREATER GREATEREQUAL LESSER LESSEREQUAL
 %token STAR PLUS MINUS SLASH MODULO
 
 %token UNDERSCORE
@@ -81,6 +82,11 @@ let grp raw group = if false then group else raw
 
 // ========================== precedence ==========================
 
+%left DBL_PIPE
+%left DBL_CARET
+%left DBL_AMPERSAND
+%left EQUAL NOTEQUAL
+%left GREATER GREATEREQUAL LESSER LESSEREQUAL
 %left PLUS MINUS
 %left SLASH STAR
 %right CARET
@@ -143,7 +149,7 @@ definition:
 ;
 
 type_definition:
-  | list(PRIMENAME { mknode $sloc $1}) UPPERNAME EQUAL type_definition_body
+  | list(PRIMENAME { mknode $sloc $1}) UPPERNAME COLONEQUAL type_definition_body
     { mknode $sloc (TL_Type_Definition (mktypdecl (mknode $loc($2) $2) $1 $4)) }
 ;
 
@@ -252,16 +258,29 @@ base_expr:
   | error { expected "an expression" $sloc }
 ;
 
-%inline infix_op:
-  | PLUS  { mkgop $sloc "add" (* AP_BinaryOp BI_Add *) }
-  | MINUS { mkgop $sloc "sub" (* AP_BinaryOp BI_Subtract *) }
-  | STAR  { mkgop $sloc "mul" (* AP_BinaryOp BI_Multiply *) }
-  | SLASH { mkgop $sloc "div" (* AP_BinaryOp BI_Divide *) }
-  | CARET { mkgop $sloc "pow" (* AP_BinaryOp BI_Power *) }
+%inline infix_op: infix_op_ { mkgop $sloc $1 }
+%inline infix_op_:
+  | PLUS          { "add" }
+  | MINUS         { "sub" }
+  | STAR          { "mul" }
+  | SLASH         { "div" }
+  | CARET         { "pow" }
+  | MODULO        { "mod" }
+  | GREATER       { "gr"  }
+  | GREATEREQUAL  { "gre" }
+  | LESSER        { "ls"  }
+  | LESSEREQUAL   { "lse" }
+  | EQUAL         { "eq"  }
+  | NOTEQUAL      { "neq" }
+  | DBL_AMPERSAND { "and" }
+  | DBL_CARET     { "xor" }
+  | DBL_PIPE      { "or"  }
 ;
-%inline unary_op:
-  | MINUS { mkgop $sloc "neg" (* AP_UnaryOp UN_Negate *) }
-  | BANG  { mkgop $sloc "not" (* AP_UnaryOp UN_Not *) }
+
+%inline unary_op: unary_op_ { mkgop $sloc $1 }
+%inline unary_op_:
+  | MINUS { "neg" }
+  | BANG  { "not" }
 ;
 
 single_expr:
