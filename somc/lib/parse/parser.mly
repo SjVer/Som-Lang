@@ -21,15 +21,15 @@ let mkgop locs name =
   let identif = Ident.from_list ["std"; "ops"; name]
   in EX_Identifier (mkgnode locs identif)
 
-let empty_constr = Ident.from_list ["std"; "list"; "Empty"]
-let const_constr = Ident.from_list ["std"; "list"; "Cons"]
+let nil_constr = Ident.from_list ["std"; "list"; "Nil"]
+let cons_constr = Ident.from_list ["std"; "list"; "Cons"]
 
 let rec mkglist endlocs = function
   | [] -> 
-    let empty = mkgnode endlocs empty_constr
+    let empty = mkgnode endlocs nil_constr
     in mkgnode endlocs (EX_Construct (empty, None))
   | (l, e) :: es ->
-    let cons = mkgnode l const_constr in
+    let cons = mkgnode l cons_constr in
     let cons_tuple = EX_Tuple [e; mkglist endlocs es] in
     let expr = EX_Construct (cons, Some (mkgnode l cons_tuple)) in
     mkgnode l expr
@@ -199,7 +199,7 @@ strict_binding(EXPR):
 fun_binding(EXPR): strict_binding(EXPR) { $1 };
 
 lambda_def:
-  | THICKARROW expr { $2 }
+  | ARROW expr { $2 }
   | simple_pattern lambda_def { mkgnode $sloc (EX_Lambda (mkbind $1 $2))}
 ;
 
@@ -290,7 +290,6 @@ single_expr:
   | LBRACKET list_body RBRACKET { mkglist $loc($3) $2 }
   | LBRACKET list_body error { unclosed "[" "]" "list" $loc($1) }
 
-  | BOOL { mknode $sloc (EX_Literal (LI_Bool $1)) }
   | INTEGER { mknode $sloc (EX_Literal (LI_Int $1)) }
   | FLOAT { mknode $sloc (EX_Literal (LI_Float $1)) }
   | STRING { mknode $sloc (EX_Literal (LI_String $1)) }

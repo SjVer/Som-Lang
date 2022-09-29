@@ -40,10 +40,14 @@ let get_syntax_error_msg = function
 
 type type_error =
   | Expected of string * string (*+a different type*)
+  | Expected_funtion of string (*+type*)
+  | Recursive_type
   | Could_not_infer (*+type*)
 
 let get_type_error_msg = function
   | Expected (e, g)    -> f "expected type `%s` but found type `%s`" e g
+  | Expected_funtion g -> f "expected a function type but found type `%s`" g
+  | Recursive_type     -> f "recursive type"
   | Could_not_infer    -> f "could not infer type"
 
 (* Other errors *)
@@ -78,6 +82,6 @@ let get_error_header_and_msg = function
 
 type note = string
 
-exception Error of error * Span.span option * note list
+exception Error of error * Span.t option * note list
 
 let raise_error err span notes = raise (Error (err, span, notes))

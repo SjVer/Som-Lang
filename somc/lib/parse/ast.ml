@@ -2,16 +2,16 @@ type ast = toplevel node list
 
 and 'a node =
   {
-    span: Span.span;
+    span: Span.t;
     item: 'a
   }
 
 (* ====================== Toplevel ===================== *)
 
 and toplevel =
-  | TL_Declaration of string * typ node (** `string: typ` *)
-  | TL_Definition of value_binding (** `patt = expr;;` *)
-  | TL_Type_Definition of type_definition (** `string := type;;` *)
+  | TL_Declaration of string * typ node (** `string: typ.` *)
+  | TL_Definition of value_binding (** `patt = expr.` *)
+  | TL_Type_Definition of type_definition (** `string := type.` *)
   | TL_Import of import (** `#import` *)
 
 and value_binding =
@@ -62,24 +62,7 @@ and expr =
   | EX_Literal of literal (** `literal` *)
   | EX_Identifier of Ident.t node (** `variable` *)
 
-(* and applicant =
-  | AP_Expr of expr node
-  | AP_BinaryOp of bin_op
-  | AP_UnaryOp of un_op
-  
-and bin_op =
-  | BI_Add
-  | BI_Subtract
-  | BI_Multiply
-  | BI_Divide
-  | BI_Power
-
-and un_op =
-  | UN_Negate
-  | UN_Not *)
-
 and literal =
-  | LI_Bool of bool
   | LI_Int of int
   | LI_Float of float
   | LI_Char of char

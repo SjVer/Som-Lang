@@ -14,7 +14,10 @@ let has_arg long short = Array.exists (fun a -> a = long || a = short) Sys.argv
 let exit_after () = exit 0
 
 (* opt enum type for cli (idk why but for some reason the prefix '-' is needed) *)
-let opt_typ = enum "optimization level" ["-0", O0; "-1", O1; "-2", O2; "-3", O3; "-s", Os; "-z", Oz]
+let opt_typ = enum "" [
+  "-0", O0; "-1", O1; "-2", O2; "-3", O3;
+  "-n", On; "-s", Os; "-z", Oz
+]
 
 (* explain given error code *)
 let explain_ecode code =
@@ -79,5 +82,5 @@ let () =
   close();
   ignore (verbose, mute, opt_level', passes);
 
-  Somc.Parse.PrintAst.print_toplevel (Somc.Parse.parse file);
+  Pipeline.TypecheckFileQuery.call file;
   exit 0

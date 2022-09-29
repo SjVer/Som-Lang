@@ -1,11 +1,11 @@
 open Lexing
 open Loc
 
-type span =
+type t =
   {
     file: string;
-    start: loc;
-    end_: loc;
+    start: Loc.t;
+    end_: Loc.t;
     ghost: bool;
   }
 

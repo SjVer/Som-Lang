@@ -1,6 +1,1 @@
--- type definition
-'a IO := !'a.
-
--- definition
-foo x y = x + y.
-
+foo x = (1, '2'; "three").

@@ -1,4 +1,4 @@
-type loc =
+type t =
   {
     line: int;
     col: int;

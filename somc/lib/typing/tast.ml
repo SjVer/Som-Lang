@@ -1,16 +1,16 @@
-type 'a node =
+type 'a tnode =
   {
-    span: Span.span;
+    span: Span.t;
     item: 'a;
-    typ: Types.type_expr;
+    typ: Types.t;
   }
 
 (* ====================== Toplevel ====================== *)
 
 and value_binding =
   {
-    patt: pattern node;
-    expr: expr node;
+    patt: pattern tnode;
+    expr: expr tnode;
   }
 
 (* ====================== Pattern ======================= *)
@@ -22,18 +22,17 @@ and pattern =
 (* ===================== Expression ===================== *)
 
 and expr =
-  | EX_Grouping of expr node
-  | EX_Binding of value_binding list * expr node
+  | EX_Grouping of expr tnode
+  | EX_Binding of value_binding list * expr tnode
   | EX_Lambda of value_binding
-  (* | EX_Sequence of expr node * expr node *)
-  | EX_Application of expr node * expr node list
-  | EX_Tuple of expr node list
-  | EX_Construct of Path.t node * expr node option
+  | EX_Sequence of expr tnode * expr tnode
+  | EX_Application of expr tnode * expr tnode list
+  | EX_Tuple of expr tnode list
+  | EX_Construct of Path.t tnode * expr tnode option
   | EX_Literal of literal
-  | EX_Identifier of Path.t node
+  | EX_Identifier of Path.t tnode
 
 and literal =
-  | LI_Bool of bool
   | LI_Int of int
   | LI_Float of float
   | LI_Char of char
