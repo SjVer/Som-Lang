@@ -16,17 +16,6 @@ let show_literal = function
   | LI_String s -> "String \"" ^ String.escaped s ^ "\""
   | LI_Nil -> "Nil"
 
-(* let show_bin_op = function
-  | BI_Add -> "+"
-  | BI_Subtract -> "-"
-  | BI_Multiply -> "*"
-  | BI_Divide -> "/"
-  | BI_Power -> "^"
-
-let show_un_op = function
-  | UN_Negate -> "-"
-  | UN_Not -> "!" *)
-
 let show_builtin_type = function
   | BT_Int (s, w) ->
     Printf.sprintf "$i.%c.%d"
