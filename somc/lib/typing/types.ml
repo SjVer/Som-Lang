@@ -1,5 +1,6 @@
 type t =
   | TName of Path.t
+  | TPrim of prim
   | TVar of var ref
   | TEff of t
   | TApp of t * t
@@ -10,6 +11,20 @@ and var =
   | Unbound of int * int (** [id] and [level] *)
   | Link of t (** already solved *)
   | Generic of int (** [id] *)
+
+and prim =
+  | PInt of bool * int
+  | PFloat of int
+  | PVoid
+
+let show_prim =
+  let f = Printf.sprintf in
+  function
+    | PInt (s, w) ->
+      let s' = if s then 's' else 'u' in
+      f "$i.%c.%d" s' w
+    | PFloat w -> f "$f.%d" w
+    | PVoid -> "%v"
 
 let show_type ty =
   let names = Hashtbl.create 10 in
@@ -26,6 +41,7 @@ let show_type ty =
 
   let rec go prim = function
     | TName p -> Path.to_string p
+    | TPrim p -> show_prim p
     | TVar {contents=Unbound (id, _)} ->
       "_" ^ string_of_int id
     | TVar {contents=Link ty} -> go prim ty

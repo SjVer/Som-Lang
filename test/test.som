@@ -1,1 +1,1 @@
-foo x = (1, '2'; "three").
+id x = x.

@@ -31,7 +31,7 @@ let mk s t i = {span=s; item=i; typ=t}
     if 'b comes from a higher level than 'a *)
 let occurs_check_adjust_levels id level =
   let rec go = function
-    | TName _ -> ()
+    | TName _ | TPrim _ -> ()
     | TVar {contents = Link ty} -> go ty
     | TVar {contents = Generic _} -> assert false
     | TVar ({contents = Unbound (other_id, other_level)} as other) ->
@@ -49,6 +49,7 @@ let rec unify ty1 ty2 =
   if ty1 == ty2 then ()
   else match (ty1, ty2) with
     | TName n1, TName n2 when n1 = n2 -> ()
+    | TPrim p1, TPrim p2 when p1 = p2 -> ()
 
     | TFun (p1, r1), TFun (p2, r2) ->
       unify p1 p2;
@@ -75,8 +76,11 @@ let rec unify ty1 ty2 =
 (** generalizes type [ty] replacing 
     unbound type variables with Generic ones *)
 let rec generalize level = function
-  | TVar {contents = Unbound (id, other_level)}
-  when other_level > level -> TVar (ref (Generic id))
+  | TVar ({contents = Unbound (id, other_level)} as ty)
+    when other_level > level ->
+      ty := Generic id;
+      TVar ty
+
   | TVar {contents = Link ty} -> generalize level ty
 
   | TEff t -> TEff (generalize level t)
@@ -86,14 +90,14 @@ let rec generalize level = function
   
   | TVar {contents = Generic _}
   | TVar {contents = Unbound _}
-  | TName _ as ty -> ty
+  | TName _ | TPrim _ as ty -> ty
 
 (** instantiates type [ty] replacing Generic
     type variables with fresh ones *)
 let instantiate level ty =
   let id_var_map = Hashtbl.create 20 in
   let rec go ty = match ty with
-    | TName _ -> ty
+    | TName _ | TPrim _ -> ty
     | TVar {contents = Link ty} -> go ty
     | TVar {contents = Generic id} -> begin
         try Hashtbl.find id_var_map id
@@ -122,11 +126,14 @@ let rec match_fun_ty = function
 
 (* inference functions *)
 
-let infer_patt ?(level=0) _ patt =
+let infer_patt ?(level=0) env patt =
   let {span=s; item=patt} : Ast.pattern Ast.node = patt in
   match patt with
-    | PA_Variable v -> mk s (new_var level) (PA_Variable v)
-    | PA_Wildcard -> mk s (new_var level) PA_Wildcard
+    | PA_Variable v ->
+      let v' = new_var level in
+      let env' = Env.extend env `Var v v' in
+      env', mk s v' (PA_Variable v)
+    | PA_Wildcard -> env, mk s (new_var level) PA_Wildcard
 
 (** infer an expression *)
 let rec infer_expr ?(level=0) env exp =
@@ -144,8 +151,7 @@ let rec infer_expr ?(level=0) env exp =
       infer_expr env level body *)
     
     | EX_Lambda {patt; expr} ->
-      let patt' = infer_patt ~level env patt in
-      let env' = env (* TODO: extend env *) in
+      let env', patt' = infer_patt ~level env patt in
       let expr' = infer_expr ~level env' expr in
       mk s (TFun (patt'.typ, expr'.typ))
         (EX_Lambda {patt=patt'; expr=expr'})
@@ -171,16 +177,23 @@ let rec infer_expr ?(level=0) env exp =
       in mk s t (EX_Literal l')
     
     | EX_Identifier {span; item} ->
-      let path = Path.from_ident item in
-      let t = TName (Path.Ident "var") in (* TODO: lookup item in env *)
-      mk s t (EX_Identifier (mk span t path)) 
+      let path = Path.from_ident item in (* TODO: resolve path *)
+      let name = Path.to_string path in
+      begin try
+        let t = instantiate level (Env.lookup env `Var name) in
+        mk s t (EX_Identifier (mk span t path)) 
+      with Not_found ->
+        error (Use_of_unbound ("variable", name)) (Some span)
+      end
 
     | _ -> error (Expected ("idk", "idc")) (Some s)
 
 (* helper functions *)
 
-let infer_expr e =
-  try infer_expr ~level:0 () e
+let infer_expr env e =
+  try
+    let e' = infer_expr ~level:0 env e in
+    mk e'.span (generalize (-1) e'.typ) e'.item
   with Error (err, s, n) ->
     Report.report err s n;
     (* return some empty expression? *)
