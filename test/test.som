@@ -1,4 +1,7 @@
-main =
-  list a b = [a, b] =>
-  list 1 2
-  .
+-- main =
+--   -- apply f x = f x =>
+--   -- int = 0 =>
+--   apply this
+--   .
+
+apply = f x.

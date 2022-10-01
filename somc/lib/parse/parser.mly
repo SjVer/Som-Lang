@@ -188,7 +188,7 @@ import_body:
 // ======================== binding helpers =======================
 
 binding(EXPR):
-  | var_pattern strict_binding(EXPR) { mkbind $1 $2 }
+  | pattern strict_binding(EXPR) { mkbind $1 $2 }
 ;
 
 strict_binding(EXPR):
@@ -210,11 +210,9 @@ pattern: simple_pattern { $1 };
 simple_pattern:
   // TODO: rn the pattern's loc seems to be that of 
   // its expr instead (when coming from binding)
-  | var_pattern { $1 }
+  | LOWERNAME { mknode $sloc (PA_Variable $1) }
   | UNDERSCORE { mknode $sloc PA_Wildcard }
 ;
-
-var_pattern: LOWERNAME { mknode $sloc (PA_Variable $1) };
 
 // ========================== expressions ==========================
 
@@ -247,7 +245,6 @@ base_expr:
     { mknode $sloc (EX_Application (mkgnode $loc($2) $2, [$1; $3])) }
   | unary_op base_expr %prec prec_unary
     { mknode $sloc (EX_Application (mkgnode $loc($1) $1, [$2])) }
-  // | base_expr ARROW typ { mknode $sloc (EX_Cast ($1, $3))}
   | single_expr { $1 }
 
   | error { expected "an expression" $sloc }
@@ -404,6 +401,5 @@ directive_body:
 
 longident_body(FINAL):
   | longident_body(LOWERNAME) DBL_COLON FINAL { Ident.Cons ($1, $3) } 
-  // | longident_body(LOWERNAME) DBL_COLON error { expected "an identifer" $loc($3) } 
   | FINAL { Ident.Ident $1 }
 ;
