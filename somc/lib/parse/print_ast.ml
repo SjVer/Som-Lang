@@ -92,12 +92,10 @@ and print_expr_node i node =
       p i "EX_Grouping" span;
       print_expr_node (i + 1) e
 
-    | EX_Binding (bindings, e) ->
+    | EX_Binding (bind, e) ->
       p i "EX_Binding" span;
-      List.iter begin fun { patt; expr } ->
-        print_patt_node' (i + 1) patt;
-        print_expr_node (i + 2) expr
-      end bindings;
+      print_patt_node' (i + 1) bind.patt;
+      print_expr_node (i + 2) bind.expr;
       print_expr_node (i + 1) e
 
     | EX_Lambda {patt; expr} ->

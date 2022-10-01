@@ -53,7 +53,7 @@ and pattern =
 
 and expr =
   | EX_Grouping of expr node (** `(expr)` *)
-  | EX_Binding of value_binding list * expr node (** `patt = expr, ... => expr` *)
+  | EX_Binding of value_binding * expr node (** `patt = expr => expr` *)
   | EX_Lambda of value_binding (** `\patt => expr` *)
   | EX_Sequence of expr node * expr node (** `expr, expr` *)
   | EX_Application of expr node * expr node list (** `appl expr ...` *)

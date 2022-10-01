@@ -12,12 +12,11 @@ let empty =
     (* classes=SMap.empty; *)
   }
 
-let extend env what key value =
-  match what with
-    | `Var -> {vars=SMap.add key value env.vars}
-    (* {env with vars = SMap.add key value env.vars} *)
+let extend_var env name typ =
+  {vars=SMap.add name typ env.vars}
+  (* {env with vars = SMap.add key value env.vars} *)
 
-let lookup env `Var key = SMap.find key env.vars
+let lookup_var env name = SMap.find name env.vars
 
 let print env =
   print_endline "{";

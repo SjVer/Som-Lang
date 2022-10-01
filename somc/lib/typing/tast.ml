@@ -23,7 +23,7 @@ and pattern =
 
 and expr =
   | EX_Grouping of expr tnode
-  | EX_Binding of value_binding list * expr tnode
+  | EX_Binding of value_binding * expr tnode
   | EX_Lambda of value_binding
   | EX_Sequence of expr tnode * expr tnode
   | EX_Application of expr tnode * expr tnode list

@@ -1,1 +1,2 @@
-id x = x.
+main =
+  id x = x => 0.

@@ -68,6 +68,8 @@ let rec unify ty1 ty2 =
       occurs_check_adjust_levels id level ty;
       tvar := Link ty
 
+    | TTup ts1, TTup ts2 -> List.iter2 unify ts1 ts2
+
     | _ ->
       let ty1_str = show_type ty1 in
       let ty2_str = show_type ty2 in
@@ -131,7 +133,7 @@ let infer_patt ?(level=0) env patt =
   match patt with
     | PA_Variable v ->
       let v' = new_var level in
-      let env' = Env.extend env `Var v v' in
+      let env' = Env.extend_var env v v' in
       env', mk s v' (PA_Variable v)
     | PA_Wildcard -> env, mk s (new_var level) PA_Wildcard
 
@@ -143,12 +145,12 @@ let rec infer_expr ?(level=0) env exp =
       let t = infer_expr ~level env e in
       mk s t.typ (EX_Grouping t) 
     
-    (*| EX_Binding (bindings, body) ->
-      per binding:
-        var_ty = infer_expr env (level + 1) value
-        gen_ty = generalize level var_ty
-        extend_with_name env name gen_ty
-      infer_expr env level body *)
+    | EX_Binding (bind, body) ->
+      let env', patt' = infer_patt ~level env bind.patt in
+      let var' = infer_expr ~level:(level + 1) env bind.expr in
+      (* let gen_ty = generalize level var'.typ in *)
+      let body' = infer_expr ~level env' body in
+      mk s body'.typ (EX_Binding ({patt=patt'; expr=var'}, body'))
     
     | EX_Lambda {patt; expr} ->
       let env', patt' = infer_patt ~level env patt in
@@ -180,7 +182,7 @@ let rec infer_expr ?(level=0) env exp =
       let path = Path.from_ident item in (* TODO: resolve path *)
       let name = Path.to_string path in
       begin try
-        let t = instantiate level (Env.lookup env `Var name) in
+        let t = instantiate level (Env.lookup_var env name) in
         mk s t (EX_Identifier (mk span t path)) 
       with Not_found ->
         error (Use_of_unbound ("variable", name)) (Some span)

@@ -219,16 +219,11 @@ var_pattern: LOWERNAME { mknode $sloc (PA_Variable $1) };
 // ========================== expressions ==========================
 
 expr:
-  | bindings_expr THICKARROW expr { mknode $sloc (EX_Binding ($1, $3)) }
+  | binding(base_expr) THICKARROW expr { mknode $sloc (EX_Binding ($1, $3)) }
   | BACKSLASH simple_pattern lambda_def { mknode $sloc (EX_Lambda (mkbind $2 $3)) }
   | seq_expr { $1 }
 
   | error { expected "an expression" $sloc }
-;
-
-bindings_expr:
-  | binding(base_expr) COMMA bindings_expr { $1 :: $3 }
-  | binding(base_expr) { [$1] }
 ;
 
 // base expression (sequences and applications)
