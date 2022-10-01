@@ -217,7 +217,7 @@ simple_pattern:
 // ========================== expressions ==========================
 
 expr:
-  | binding(seq_expr) THICKARROW expr { mknode $sloc (EX_Binding ($1, $3)) }
+  | binding(base_expr) THICKARROW expr { mknode $sloc (EX_Binding ($1, $3)) }
   | BACKSLASH simple_pattern lambda_def { mknode $sloc (EX_Lambda (mkbind $2 $3)) }
   | seq_expr { $1 }
 
