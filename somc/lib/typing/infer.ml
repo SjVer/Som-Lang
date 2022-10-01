@@ -24,6 +24,8 @@ let new_gen_var () = TVar (ref (Generic (ID.next ())))
 
 let mk s t i = {span=s; item=i; typ=t}
 
+let set_ty t n = {n with typ=t}
+
 (* helper functions *)
 
 (** asserts that the type isn't recursive
@@ -148,9 +150,11 @@ let rec infer_expr ?(level=0) env exp =
     | EX_Binding (bind, body) ->
       let env', patt' = infer_patt ~level env bind.patt in
       let var' = infer_expr ~level:(level + 1) env bind.expr in
-      (* let gen_ty = generalize level var'.typ in *)
+      unify patt'.typ var'.typ;
+
+      let var'' = set_ty (generalize level var'.typ) var' in
       let body' = infer_expr ~level env' body in
-      mk s body'.typ (EX_Binding ({patt=patt'; expr=var'}, body'))
+      mk s body'.typ (EX_Binding ({patt=patt'; expr=var''}, body'))
     
     | EX_Lambda {patt; expr} ->
       let env', patt' = infer_patt ~level env patt in
@@ -163,11 +167,38 @@ let rec infer_expr ?(level=0) env exp =
       let e2' = infer_expr ~level env e2 in
       mk s e2'.typ (EX_Sequence (e1', e2'))
   
+    | EX_Application (f, es) ->
+      assert (es <> []);
+      let f' = infer_expr ~level env f in
+
+      (* infer and unify recursively. e.g.:
+          go (A -> B -> C) [a, b]
+            calls go (B -> C) [b]
+              returns C, [b']
+            returns C, [a', b'] *)
+      let rec go fty = function
+        | e :: es ->
+          let param_ty, out_ty = match_fun_ty fty in
+          let e' = infer_expr ~level env e in
+          unify param_ty e'.typ;
+
+          let next_out_ty, es' = go out_ty es in
+          next_out_ty, e' :: es'
+        | [] -> fty, []
+      in
+
+      let out_ty, es' = go f'.typ es in
+      mk s out_ty (EX_Application (f', es'))
+
     | EX_Tuple es ->
       let es' = List.map (infer_expr ~level env) es in
       let ts = List.map (fun e -> e.typ) es' in
       mk s (TTup ts) (EX_Tuple es')
-    
+
+    | EX_Construct (pnode, _enode) ->
+      let name = Parse.Ident.to_string pnode.item in
+      error (Use_of_unbound ("constructor", name)) (Some pnode.span)
+
     | EX_Literal l ->
       let name n = TName (Path.Ident n) in
       let l', t = match l with
@@ -188,15 +219,13 @@ let rec infer_expr ?(level=0) env exp =
         error (Use_of_unbound ("variable", name)) (Some span)
       end
 
-    | _ -> error (Expected ("idk", "idc")) (Some s)
-
 (* helper functions *)
 
 let infer_expr env e =
-  try
-    let e' = infer_expr ~level:0 env e in
-    mk e'.span (generalize (-1) e'.typ) e'.item
-  with Error (err, s, n) ->
-    Report.report err s n;
-    (* return some empty expression? *)
-    mk e.span (new_var 0) (EX_Literal LI_Nil)
+  let e' =
+    try infer_expr ~level:0 env e
+    with Error (err, s, n) ->
+      Report.report err s n;
+      let span = {e.span with Span.ghost=true} in
+      mk span (new_var 0) EX_Error
+  in set_ty (generalize (-1) e'.typ) e'

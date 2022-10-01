@@ -1,2 +1,4 @@
 main =
-  id x = x => 0.
+  list a b = [a, b] =>
+  list 1 2
+  .

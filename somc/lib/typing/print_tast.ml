@@ -32,34 +32,44 @@ and print_expr_node i node =
     | EX_Grouping e -> 
       p i "EX_Grouping" typ span;
       print_expr_node (i + 1) e
+    
     | EX_Binding (bind, e) ->
       p i "EX_Binding" typ span;
       print_patt_node' (i + 1) bind.patt;
-      print_expr_node (i + 2) bind.expr;
+      print_expr_node (i + 1) bind.expr;
       print_expr_node (i + 1) e
+  
     | EX_Lambda {patt; expr} ->
       p i "EX_Lambda" typ span;
       print_patt_node' (i + 1) patt;
       print_expr_node (i + 1) expr
+  
     | EX_Sequence (e1, e2) ->
       p i "EX_Sequence" typ span;
       print_expr_node (i + 1) e1;
       print_expr_node (i + 1) e2
+    
     | EX_Application (a, es) ->
       p i "EX_Application" typ span;
       print_expr_node (i + 1) a;
       List.iter (print_expr_node (i + 1)) es
+    
     | EX_Tuple es ->
       p i "EX_Tuple" typ span;
       List.iter (print_expr_node (i + 1)) es
+    
     | EX_Construct (n, e) ->
       p i ("EX_Construct " ^ Path.to_string n.item) typ span;
       if Option.is_some e
       then print_expr_node (i + 1) (Option.get e)
+    
     | EX_Literal l ->
       p i ("EX_Literal " ^ show_literal l) typ span
+    
     | EX_Identifier {span=_; item=id; typ=_} ->
       p i ("EX_Identifier " ^ Path.to_string id) typ span
+
+    | EX_Error -> p i "EX_Error" typ span
 
 (* and print_toplevel_node i node =
   let {span; item; typ} = node in

@@ -31,6 +31,7 @@ and expr =
   | EX_Construct of Path.t tnode * expr tnode option
   | EX_Literal of literal
   | EX_Identifier of Path.t tnode
+  | EX_Error
 
 and literal =
   | LI_Int of int

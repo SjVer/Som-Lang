@@ -10,7 +10,7 @@ scope: source.som
 variables:
   lname: '\b_?[a-z][A-Za-z_0-9]*\b'
   uname: '\b_?[A-Z][A-Za-z_0-9]*\b'
-  pname: \'{{lname}}
+  pname: \'{{lname}}(?!\')
 
   # numbers
   decimal: '\b[0-9]+(?:\.[0-9]+)?\b'

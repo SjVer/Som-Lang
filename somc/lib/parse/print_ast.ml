@@ -95,7 +95,7 @@ and print_expr_node i node =
     | EX_Binding (bind, e) ->
       p i "EX_Binding" span;
       print_patt_node' (i + 1) bind.patt;
-      print_expr_node (i + 2) bind.expr;
+      print_expr_node (i + 1) bind.expr;
       print_expr_node (i + 1) e
 
     | EX_Lambda {patt; expr} ->
