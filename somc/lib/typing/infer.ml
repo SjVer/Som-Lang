@@ -118,15 +118,15 @@ let instantiate level ty =
   in go ty
 
 (** asserts that the given type is a function type *)
-let rec match_fun_ty = function
+let rec match_fun_ty span = function
   | TFun (p, r) -> p, r
-  | TVar {contents = Link ty} -> match_fun_ty ty
+  | TVar {contents = Link ty} -> match_fun_ty span ty
   | TVar ({contents = Unbound (_, level)} as tvar) ->
     let param_ty = new_var level in
     let return_ty = new_var level in
     tvar := Link (TFun (param_ty, return_ty));
     param_ty, return_ty
-  | t -> error (Expected_funtion (show_type t)) None
+  | t -> error (Expected_funtion (show_type t)) (Some span)
 
 (* inference functions *)
 
@@ -176,18 +176,19 @@ let rec infer_expr ?(level=0) env exp =
             calls go (B -> C) [b]
               returns C, [b']
             returns C, [a', b'] *)
-      let rec go fty = function
+      let rec go span fty = function
         | e :: es ->
-          let param_ty, out_ty = match_fun_ty fty in
+          let param_ty, out_ty = match_fun_ty span fty in
           let e' = infer_expr ~level env e in
           unify param_ty e'.typ;
 
-          let next_out_ty, es' = go out_ty es in
+          let new_span = Span.concat_spans span e.span in
+          let next_out_ty, es' = go new_span out_ty es in
           next_out_ty, e' :: es'
         | [] -> fty, []
       in
 
-      let out_ty, es' = go f'.typ es in
+      let out_ty, es' = go f'.span f'.typ es in
       mk s out_ty (EX_Application (f', es'))
 
     | EX_Tuple es ->

@@ -4,6 +4,8 @@ module PrintTAst = Print_tast
 open Parse.Ast
 
 let typecheck ast =
+  Parse.PrintAst.print_toplevel ast;
+
   List.iter (fun {span=_; item} -> match item with
     | TL_Definition {patt=_; expr} ->
       let texpr = Infer.infer_expr Env.empty expr in

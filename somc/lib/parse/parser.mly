@@ -187,16 +187,12 @@ import_body:
 
 // ======================== binding helpers =======================
 
-binding(EXPR):
-  | pattern strict_binding(EXPR) { mkbind $1 $2 }
-;
+binding(EXPR): pattern strict_binding(EXPR) { mkbind $1 $2 };
 
 strict_binding(EXPR):
-  | simple_pattern fun_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
+  | simple_pattern strict_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
   | EQUAL EXPR { $2 }
 ;
-
-fun_binding(EXPR): strict_binding(EXPR) { $1 };
 
 lambda_def:
   | ARROW expr { $2 }
@@ -217,7 +213,7 @@ simple_pattern:
 // ========================== expressions ==========================
 
 expr:
-  | binding(base_expr) THICKARROW expr { mknode $sloc (EX_Binding ($1, $3)) }
+  | binding(seq_expr) THICKARROW expr { mknode $sloc (EX_Binding ($1, $3)) }
   | BACKSLASH simple_pattern lambda_def { mknode $sloc (EX_Lambda (mkbind $2 $3)) }
   | seq_expr { $1 }
 

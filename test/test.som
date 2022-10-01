@@ -4,4 +4,28 @@
 --   apply this
 --   .
 
-apply = f x.
+main = f x
+---
+[prog:
+  [list(toplevel):
+    [toplevel:
+      [definition:
+        [binding(expr):
+          [pattern: [simple_pattern: LOWERNAME]]
+          [strict_binding(expr): EQUAL [expr: error]]
+        ]
+      ]
+      [dot: error]
+    ]
+    [list(toplevel):]
+  ]
+  EOF
+]
+
+prog -> list(toplevel) -> toplevel -> definition -> binding(expr) -> pattern -> simple_pattern -> LOWERNAME
+     |                 |           |                              -> strict_binding(expr) -> EQUAL
+     |                 |           |                                                      -> expr -> error
+     |                 |           -> dot -> error
+     |                 -> list(toplevel) -> []
+     -> EOF
+---

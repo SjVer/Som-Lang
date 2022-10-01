@@ -43,3 +43,5 @@ let span_from_lexbuf lexbuf =
   span_from_lexlocs (lexbuf.lex_start_p, lexbuf.lex_curr_p)
 
 let offsets_from_span span = (span.start.offset, span.end_.offset)
+
+let concat_spans a b = {a with end_=b.end_}
