@@ -9,7 +9,7 @@ let raise_error e locs notes =
 
 let unclosed s e what locs =
   raise_error (Unclosed s) locs
-  [Printf.sprintf "try adding '%s' after the enclosed %s" what e]
+  [Printf.sprintf "try adding '%s' after the enclosed %s" e what]
 let expected what locs = raise_error (Expected what) locs []
 
 let mknode locs item = {span = span_from_lexlocs locs false; item }
@@ -39,6 +39,47 @@ let rec mkglist endlocs = function
 let grp raw group = if false then group else raw
 %}
 // let mkdir id arg = {id; arg}
+
+/*
+  KNOWN CONFLICTS
+
+  ** Conflict (shift/reduce) in state 195.
+    ** Token involved: error
+    pattern EQUAL pattern EQUAL LBRACKET
+    >> f = g = [ !error
+    :: to what rule does the error token belong?
+
+  ** Conflict (shift/reduce) in state 165.
+    ** Token involved: error
+    pattern EQUAL base_expr SEMICOLON
+    >> f = 1 ; !error
+    :: to what rule does the error token belong?
+
+  ** Conflict (shift/reduce) in state 106.
+    ** Token involved: error
+    pattern EQUAL LBRACKET
+    >> f = [ !error
+    :: to what rule does the error token belong?
+
+  ** Conflict (reduce/reduce) in state 105.
+    ** Tokens involved: LOWERNAME EQUAL
+    pattern EQUAL LOWERNAME
+    >> f = x?
+    :: pattern vs application ambigouity
+
+  ** Conflict (reduce/reduce) in state 99.
+    ** Tokens involved: error RPAREN DOT
+    pattern EQUAL error
+    >> f = !error
+    :: does the error belong to expr or base_expr?
+
+  ** Conflict (shift/reduce) in state 39.
+    ** Token involved: error
+    LOWERNAME COLON effect_type SEMICOLON
+    >> f : T ; !error
+    :: does the error belong to effect_type or tuple_type?
+
+*/
 
 // ============================ tokens ============================
 
@@ -88,7 +129,7 @@ let grp raw group = if false then group else raw
 %left EQUAL NOTEQUAL
 %left GREATER GREATEREQUAL LESSER LESSEREQUAL
 %left PLUS MINUS
-%left SLASH STAR
+%left SLASH STAR MODULO
 %right CARET
 %nonassoc prec_unary
 
@@ -192,7 +233,7 @@ binding(EXPR): pattern strict_binding(EXPR) { mkbind $1 $2 };
 strict_binding(EXPR):
   | simple_pattern strict_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
   | EQUAL EXPR { $2 }
-  | error { expected "a pattern or '='" $sloc }
+  // | error { expected "a pattern or '='" $sloc }
 ;
 
 lambda_def:
