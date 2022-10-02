@@ -192,11 +192,13 @@ binding(EXPR): pattern strict_binding(EXPR) { mkbind $1 $2 };
 strict_binding(EXPR):
   | simple_pattern strict_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
   | EQUAL EXPR { $2 }
+  | error { expected "a pattern or '='" $sloc }
 ;
 
 lambda_def:
   | ARROW expr { $2 }
   | simple_pattern lambda_def { mkgnode $sloc (EX_Lambda (mkbind $1 $2))}
+  | error { expected "a pattern or '->'" $sloc }
 ;
 
 // =========================== patterns ===========================
@@ -204,9 +206,9 @@ lambda_def:
 pattern: simple_pattern { $1 };
 
 simple_pattern:
-  // TODO: rn the pattern's loc seems to be that of 
+  // TODO: rn the pattern's loc seems to be that of
   // its expr instead (when coming from binding)
-  | LOWERNAME { mknode $sloc (PA_Variable $1) }
+  | LOWERNAME { print_endline "P"; mknode $sloc (PA_Variable $1) }
   | UNDERSCORE { mknode $sloc PA_Wildcard }
 ;
 
