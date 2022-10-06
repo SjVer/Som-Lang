@@ -3,14 +3,12 @@ open ANSITerminal
 
 let f = Printf.sprintf
 
-let read_lines name =
-  let ic = open_in name in
-  let try_read () =
-    try Some (input_line ic) with End_of_file -> None in
-  let rec loop acc = match try_read () with
-    | Some s -> loop (s :: acc)
-    | None -> close_in ic; List.rev acc in
-  (loop []) @ [""]
+(* to be set to ReadFile.call *)
+let read_file_fn = ref (fun (""|_) -> assert false)
+
+let read_lines f =
+  let source = !read_file_fn f in
+  String.split_on_char '\n' source
 
 type report_kind = Single_line | Double_line | Multi_line
 

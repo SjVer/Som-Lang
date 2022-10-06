@@ -165,17 +165,26 @@ and print_toplevel_node i node =
       p i ("TL_Import " ^ show_path path) span;
       print_import_kind_node' (i + 1) kind
 
+    | TL_Section (n, ast) ->
+      p i ("TL_Section " ^ n) span;
+      print_toplevel (i + 1) ast
+      
+    | TL_Link (n, tl) ->
+      p i ("TL_Link " ^ n) span;
+      print_toplevel_node (i + 1) tl
+
+and print_toplevel i nodes =
+  match nodes with
+    | [] -> ()
+    | [n] -> print_toplevel_node i n
+    | n :: ns ->
+      print_toplevel_node i n;
+      print_newline ();
+      print_toplevel i ns 
+
 (* expose functions *)
 
 let print_expr_node = print_expr_node 0
 let print_type_node = print_type_node 0
 let print_toplevel_node = print_toplevel_node 0
-
-let rec print_toplevel nodes =
-  match nodes with
-    | [] -> ()
-    | [n] -> print_toplevel_node n
-    | n :: ns ->
-      print_toplevel_node n;
-      print_newline ();
-      print_toplevel ns 
+let print_toplevel = print_toplevel 0

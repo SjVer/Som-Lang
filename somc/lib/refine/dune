@@ -1,4 +1,4 @@
 (library
  (name refine)
- (libraries parse)
+ (libraries parse config)
 )

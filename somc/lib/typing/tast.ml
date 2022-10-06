@@ -1,4 +1,8 @@
-type 'a tnode =
+type tast = toplevel node list
+
+and 'a node = 'a Parse.Ast.node
+
+and 'a tnode =
   {
     span: Span.t;
     item: 'a;
@@ -6,6 +10,12 @@ type 'a tnode =
   }
 
 (* ====================== Toplevel ====================== *)
+
+and toplevel =
+  | TL_Declaration of string * Types.t
+  | TL_Definition of value_binding
+  (* | TL_Type_Definition of  *)
+  | TL_Section of string * tast
 
 and value_binding =
   {

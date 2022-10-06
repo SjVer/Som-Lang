@@ -5,9 +5,9 @@ module Ident = Ident
 open Report.Error
 open Span
 
-let parse file =
-  (* lexbuf stuff temporary *)
-  let lexbuf = Lexing.from_channel (open_in file) in
+let parse file source =
+  let lexbuf = Lexing.from_string source in
+
   try
     lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname = file};
     Parser.prog Lexer.main lexbuf

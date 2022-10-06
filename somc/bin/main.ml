@@ -1,13 +1,7 @@
 open Clap
 open Somc.Codegen.Opt
 
-module R = Somc.Report
-module E = Somc.Report.Error
-module C = Somc.Report.Codes
-
-(* information *)
-let usage_msg = "somc [--verbose|-v] [--mute|-m] <FILE>"
-let version_msg = "somc 0.1.0"
+module C = Somc.Config
 
 (* helper functions *)
 let has_arg long short = Array.exists (fun a -> a = long || a = short) Sys.argv
@@ -21,17 +15,18 @@ let opt_typ = enum "" [
 
 (* explain given error code *)
 let explain_ecode code =
-  match C.error_name_from_int code with
+  let module R = Somc.Report in
+  match R.Codes.error_name_from_int code with
   | Some (kind, name) ->
     Printf.printf "%s error E%03d:%s\n" kind code name;
     exit 0
   | None ->
-    R.report (E.Other_error (E.Cannot_explain code)) None [];
+    R.report (R.Error.Other_error (R.Error.Cannot_explain code)) None [];
     exit 1
 
 (* entrypoint *)
 let () =
-  description "Official Som compiler";
+  description C.description;
 
   (* named args *)
   let verbose = flag
@@ -69,8 +64,8 @@ let () =
   
   (* check hidden args *)
   if has_arg "--help" "-h"    then exit_after (help ());
-  if has_arg "--usage" "-u"   then exit_after (print_endline usage_msg);
-  if has_arg "--version" "-V" then exit_after (print_endline version_msg);
+  if has_arg "--usage" "-u"   then exit_after (print_endline C.usage_msg);
+  if has_arg "--version" "-V" then exit_after (print_endline C.version_msg);
 
   (* check --explain *)
   if Option.is_some explain then explain_ecode (Option.get explain);
@@ -82,5 +77,5 @@ let () =
   close();
   ignore (verbose, mute, opt_level', passes);
 
-  Pipeline.TypecheckFileQuery.call file;
+  Typing.PrintTAst.print_toplevel (Pipeline.TypecheckFile.call file);
   exit 0

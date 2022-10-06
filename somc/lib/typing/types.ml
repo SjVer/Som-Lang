@@ -26,6 +26,19 @@ let show_prim =
     | PFloat w -> f "$f.%d" w
     | PVoid -> "%v"
 
+let rec parse_type =
+  let open Parse.Ast in function
+    | TY_Builtin b -> begin
+        let p = match b with
+          | BT_Int (s, w) -> PInt (s, w)
+          | BT_Float w -> PFloat w
+          | BT_Void -> PVoid
+        in
+        TPrim p
+      end
+    | _ -> Infer.new_var 0
+    
+
 let show_type ty debug =
   let vnames = Hashtbl.create 10 in
   let unames = Hashtbl.create 10 in

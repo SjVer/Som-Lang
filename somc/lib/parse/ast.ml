@@ -13,6 +13,8 @@ and toplevel =
   | TL_Definition of value_binding (** `patt = expr.` *)
   | TL_Type_Definition of type_definition (** `string := type.` *)
   | TL_Import of import (** `#import` *)
+  | TL_Section of string * ast (** `string { ... }` *)
+  | TL_Link of string * toplevel node (** internal use *)
 
 and value_binding =
   {

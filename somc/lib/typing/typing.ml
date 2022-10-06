@@ -1,18 +1,32 @@
+module Env = Env
 module TAst = Tast
 module PrintTAst = Print_tast
+module Path = Path
 
 open Parse.Ast
+open TAst
+open Infer
 
-let typecheck ast =
-  List.iter (fun {span=_; item} -> match item with
-    | TL_Import i ->
-      Import.import i
+let mk s i = {span=s; item=i}
 
-    | TL_Definition {patt=_; expr} ->
-      let texpr = Infer.infer_expr Env.empty expr in
-      Print_tast.print_expr_node texpr;
-      print_newline ();
-      print_endline (Types.show_type texpr.typ true)
+let typecheck_tl_node env node =
+  let Ast.{span; item : toplevel} = node in match item with
+    | TL_Definition {patt; expr} ->
+      let env', patt' = infer_patt ~level:0 env patt in
+      let expr' = infer_expr env expr in
+      unify span patt'.typ expr'.typ;
 
-    | _ -> ()
-  ) ast
+      let expr'' = set_ty (generalize (-1) expr'.typ) expr' in
+      env', mk span (TL_Definition {patt=patt'; expr=expr''}) 
+    
+    | _ -> failwith "idk"
+
+let typecheck env (ast : ast) =
+  let rec go env acc = function
+      | hd :: tl ->
+        let env', hd' = typecheck_tl_node env hd in
+        go env' (acc @ [hd']) tl
+      | _ -> env, acc
+  in
+  let _env', tast = go env [] ast in
+  tast

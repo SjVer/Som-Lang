@@ -55,15 +55,15 @@ let get_type_error_msg = function
 type other_error =
   | Could_not_open of string (*+file*)
   | Could_not_compile of string (*+file*)
-  | Failed_to_resolve of string (*+module*)
-  | Failed_to_import of string (*+module*)
+  | Failed_to_resolve of string (*+symbol*)
+  | Failed_to_import of string (*+symbol*)
   | Cannot_explain of int (*+error code*)
 
 let get_other_error_msg = function
   | Could_not_open w    -> f "could not open file '%s'" w
   | Could_not_compile w -> f "could not compile '%s' due to previous error" w
-  | Failed_to_resolve w -> f "failed to resolve module '%s'" w
-  | Failed_to_import w  -> f "failed to import module `%s`" w
+  | Failed_to_resolve w -> f "failed to resolve `%s`" w
+  | Failed_to_import w  -> f "failed to import `%s`" w
   | Cannot_explain w    -> f "cannot explain invalid error code E%03d" w
 
 (* Types *)
@@ -85,3 +85,7 @@ type note = string
 exception Error of error * Span.t option * note list
 
 let raise_error err span notes = raise (Error (err, span, notes))
+
+let add_note e note =
+  let (err, span, notes) = e in
+  Error (err, span, notes @ [note])

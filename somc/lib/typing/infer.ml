@@ -28,25 +28,6 @@ let set_ty t n = {n with typ=t}
 
 (* helper functions *)
 
-(** asserts that the type isn't recursive
-    and solves constraints like {'a = 'b}
-    if 'b comes from a higher level than 'a *)
-let occurs_check_adjust_levels id level =
-  let rec go = function
-    | TName _ | TPrim _ -> ()
-    | TVar {contents = Link ty} -> go ty
-    | TVar {contents = Generic _} -> assert false
-    | TVar ({contents = Unbound (other_id, other_level)} as other) ->
-      if other_id = id then error Recursive_type None;
-      if other_level > level
-        then other := Unbound (other_id, other_level)
-        else ()
-    | TEff t -> go t
-    | TApp (a, t) -> go a; go t
-    | TFun (p, r) -> go p; go r
-    | TTup ts -> List.iter go ts
-  in go
-
 (** generalizes type [ty] replacing 
     unbound type variables with Generic ones *)
 let rec generalize level = function
@@ -86,6 +67,25 @@ let instantiate level ty =
     | TFun (p, r) -> TFun (go p, go r)
     | TTup ts -> TTup (List.map go ts)
   in go ty
+
+(** asserts that the type isn't recursive
+  and solves constraints like {'a = 'b}
+  if 'b comes from a higher level than 'a *)
+let occurs_check_adjust_levels id level =
+  let rec go = function
+    | TName _ | TPrim _ -> ()
+    | TVar {contents = Link ty} -> go ty
+    | TVar {contents = Generic _} -> ()
+    | TVar ({contents = Unbound (other_id, other_level)} as other) ->
+      if other_id = id then error Recursive_type None;
+      if other_level > level
+        then other := Unbound (other_id, other_level)
+        else ()
+    | TEff t -> go t
+    | TApp (a, t) -> go a; go t
+    | TFun (p, r) -> go p; go r
+    | TTup ts -> List.iter go ts
+  in go
 
 let rec unify span ty1 ty2 =
   if ty1 == ty2 then ()
@@ -229,5 +229,5 @@ let infer_expr env e =
       Report.report err s n;
       let span = {e.span with Span.ghost=true} in
       mk span (new_var 0) EX_Error
-  (* in set_ty (generalize (-1) e'.typ) e' *)
-  in e'
+  in set_ty (generalize (-1) e'.typ) e'
+  (* in e' *)

@@ -24,12 +24,13 @@ stdlib:
 	@cd stdlib && make stdlib
 
 install: build stdlib
-	cp $(EXE) /usr/bin/somc
+	sudo cp $(EXE) /usr/bin/somc
 
-	cp stdlib/bin/libsom.so /usr/lib/
-	cp -r stdlib/include $(SOM_INCL_DIR)/std
+	sudo cp stdlib/bin/libsom.so /usr/lib/
+	sudo rm -r $(SOM_INCL_DIR)/std
+	sudo cp -r stdlib/include $(SOM_INCL_DIR)/std
 
-	cp tools/bash-completion.sh /usr/share/bash-completion/completions/somc
+	sudo cp tools/bash-completion.sh /usr/share/bash-completion/completions/somc
 	source ~/.bashrc
 
 clean:

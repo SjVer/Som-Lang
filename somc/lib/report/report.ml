@@ -1,5 +1,6 @@
 module Error = Error
 module Codes = Codes
+module Util = Util
 
 open Error
 open Codes
