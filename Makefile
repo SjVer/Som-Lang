@@ -2,6 +2,8 @@ SHELL := /bin/bash
 MAKEFLAGS += --no-print-directory
 EXE = somc/_build/default/bin/main.exe
 
+SOM_INCL_DIR = /usr/share/som/include
+
 .DEFAULT_GOAL := build
 
 gen_codes_ml:
@@ -22,11 +24,12 @@ stdlib:
 	@cd stdlib && make stdlib
 
 install: build stdlib
-	sudo cp $(EXE) /usr/bin/somc
+	cp $(EXE) /usr/bin/somc
 
-	sudo cp stdlib/bin/libsom.so /usr/lib/
+	cp stdlib/bin/libsom.so /usr/lib/
+	cp -r stdlib/include $(SOM_INCL_DIR)/std
 
-	sudo cp tools/bash-completion.sh /usr/share/bash-completion/completions/somc
+	cp tools/bash-completion.sh /usr/share/bash-completion/completions/somc
 	source ~/.bashrc
 
 clean:

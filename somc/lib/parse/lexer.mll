@@ -92,6 +92,7 @@ rule main = parse
   | "->" { ARROW }
   | "=>" { THICKARROW }
   | '#' { HASH }
+  | '@' { AT }
   | '\\' { BACKSLASH }
 
   | "<=" { LESSEREQUAL }

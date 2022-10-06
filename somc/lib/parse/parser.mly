@@ -96,7 +96,7 @@ let grp raw group = if false then group else raw
 %token DBL_BANG BANG
 %token DBL_QUESTION QUESTION
 %token ARROW THICKARROW
-%token BACKSLASH HASH
+%token BACKSLASH HASH AT
 
 %token DBL_PIPE PIPE
 %token DBL_AMPERSAND AMPERSAND
@@ -228,12 +228,12 @@ import_body:
 
 // ======================== binding helpers =======================
 
-binding(EXPR): pattern strict_binding(EXPR) { mkbind $1 $2 };
+binding(EXPR): AT pattern strict_binding(EXPR) { mkbind $2 $3 };
 
 strict_binding(EXPR):
   | simple_pattern strict_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
   | EQUAL EXPR { $2 }
-  // | error { expected "a pattern or '='" $sloc }
+  | error { expected "a pattern or '='" $sloc }
 ;
 
 lambda_def:
@@ -249,7 +249,7 @@ pattern: simple_pattern { $1 };
 simple_pattern:
   // TODO: rn the pattern's loc seems to be that of
   // its expr instead (when coming from binding)
-  | LOWERNAME { print_endline "P"; mknode $sloc (PA_Variable $1) }
+  | LOWERNAME { mknode $sloc (PA_Variable $1) }
   | UNDERSCORE { mknode $sloc PA_Wildcard }
 ;
 
@@ -257,7 +257,6 @@ simple_pattern:
 
 expr:
   | binding(seq_expr) THICKARROW expr { mknode $sloc (EX_Binding ($1, $3)) }
-  | BACKSLASH simple_pattern lambda_def { mknode $sloc (EX_Lambda (mkbind $2 $3)) }
   | seq_expr { $1 }
 
   | error { expected "an expression" $sloc }
@@ -266,7 +265,12 @@ expr:
 // base expression (sequences and applications)
 
 seq_expr:
-  | seq_expr COMMA tuple_expr { mknode $sloc (EX_Sequence ($1, $3)) }
+  | seq_expr COMMA lambda_expr { mknode $sloc (EX_Sequence ($1, $3)) }
+  | lambda_expr { $1 }
+;
+
+lambda_expr:
+  | BACKSLASH simple_pattern lambda_def { mknode $sloc (EX_Lambda (mkbind $2 $3)) }
   | tuple_expr { $1 }
 ;
 

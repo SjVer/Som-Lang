@@ -239,11 +239,10 @@ contexts:
         2: punctuation.separator.som
 
   definition:
-    - match: '{{lname}}(?=(\s*{{lname}})*\s*=)'
-      scope: name.symbol.som
+    - match: (@)
+      scope: keyword.definition.som
       push:
-        - match: '{{lname}}'
-          scope: variable.parameter.som
+        - include: pattern
         - match: (=)(\s*\.\.\.)?
           captures:
             1: keyword.operator.definition.som
@@ -254,6 +253,16 @@ contexts:
     - include: type
     - match: \,
       scope: punctuation.separator.sequence.som
+
+  # PATTERNS
+
+  pattern:
+    - match: '(?<=\@){{lname}}'
+      scope: entity.name.function.som
+    - match: '{{lname}}'
+      scope: variable.parameter.som
+    - match: _(?![A-za-z])
+      scope: constant.language.wildcard.som
 
   # EXPRESSION
 
@@ -312,9 +321,8 @@ contexts:
     - match: \\
       scope: keyword.other.lambda.som
       push:
-        - match: '{{lname}}'
-          scope: variable.parameter.lambda.som
-        - match: =>
+        - include: pattern
+        - match: ->
           scope: keyword.operator.definition.som
           pop: true
 
@@ -360,12 +368,8 @@ contexts:
       scope: constant.numeric.som
 
   special:
-    - match: true|false
-      scope: constant.language.boolean.som
     - match: \(\)
       scope: constant.language.null.som
-    - match: _(?![A-za-z])
-      scope: constant.language.wildcard.som
 
   string-char:
     - match: '\"'

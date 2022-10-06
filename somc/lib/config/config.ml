@@ -1,0 +1,1 @@
+let include_dir = "/usr/share/som/include/"

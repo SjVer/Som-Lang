@@ -5,6 +5,7 @@
   (libraries
     codegen
     parse
+    pipeline
     report
     span
     typing

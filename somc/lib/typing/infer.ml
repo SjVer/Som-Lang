@@ -47,36 +47,6 @@ let occurs_check_adjust_levels id level =
     | TTup ts -> List.iter go ts
   in go
 
-let rec unify ty1 ty2 =
-  if ty1 == ty2 then ()
-  else match (ty1, ty2) with
-    | TName n1, TName n2 when n1 = n2 -> ()
-    | TPrim p1, TPrim p2 when p1 = p2 -> ()
-
-    | TFun (p1, r1), TFun (p2, r2) ->
-      unify p1 p2;
-      unify r1 r2
-
-    | TApp (a1, t1), TApp (a2, t2) ->
-      unify a1 a2;
-      unify t1 t2
-
-    | TVar {contents = Link ty1}, ty2
-    | ty1, TVar {contents = Link ty2} ->
-      unify ty1 ty2
-
-    | TVar ({contents = Unbound (id, level)} as tvar), ty
-    | ty, TVar ({contents = Unbound (id, level)} as tvar) ->
-      occurs_check_adjust_levels id level ty;
-      tvar := Link ty
-
-    | TTup ts1, TTup ts2 -> List.iter2 unify ts1 ts2
-
-    | _ ->
-      let ty1_str = show_type ty1 in
-      let ty2_str = show_type ty2 in
-      error (Expected (ty1_str, ty2_str)) None
-
 (** generalizes type [ty] replacing 
     unbound type variables with Generic ones *)
 let rec generalize level = function
@@ -117,6 +87,36 @@ let instantiate level ty =
     | TTup ts -> TTup (List.map go ts)
   in go ty
 
+let rec unify span ty1 ty2 =
+  if ty1 == ty2 then ()
+  else match (ty1, ty2) with
+    | TName n1, TName n2 when n1 = n2 -> ()
+    | TPrim p1, TPrim p2 when p1 = p2 -> ()
+
+    | TFun (p1, r1), TFun (p2, r2) ->
+      unify span p1 p2;
+      unify span r1 r2
+
+    | TApp (a1, t1), TApp (a2, t2) ->
+      unify span a1 a2;
+      unify span t1 t2
+
+    | TVar {contents = Link ty1}, ty2
+    | ty1, TVar {contents = Link ty2} ->
+      unify span ty1 ty2
+
+    | TVar ({contents = Unbound (id, level)} as tvar), ty
+    | ty, TVar ({contents = Unbound (id, level)} as tvar) ->
+      occurs_check_adjust_levels id level ty;
+      tvar := Link ty
+
+    | TTup ts1, TTup ts2 -> List.iter2 (unify span) ts1 ts2
+
+    | _ ->
+      let ty1' = show_type (generalize (-1) ty1) false in
+      let ty2' = show_type (generalize (-1) ty2) false in
+      error (Expected (ty1', ty2')) (Some span)
+
 (** asserts that the given type is a function type *)
 let rec match_fun_ty span = function
   | TFun (p, r) -> p, r
@@ -126,7 +126,7 @@ let rec match_fun_ty span = function
     let return_ty = new_var level in
     tvar := Link (TFun (param_ty, return_ty));
     param_ty, return_ty
-  | t -> error (Expected_funtion (show_type t)) (Some span)
+  | t -> error (Expected_funtion (show_type t false)) (Some span)
 
 (* inference functions *)
 
@@ -150,7 +150,7 @@ let rec infer_expr ?(level=0) env exp =
     | EX_Binding (bind, body) ->
       let env', patt' = infer_patt ~level env bind.patt in
       let var' = infer_expr ~level:(level + 1) env bind.expr in
-      unify patt'.typ var'.typ;
+      unify s patt'.typ var'.typ;
 
       let var'' = set_ty (generalize level var'.typ) var' in
       let body' = infer_expr ~level env' body in
@@ -180,7 +180,7 @@ let rec infer_expr ?(level=0) env exp =
         | e :: es ->
           let param_ty, out_ty = match_fun_ty span fty in
           let e' = infer_expr ~level env e in
-          unify param_ty e'.typ;
+          unify e'.span param_ty e'.typ;
 
           let new_span = Span.concat_spans span e.span in
           let next_out_ty, es' = go new_span out_ty es in
@@ -229,4 +229,5 @@ let infer_expr env e =
       Report.report err s n;
       let span = {e.span with Span.ghost=true} in
       mk span (new_var 0) EX_Error
-  in set_ty (generalize (-1) e'.typ) e'
+  (* in set_ty (generalize (-1) e'.typ) e' *)
+  in e'

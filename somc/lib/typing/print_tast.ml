@@ -3,7 +3,7 @@ open ANSITerminal
 
 let p i str typ span =
   print_string [] (String.make i '\t' ^ str);
-  print_string [Foreground Cyan] (" : " ^ Types.show_type typ);
+  print_string [Foreground Cyan] (" : " ^ Types.show_type typ true);
   print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
   print_newline ()
 

@@ -26,16 +26,30 @@ let show_prim =
     | PFloat w -> f "$f.%d" w
     | PVoid -> "%v"
 
-let show_type ty =
-  let names = Hashtbl.create 10 in
-	let count = ref 0 in
-	let next_name () =
-		let i = !count in
-		incr count;
+let show_type ty debug =
+  let vnames = Hashtbl.create 10 in
+  let unames = Hashtbl.create 10 in
+	let vcount = ref 0 in
+	let ucount = ref 0 in
+	let next_name t =
+    let i = match t with
+      | `V -> incr vcount; !vcount - 1
+      | `U -> incr ucount; !ucount - 1
+    in
     let name = String.make 1 (Char.chr (97 + i mod 26)) ^
 			if i >= 26 then string_of_int (i / 26) else ""
-    in "'" ^ name
+    in match t with
+      | `V -> "'" ^ name
+      | `U -> "'_" ^ name
 	in
+  let do_var t map id =
+    match Hashtbl.find_opt map id with
+      | Some n -> n
+      | None ->
+        let name = next_name t in
+        Hashtbl.add map id name;
+        name
+  in
 
   let ret prim s = if prim then "("^s^")" else s in
 
@@ -43,16 +57,10 @@ let show_type ty =
     | TName p -> Path.to_string p
     | TPrim p -> show_prim p
     | TVar {contents=Unbound (id, _)} ->
-      "_" ^ string_of_int id
+      do_var `U unames id
     | TVar {contents=Link ty} -> go prim ty
-    | TVar {contents=Generic id} -> begin
-        match Hashtbl.find_opt names id with
-          | Some n -> n
-          | None ->
-            let name = next_name () in
-            Hashtbl.add names id name;
-            name
-      end
+    | TVar {contents=Generic id} ->
+      do_var `V vnames id
     | TApp (t1, t2) ->
       ret prim (go false t1 ^ " " ^ go true t2)
     | TEff t -> "!" ^ go true t
@@ -65,8 +73,8 @@ let show_type ty =
 
   in
   let ty_str = go false ty in
-  if !count > 0 then
-    let names = Hashtbl.fold (fun _ v a -> v :: a) names [] in
+  if debug && !vcount > 0 then
+    let names = Hashtbl.fold (fun _ v a -> v :: a) vnames [] in
     String.concat " " (List.sort String.compare names) ^ " . " ^ ty_str
   else
     ty_str

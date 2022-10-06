@@ -1,7 +1,3 @@
--- main =
---   -- apply f x = f x =>
---   -- int = 0 =>
---   apply this
---   .
+#std::io::puts
 
--- main = f x.
+@main = puts "test".
