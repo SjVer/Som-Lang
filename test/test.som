@@ -1,3 +1,4 @@
-#std::io::puts
+#std::io
 
-@main = puts "test".
+main: Str -> Str.
+@main = io::puts "test".

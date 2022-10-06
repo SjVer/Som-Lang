@@ -81,10 +81,9 @@ and typ =
   | TY_Any (** `_` *)
   | TY_Variable of string (** `'string` *)
   | TY_Effect of typ node option (** `!typ` *)
-  | TY_Function of typ node list * typ node (** `typ, ... -> typ` *)
+  | TY_Function of typ node * typ node (** `typ -> typ` *)
   | TY_Tuple of typ node list (** `typ; ...` *)
-  | TY_List of typ node (** `[typ]` *)
-  | TY_Construct of typ node option * string (** `string` | `typ string`*)
+  | TY_Construct of typ node option * Ident.t node (** `ident` | `typ ident`*)
   | TY_Builtin of builtin_typ (** `$llvm_typ` *)
 
 and builtin_typ =

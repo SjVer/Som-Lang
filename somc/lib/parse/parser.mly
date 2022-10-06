@@ -367,13 +367,8 @@ typ:
 ;
 
 function_type:
-  | function_type_args ARROW function_type { mknode $sloc (TY_Function ($1, $3)) }
+  | function_type ARROW function_type { mknode $sloc (TY_Function ($1, $3)) }
   | tuple_type { $1 }
-;
-
-function_type_args:
-  | tuple_type COMMA function_type_args { $1 :: $3 }
-  | tuple_type { [$1] }
 ;
 
 tuple_type:
@@ -392,16 +387,13 @@ atomic_type:
   | LPAREN typ RPAREN { grp $2 (mknode $sloc (TY_Grouping $2)) }
   | LPAREN typ error { unclosed "(" ")" "type" $loc($1) }
 
-  | LBRACKET typ RBRACKET { mknode $sloc (TY_List $2) }
-  | LBRACKET typ error { unclosed "[" "]" "list type" $loc($1) }
-
   | BUILTINITY { let (s, w) = $1 in mknode $sloc (TY_Builtin (BT_Int (s, w))) }
   | BUILTINFTY { mknode $sloc (TY_Builtin (BT_Float $1)) }
   | BUILTINVTY { mknode $sloc (TY_Builtin BT_Void) }
 
   | UNDERSCORE { mknode $sloc TY_Any }
   | PRIMENAME { mknode $sloc (TY_Variable $1) }
-  | atomic_type? UPPERNAME { mknode $sloc (TY_Construct ($1, $2)) }
+  | atomic_type? upper_longident { mknode $sloc (TY_Construct ($1, $2)) }
 ;
 
 // =========================== directives ===========================

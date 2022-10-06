@@ -64,21 +64,17 @@ and print_type_node i node =
       if Option.is_some t
       then print_type_node (i + 1) (Option.get t)
     
-    | TY_Function (ts, r) ->
+    | TY_Function (a, r) ->
       p i "TY_Function" span;
-      List.iter (print_type_node (i + 1)) ts;
+      print_type_node (i + 1) a;
       print_type_node (i + 1) r
     
     | TY_Tuple ts ->
       p i "TY_Tuple" span;
       List.iter (print_type_node (i + 1)) ts
 
-    | TY_List t ->
-      p i "TY_List" span;
-      print_type_node (i + 1) t
-
     | TY_Construct (a, t) ->
-      p i ("TY_Construct " ^ t) span;
+      p i ("TY_Construct " ^ (Ident.to_string t.item)) span;
       if Option.is_some a
       then print_type_node (i + 1) (Option.get a);
     
