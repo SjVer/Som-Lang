@@ -36,9 +36,12 @@ module TypecheckFile = Query.Make(struct
   type r = Typing.TAst.tast
   let c f =
     let ast = RefineFile.call f in
-    Typing.typecheck Typing.Env.empty ast
+    let _, tast = Typing.typecheck Typing.Env.empty ast in
+    tast
 end)
 
+(* export functions bc otherwise i'd somehow
+   have to solve dependency cycles *)
 let _ =
   Report.Util.read_file_fn := ReadFile.call;
-  Refine.Import.get_ast_fn := ParseFile.call;
+  Refine.Import.get_ast_fn := RefineFile.call;

@@ -37,7 +37,8 @@ let rec typecheck_tl_node env node =
   let Ast.{span; item : toplevel} = node in match item with
     | TL_Declaration (n, t) ->
       let t' = parse_type t.item in
-      Env.extend_var env n t', mk span (TL_Declaration (n, t'))
+      let env' = Env.extend_var env n t' in
+      env', mk span (TL_Declaration (n, t'))
 
     | TL_Definition {patt; expr} ->
       (* TODO: check and unify with declarations *)
@@ -50,9 +51,9 @@ let rec typecheck_tl_node env node =
       env', mk span (TL_Definition {patt=patt'; expr=expr''}) 
     
     | TL_Section (n, tls) ->
-      let tls' = typecheck env tls in
-      (* TODO: extend env with section n *)
-      env, mk span (TL_Section (n, tls'))
+      let env', tls' = typecheck env tls in
+      let env'' = Env.extend_sect env' n env' in
+      env'', mk span (TL_Section (n, tls'))
 
     | TL_Link (_, tl) ->
       let env', tl' = typecheck_tl_node env tl in
@@ -68,5 +69,5 @@ and typecheck env (ast : ast) =
         go env' (acc @ [hd']) tl
       | _ -> env, acc
   in
-  let _env', tast = go env [] ast in
-  tast
+  let env', tast = go env [] ast in
+  env', tast

@@ -19,6 +19,10 @@ let rec from_ident = function
   | Parse.Ident.Ident i -> Ident i
   | Parse.Ident.Cons (is, i) -> Cons (from_ident is, i)
 
+let rec to_list = function
+  | Ident s -> [s]
+  | Cons (p, s) -> to_list p @ [s]
+
 let last p =
   let Ident s | Cons (_, s) = p 
   in s

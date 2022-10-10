@@ -1,4 +1,4 @@
-#std::io
+#section::id => my_id
 
 main: Str -> Str.
-@main = io::puts "test".
+@main = my_id "test".

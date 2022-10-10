@@ -41,6 +41,7 @@ type type_error =
   | Expected_funtion of string (*+type*)
   | Recursive_type
   | Use_of_unbound of string * string (*+symbol*)
+  | Failed_to_resolve of string (*+symbol*)
   | Could_not_infer (*+type*)
   
 let get_type_error_msg = function
@@ -48,21 +49,22 @@ let get_type_error_msg = function
   | Expected_funtion g    -> f "expected a function type but found type `%s`" g
   | Recursive_type        -> f "recursive type"
   | Use_of_unbound (t, w) -> f "use of unbound %s `%s`" t w
+  | Failed_to_resolve w   -> f "failed to resolve `%s`" w
   | Could_not_infer       -> f "could not infer type"
 
 (* Other errors *)
 
 type other_error =
   | Could_not_open of string (*+file*)
+  | Cannot_import_dir of string (*+\bectory*)
   | Could_not_compile of string (*+file*)
-  | Failed_to_resolve of string (*+symbol*)
   | Failed_to_import of string (*+symbol*)
   | Cannot_explain of int (*+error code*)
 
 let get_other_error_msg = function
   | Could_not_open w    -> f "could not open file '%s'" w
+  | Cannot_import_dir w -> f "cannot import directory '%s'" w
   | Could_not_compile w -> f "could not compile '%s' due to previous error" w
-  | Failed_to_resolve w -> f "failed to resolve `%s`" w
   | Failed_to_import w  -> f "failed to import `%s`" w
   | Cannot_explain w    -> f "cannot explain invalid error code E%03d" w
 

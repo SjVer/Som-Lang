@@ -211,12 +211,12 @@ let rec infer_expr ?(level=0) env exp =
       in mk s t (EX_Literal l')
     
     | EX_Identifier {span; item} ->
-      let path = Path.from_ident item in (* TODO: resolve path *)
-      let name = Path.to_string path in
+      let path = Path.from_ident item in
       begin try
-        let t = instantiate level (Env.lookup_var env name) in
+        let t = instantiate level (Env.lookup_w_path env path) in
         mk s t (EX_Identifier (mk span t path)) 
       with Not_found ->
+        let name = Path.to_string path in
         error (Use_of_unbound ("variable", name)) (Some span)
       end
 

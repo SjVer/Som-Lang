@@ -34,7 +34,7 @@ let get_file_or_dir path =
   let go prefix =
       let dir = Filename.concat prefix path in
       let file = (dir ^ Config.extension) in
-
+      
       try
         if Sys.is_directory dir then `Dir path
         else assert false
@@ -48,16 +48,18 @@ let get_file_or_dir path =
     | `Not_found -> go Config.include_dir
     | _ as r -> r 
 
-let rec resolve_file acc path =
-  match path with
-    | (hd :: tl) as path -> begin
-        let segment = hd.Parse.Ast.item in
-        match get_file_or_dir (Filename.concat acc segment) with
-          | `Dir d -> resolve_file d tl
-          | `File f -> f, tl
-          | `Not_found -> acc, path
-      end
-    | _ -> acc, []
+let rec resolve_file acc = function
+  | (hd :: tl) as path -> begin
+      let segment = hd.Parse.Ast.item in
+      match get_file_or_dir (Filename.concat acc segment) with
+        | `Dir d -> resolve_file d tl
+        | `File f -> f, tl
+        | `Not_found -> acc, path
+    end
+  | [] ->
+    (* found a directory, not a file *)
+    let open Report.Error in
+    raise_error (Other_error (Cannot_import_dir acc)) None []
 
 (** returns a function that when given
     a string returns a toplevel item
@@ -97,9 +99,9 @@ let desugar ({path; kind} : import) =
   let file, path' = resolve_file "" path in
   let path'' = List.map (fun n -> n.item) path' in
 
-  let symbol =
-    try resolve_symbol file path''
-    with Not_found ->
+  (* TODO: allow importing directories? *)
+
+  let report () =
       let fst = List.hd path' in
       let lst = List.hd (List.rev path') in
       let span = Span.concat_spans fst.span lst.span in
@@ -107,7 +109,13 @@ let desugar ({path; kind} : import) =
 
       let open Report.Error in
       let e = Failed_to_resolve path_str in
-      raise_error (Other_error e) (Some span) []
+      raise_error (Type_error e) (Some span) []
+  in
+  
+  if file = "" then report ();
+  let symbol =
+    try resolve_symbol file path''
+    with Not_found -> report ()
   in
 
   match kind.item with
