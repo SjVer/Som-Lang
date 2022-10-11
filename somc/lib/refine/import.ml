@@ -49,6 +49,11 @@ let get_file_or_dir path =
     | _ as r -> r 
 
 let rec resolve_file acc = function
+  | [] ->
+    (* found a directory, not a file *)
+    let open Report.Error in
+    raise_error (Other_error (Cannot_import_dir acc)) None []
+
   | (hd :: tl) as path -> begin
       let segment = hd.Parse.Ast.item in
       match get_file_or_dir (Filename.concat acc segment) with
@@ -56,10 +61,6 @@ let rec resolve_file acc = function
         | `File f -> f, tl
         | `Not_found -> acc, path
     end
-  | [] ->
-    (* found a directory, not a file *)
-    let open Report.Error in
-    raise_error (Other_error (Cannot_import_dir acc)) None []
 
 (** returns a function that when given
     a string returns a toplevel item
@@ -96,26 +97,34 @@ let resolve_symbol file =
   in go (!get_ast_fn file)
 
 let desugar ({path; kind} : import) =
+  let open Report.Error in
+
   let file, path' = resolve_file "" path in
   let path'' = List.map (fun n -> n.item) path' in
-
+  
   (* TODO: allow importing directories? *)
-
-  let report () =
+  
+  if file = "" then begin
+    let fst = List.hd path in
+    let e = Failed_to_resolve fst.item in
+    raise_error (Type_error e) (Some fst.span) [
+      Printf.sprintf
+        "try adding directory '%s/' or\n\
+        file '%s.som' to the included paths"
+        fst.item fst.item
+    ] 
+  end;
+  
+  let symbol =
+    try resolve_symbol file path''
+    with Not_found ->
       let fst = List.hd path' in
       let lst = List.hd (List.rev path') in
       let span = Span.concat_spans fst.span lst.span in
       let path_str = String.concat "::" path'' in
 
-      let open Report.Error in
       let e = Failed_to_resolve path_str in
       raise_error (Type_error e) (Some span) []
-  in
-  
-  if file = "" then report ();
-  let symbol =
-    try resolve_symbol file path''
-    with Not_found -> report ()
   in
 
   match kind.item with

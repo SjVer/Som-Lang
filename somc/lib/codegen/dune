@@ -1,4 +1,4 @@
 (library
  (name codegen)
- (libraries llvm)
+ (libraries report llvm.scalar_opts llvm.ipo llvm.vectorize)
 )

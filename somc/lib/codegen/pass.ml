@@ -1,3 +1,11 @@
+type pass_func = [`Module] Llvm.PassManager.t -> unit
+
+type t =
+  {
+    name: string;
+    func: pass_func;
+  }
+
 let get_scalar_opts_pass =
   let open Llvm_scalar_opts in function
   | "aggressive-dce" -> Some add_aggressive_dce
@@ -67,15 +75,25 @@ let get_ipo_pass =
 
 (** gets a pass by name or raises [Not_found]
     if it doesn't exist *)
-let get_pass pass =
-  let rec try_get pass = function
-    | [] -> raise Not_found
-    | fn :: fns -> match fn pass with
+let get_pass name =
+  let rec try_get = function
+    | [] ->
+      let open Report in
+      let open Error in
+      let e = Nonexistent_pass name in
+      report (Other_error e) None [
+        "for a list of supported passes go to\n\
+        https://documentation.isnt.written.yet"
+      ];
+      exit 1;
+
+    | fn :: fns -> match fn name with
       | Some pass -> pass
-      | None -> try_get pass fns
+      | None -> try_get fns
   in
-  try_get pass [
+  let func = try_get [
     get_scalar_opts_pass;
     get_vectorize_pass;
     get_ipo_pass;
   ]
+  in {name; func}

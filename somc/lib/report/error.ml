@@ -60,6 +60,7 @@ type other_error =
   | Could_not_compile of string (*+file*)
   | Failed_to_import of string (*+symbol*)
   | Cannot_explain of int (*+error code*)
+  | Nonexistent_pass of string
 
 let get_other_error_msg = function
   | Could_not_open w    -> f "could not open file '%s'" w
@@ -67,6 +68,7 @@ let get_other_error_msg = function
   | Could_not_compile w -> f "could not compile '%s' due to previous error" w
   | Failed_to_import w  -> f "failed to import `%s`" w
   | Cannot_explain w    -> f "cannot explain invalid error code E%03d" w
+  | Nonexistent_pass w  -> f "cannot run nonexistend LLVM pass '%s'" w
 
 (* Types *)
 

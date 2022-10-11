@@ -1,9 +1,4 @@
-(* information configs *)
-
-let name = "somc"
-let usage_msg = name ^ " [options] files..."
-let version_msg = name ^ " 0.1.0"
-let description = "Official Som compiler"
+module Cli = Cli
 
 (* internally used configs *)
 
