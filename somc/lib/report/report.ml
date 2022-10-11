@@ -1,5 +1,5 @@
-module Error = Error
 module Codes = Codes
+module Error = Error
 module Util = Util
 
 open Error
@@ -8,9 +8,7 @@ open Span
 open ANSITerminal
 open Util
 
-let has_reported = ref false
-
-let report_single_line_span span lines digits =
+let report_single_line_span color span lines digits =
   (* print line before *)
   if span.start.line >= 2 then begin
     report_lineno digits (span.start.line - 1);
@@ -26,18 +24,18 @@ let report_single_line_span span lines digits =
   (* print relevant line *)
   report_lineno digits (span.start.line);
   prerr_string [] part_before;
-  prerr_string red part;
+  prerr_string [Bold; Foreground color] part;
   prerr_string [] part_after;
   prerr_newline ();
 
   (* print marking *)
-  report_marking digits line span
+  report_marking digits line color span
 
-let report_double_line_span _ _ _ = ignore
+let report_double_line_span _ _ _ _ = ignore
 
-let report_multi_line_span _ _ _ = ignore
+let report_multi_line_span _ _ _ _ = ignore
 
-let report_span span =
+let report_span color span =
   let lines = read_lines span.file in
   let digits = String.length (string_of_int span.start.line) in
 
@@ -50,17 +48,17 @@ let report_span span =
     | Single_line -> report_single_line_span
     | Double_line -> report_double_line_span
     | Multi_line -> report_multi_line_span
-  in report_fn span lines digits
+  in report_fn color span lines digits
 
 let report_note note =
   prerr_string [Bold] " note: ";
   String.concat "\n       " (String.split_on_char '\n' note)
     |> prerr_endline
 
+(* main functions *)
+
 let report error span notes =
-  (* print leading newline if not the firs report *)
-  if !has_reported then prerr_newline ()
-  else has_reported := true;
+  Util.maybe_newline ();
 
   (* print "somekindof error[code]: msg" *)
   let (header, msg) = get_error_header_and_msg error in
@@ -76,9 +74,26 @@ let report error span notes =
   (* print span if given *)
   let print_tail = List.length notes > 0 in
   begin match span with
-    | Some span -> report_span span print_tail
+    | Some span -> report_span Red span print_tail
     | None -> ()
   end;
 
   (* print notes *)
   List.iter report_note notes
+
+let warning, note =
+  let go color header msg span =
+    if !(Config.Cli.args).mute then ()
+    else begin
+      Util.maybe_newline ();
+      prerr_string [Bold; Foreground color] header;
+      prerr_string [Bold] (": " ^ msg);
+      prerr_newline ();
+      
+      (* print span if given *)
+      match span with
+        | Some span -> report_span color span false
+        | None -> ()
+  end
+  in
+  go Yellow "warning", go Cyan "note"

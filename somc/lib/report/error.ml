@@ -84,9 +84,7 @@ let get_error_header_and_msg = function
   | Type_error e   -> "type error",   get_type_error_msg e
   | Other_error e  -> "error",        get_other_error_msg e
 
-type note = string
-
-exception Error of error * Span.t option * note list
+exception Error of error * Span.t option * string list
 
 let raise_error err span notes = raise (Error (err, span, notes))
 

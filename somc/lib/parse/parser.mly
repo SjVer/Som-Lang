@@ -9,7 +9,7 @@ let raise_error e locs notes =
 
 let unclosed s e what locs =
   raise_error (Unclosed s) locs
-  [Printf.sprintf "try adding '%s' after the enclosed %s" e what]
+  [Printf.sprintf "try adding '%s' after the enclosed %s." e what]
 let expected what locs = raise_error (Expected what) locs []
 
 let mknode locs item = {span = span_from_lexlocs locs false; item }

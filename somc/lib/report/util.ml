@@ -1,6 +1,11 @@
 open Span
 open ANSITerminal
 
+let has_reported = ref false
+let maybe_newline () =
+  if !has_reported then prerr_newline ()
+  else has_reported := true
+
 let f = Printf.sprintf
 
 (* to be set to ReadFile.call *)
@@ -24,7 +29,7 @@ let report_lineno digits line =
   (* print " lineno | " *)
   prerr_string cyan (f " %*d │ " digits line)
 
-let report_marking digits line span print_tail =
+let report_marking digits line color span print_tail =
   let tail = if print_tail then "  │ " else "  ╵ " in
   prerr_string cyan (String.make digits ' ' ^ tail);
 
@@ -35,7 +40,8 @@ let report_marking digits line span print_tail =
   done;
 
   (* actual marking *)
-  prerr_string red "^";
+  let style = [Bold; Foreground color] in
+  prerr_string style "^";
   if span_length span >= 2
-  then prerr_string red (String.make (span_length span - 1) '~');
+  then prerr_string style (String.make (span_length span - 1) '~');
   prerr_newline ()

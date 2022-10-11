@@ -1,9 +1,7 @@
-type pass_func = [`Module] Llvm.PassManager.t -> unit
-
 type t =
   {
     name: string;
-    func: pass_func;
+    func: [`Module] Llvm.PassManager.t -> unit;
   }
 
 let get_scalar_opts_pass =
@@ -83,7 +81,7 @@ let get_pass name =
       let e = Nonexistent_pass name in
       report (Other_error e) None [
         "for a list of supported passes go to\n\
-        https://documentation.isnt.written.yet"
+        https://documentation.isnt.written.yet."
       ];
       exit 1;
 
@@ -97,3 +95,7 @@ let get_pass name =
     get_ipo_pass;
   ]
   in {name; func}
+
+let add_pass pm pass =
+  Report.note ("registering LLVM pass " ^ pass.name) None;
+  pass.func pm

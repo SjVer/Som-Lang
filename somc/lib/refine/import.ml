@@ -110,7 +110,7 @@ let desugar ({path; kind} : import) =
     raise_error (Type_error e) (Some fst.span) [
       Printf.sprintf
         "try adding directory '%s/' or\n\
-        file '%s.som' to the included paths"
+        file '%s.som' to the included paths."
         fst.item fst.item
     ] 
   end;

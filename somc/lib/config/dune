@@ -1,4 +1,3 @@
 (library
  (name config)
- (libraries codegen report clap)
 )
