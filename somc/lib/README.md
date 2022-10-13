@@ -1,5 +1,9 @@
 # Libraries
 
+## analysis/
+
+Responsible for name resolution.
+
 ## codegen/
 
 Responsible for translating ??? into LLVM IR and generating the final binary.
@@ -15,10 +19,6 @@ Responsible for opening, lexing and parsing source files into an AST.
 ## pipeline/
 
 Contains the compiler queries.
-
-## refine/
-
-Responsible for desugaring, constant folding and closure conversion.
 
 ## report/
 

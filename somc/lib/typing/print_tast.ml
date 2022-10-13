@@ -73,6 +73,9 @@ and print_expr_node i node =
     | EX_Identifier {span=_; item=id; typ=_} ->
       pt i ("EX_Identifier " ^ Path.to_string id) typ span
 
+    | EX_External n ->
+      pt i ("EX_External " ^ n) typ span
+
     | EX_Error -> pt i "EX_Error" typ span
 
 and print_toplevel_node i node =
@@ -88,19 +91,29 @@ and print_toplevel_node i node =
 
     | TL_Section (n, tast) ->
       p i ("TL_Section " ^ n) span;
-      print_toplevel (i + 1) tast
+      print_tast (i + 1) tast
 
-and print_toplevel i nodes =
+and print_tast i nodes =
+  let first = ref true in
+
+  let go i (tl: toplevel node) =
+    if Span.is_in_stdlib tl.span then ()
+    else begin
+      print_toplevel_node i tl;
+      if !first then first := false
+      else print_newline ()
+    end
+  in
+
   match nodes with
   | [] -> ()
-  | [n] -> print_toplevel_node i n
+  | [n] -> go i n
   | n :: ns ->
-    print_toplevel_node i n;
-    print_newline ();
-    print_toplevel i ns
+    go i n;
+    print_tast i ns
 
 (* expose functions *)
 
 let print_expr_node = print_expr_node 0
 let print_toplevel_node = print_toplevel_node 0
-let print_toplevel = print_toplevel 0
+let print_tast = print_tast 0

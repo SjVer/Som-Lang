@@ -1,3 +1,4 @@
-#std::io
+#std/io
 
-@id x = x.
+@int = 1.
+@char = 'c'.

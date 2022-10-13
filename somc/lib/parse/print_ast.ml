@@ -121,8 +121,11 @@ and print_expr_node i node =
     | EX_Literal l ->
       p i ("EX_Literal " ^ show_literal l) span
     
-  | EX_Identifier {span = _; item = id} ->
-    p i ("EX_Identifier " ^ Ident.to_string id) span
+    | EX_Identifier {span = _; item = id} ->
+      p i ("EX_Identifier " ^ Ident.to_string id) span
+    
+    | EX_External n ->
+      p i ("EX_External " ^ n) span
 
 and print_import_kind_node' i node =
   let {span; item} = node in
@@ -132,7 +135,7 @@ and print_import_kind_node' i node =
     | IK_Rename n -> p i ("IK_Rename " ^ n) span
     | IK_Nested is -> p i "IK_Nested" span;
       List.iter (
-        fun {span; item = {path; kind}} ->
+        fun {span; item = {dir=_; path; kind}} ->
           p (i + 1) (show_path path) span;
           print_import_kind_node' (i + 2) kind
         ) is
@@ -157,30 +160,44 @@ and print_toplevel_node i node =
       p i ("TL_Type_Definition " ^ name) span;
       print_type_node (i + 1) d.typ
 
-    | TL_Import {path; kind} ->
-      p i ("TL_Import " ^ show_path path) span;
+    | TL_Import {dir; path; kind} ->
+      let dir' = match dir with
+        | [] -> ""
+        | l -> String.concat "/" l ^ "/"
+      in
+      p i ("TL_Import " ^ dir' ^ show_path path) span;
       print_import_kind_node' (i + 1) kind
 
     | TL_Section (n, ast) ->
       p i ("TL_Section " ^ n) span;
-      print_toplevel (i + 1) ast
-      
+      print_ast (i + 1) ast
+    
     | TL_Link (n, tl) ->
       p i ("TL_Link " ^ n) span;
       print_toplevel_node (i + 1) tl
 
-and print_toplevel i nodes =
+and print_ast i nodes =
+  let first = ref true in
+
+  let go i tl =
+    if Span.is_in_stdlib tl.span then ()
+    else begin
+      print_toplevel_node i tl;
+      if !first then first := false
+      else print_newline ()
+    end
+  in
+
   match nodes with
-    | [] -> ()
-    | [n] -> print_toplevel_node i n
-    | n :: ns ->
-      print_toplevel_node i n;
-      print_newline ();
-      print_toplevel i ns 
+  | [] -> ()
+  | [n] -> go i n
+  | n :: ns ->
+    go i n;
+    print_ast i ns
 
 (* expose functions *)
 
 let print_expr_node = print_expr_node 0
 let print_type_node = print_type_node 0
 let print_toplevel_node = print_toplevel_node 0
-let print_toplevel = print_toplevel 0
+let print_ast = print_ast 0

@@ -21,21 +21,21 @@ module ParseFile = Query.Make(struct
   let c f =
     let source = ReadFile.call f in
     Parse.parse f source
-end)
+  end)
 
-module RefineFile = Query.Make(struct
+  module AnalyzeFile = Query.Make(struct
   type a = string
   type r = Parse.Ast.ast
   let c f =
     let ast = ParseFile.call f in
-    Refine.desugar ast
+    Analysis.check ast
 end)
 
 module TypecheckFile = Query.Make(struct
   type a = string
   type r = Typing.TAst.tast
   let c f =
-    let ast = RefineFile.call f in
+    let ast = AnalyzeFile.call f in
     let _, tast = Typing.typecheck Typing.Env.empty ast in
     tast
 end)
@@ -44,4 +44,4 @@ end)
    have to solve dependency cycles *)
 let _ =
   Report.Util.read_file_fn := ReadFile.call;
-  Refine.Import.get_ast_fn := RefineFile.call;
+  Analysis.Name_res.get_ast_fn := AnalyzeFile.call;

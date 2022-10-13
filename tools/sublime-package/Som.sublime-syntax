@@ -8,8 +8,8 @@ fileTypes: [som]
 scope: source.som
 
 variables:
-  lname: '\b_?[a-z][A-Za-z_0-9]*\b'
-  uname: '\b_?[A-Z][A-Za-z_0-9]*\b'
+  lname: '\b_*[a-z][A-Za-z_0-9]*\b'
+  uname: '\b_*[A-Z][A-Za-z_0-9]*\b'
   pname: \'{{lname}}(?!\')
 
   # numbers
@@ -88,7 +88,7 @@ contexts:
         2: variable.annotation.som
 
   import:
-    - match: \#\s*(?={{lname}})
+    - match: \#\s*(?={{lname}}|{{uname}})
       scope: keyword.import.som
       push: import_finish
 
@@ -109,7 +109,7 @@ contexts:
             2: entity.name.namespace.som
           pop: true
 
-        - match: '::'
+        - match: '::|\/'
           scope: punctuation.accessor.som
           set: import_finish
 

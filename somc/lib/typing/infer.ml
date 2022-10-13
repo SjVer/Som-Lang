@@ -135,7 +135,7 @@ let infer_patt ?(level=0) env patt =
   match patt with
     | PA_Variable v ->
       let v' = new_var level in
-      let env' = Env.extend_var env v v' in
+      let env' = Env.add_symbol env v v' in
       env', mk s v' (PA_Variable v)
     | PA_Wildcard -> env, mk s (new_var level) PA_Wildcard
 
@@ -213,12 +213,22 @@ let rec infer_expr ?(level=0) env exp =
     | EX_Identifier {span; item} ->
       let path = Path.from_ident item in
       begin try
-        let t = instantiate level (Env.lookup_w_path env path) in
+        let t = instantiate level (Env.get_w_path env path) in
         mk s t (EX_Identifier (mk span t path)) 
       with Not_found ->
         let name = Path.to_string path in
         error (Use_of_unbound ("variable", name)) (Some span)
       end
+
+    | EX_External n ->
+      let t = begin try
+        instantiate level (Env.SMap.find n !Env.externals)
+      with Not_found ->
+        let t' = new_var level in
+        Env.externals := Env.SMap.add n t' !Env.externals;
+        t'
+      end in
+      mk s t (EX_External n)
 
 (* helper functions *)
 

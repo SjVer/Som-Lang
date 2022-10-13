@@ -92,7 +92,7 @@ let () =
 
 (* entrypoint *)
 let () =
-  Typing.PrintTAst.print_toplevel (
+  Typing.PrintTAst.print_tast (
     Pipeline.TypecheckFile.call
       (!Config.Cli.args).file
   );

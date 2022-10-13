@@ -14,7 +14,6 @@ and 'a tnode =
 and toplevel =
   | TL_Declaration of string * Types.t
   | TL_Definition of value_binding
-  (* | TL_Type_Definition of  *)
   | TL_Section of string * tast
 
 and value_binding =
@@ -41,6 +40,7 @@ and expr =
   | EX_Construct of Path.t tnode * expr tnode option
   | EX_Literal of literal
   | EX_Identifier of Path.t tnode
+  | EX_External of string
   | EX_Error
 
 and literal =

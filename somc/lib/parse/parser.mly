@@ -15,7 +15,7 @@ let expected what locs = raise_error (Expected what) locs []
 let mknode locs item = {span = span_from_lexlocs locs false; item }
 let mkgnode locs item = {span = span_from_lexlocs locs true; item }
 let mkbind patt expr = {patt; expr}
-let mkimp path kind = {path; kind}
+let mkimp dir path kind = {dir; path; kind}
 let mktypdecl name params typ = {name; params; typ}
 let mkgop locs name = 
   let identif = Ident.from_list ["std"; "ops"; name]
@@ -201,10 +201,22 @@ type_definition_body:
 
 // ======================== import helpers ========================
 
-import_body:
+import_body: import_body_ { let (d, p, k) = $1 in mkimp d p k }
+import_body_:
+  | import_rest { let (p, k) = $1 in [], p, k }
+  | import_dir_segment import_body_
+    { let (d, p, k) = $2 in $1 :: d, p, k } 
+;
+
+%inline import_dir_segment:
+  | LOWERNAME SLASH { $1 }
+  | UPPERNAME SLASH { $1 }
+;
+
+import_rest:
   // don't question the mess. accept that it (and nothing else) works.
-  | snel(DBL_COLON, path_segment) noncolon_import_kind { mkimp $1 $2 }
-  | list(path_segment DBL_COLON {$1}) colon_import_kind { mkimp $1 $2 }
+  | snel(DBL_COLON, path_segment) noncolon_import_kind { $1, $2 }
+  | list(path_segment DBL_COLON {$1}) colon_import_kind { $1, $2 }
 ;
 
 %inline path_segment: LOWERNAME { mknode $sloc $1 };
@@ -231,7 +243,7 @@ import_body:
 binding(EXPR): AT pattern strict_binding(EXPR) { mkbind $2 $3 };
 
 strict_binding(EXPR):
-  | simple_pattern strict_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
+  | pattern strict_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
   | EQUAL EXPR { $2 }
   | error { expected "a pattern or '='" $sloc }
 ;
@@ -332,6 +344,7 @@ single_expr:
   | EMPTYPARENS { mknode $sloc (EX_Literal LI_Nil) }
 
   | lower_longident { mknode $sloc (EX_Identifier $1) }
+  | HASH LOWERNAME { mknode $sloc (EX_External $2) }
 
   // | directive { mknode $sloc (EX_Directive $1) }
 ;

@@ -3,7 +3,7 @@ type ast = toplevel node list
 and 'a node =
   {
     span: Span.t;
-    item: 'a
+    item: 'a;
   }
 
 (* ====================== Toplevel ===================== *)
@@ -33,6 +33,7 @@ and type_definition =
 
 and import =
   {
+    dir: string list;
     path: string node list;
     kind: import_kind node;
   } 
@@ -63,6 +64,7 @@ and expr =
   | EX_Construct of Ident.t node * expr node option (** `String expr` *)
   | EX_Literal of literal (** `literal` *)
   | EX_Identifier of Ident.t node (** `variable` *)
+  | EX_External of string (** `#string` *)
 
 and literal =
   | LI_Int of int

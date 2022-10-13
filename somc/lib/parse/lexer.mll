@@ -44,8 +44,8 @@ let prime = '\''
 let alpha = ['a'-'z' 'A'-'Z' '0'-'9' '_']
 let digit = ['0'-'9']
 
-let lower_name = '_'? ['a'-'z'] alpha*
-let upper_name = '_'? ['A'-'Z'] alpha*
+let lower_name = '_'* ['a'-'z'] alpha*
+let upper_name = '_'* ['A'-'Z'] alpha*
 
 let b_int = '0' ('b'|'B') ('0' | '1')+
 let o_int = '0' ('c'|'C') ['0'-'7']+

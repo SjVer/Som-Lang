@@ -11,12 +11,13 @@ let parse file source =
   try
     lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname = file};
     Parser.prog Lexer.main lexbuf
+
   with
-  | Error (e, s, n) ->
-    Report.report e s n;
-    Report.report (Other_error (Could_not_compile file)) None [];
-    exit 1
-  | Parser.Error ->
-    let span = span_from_lexbuf lexbuf false in
-    Report.report (Syntax_error Unexpected) (Some span) [];
-    exit 1
+    | Error (e, s, n) ->
+      Report.report e s n;
+      Report.report (Other_error (Could_not_compile file)) None [];
+      exit 1
+    | Parser.Error ->
+      let span = span_from_lexbuf lexbuf false in
+      Report.report (Syntax_error Unexpected) (Some span) [];
+      exit 1

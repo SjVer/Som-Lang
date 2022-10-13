@@ -1,4 +1,4 @@
 (library
   (name pipeline)
-  (libraries report parse typing refine)
+  (libraries report parse analysis typing)
 )

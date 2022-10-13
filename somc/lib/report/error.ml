@@ -24,14 +24,12 @@ type syntax_error =
   | Expected of string (*+token*)
   | Unexpected (*+token*)
   | Unclosed of string (*+token*)
-  | Duplicate_parameter of string
   | Other of string (*+syntax error*)
   
 let get_syntax_error_msg = function
   | Expected w            -> f "expected %s" w
   | Unexpected            -> f "unexpected token"
   | Unclosed w            -> f "unclosed '%s'" w
-  | Duplicate_parameter w -> f "duplicate parameter `%s`" w
   | Other w               -> w
   
 (* Type errors *)
@@ -42,6 +40,7 @@ type type_error =
   | Recursive_type
   | Use_of_unbound of string * string (*+symbol*)
   | Failed_to_resolve of string (*+symbol*)
+  | Cannot_import_from of string (*+non-module symbol*)
   | Could_not_infer (*+type*)
   
 let get_type_error_msg = function
@@ -50,6 +49,7 @@ let get_type_error_msg = function
   | Recursive_type        -> f "recursive type"
   | Use_of_unbound (t, w) -> f "use of unbound %s `%s`" t w
   | Failed_to_resolve w   -> f "failed to resolve `%s`" w
+  | Cannot_import_from w  -> f "cannot import from non-module symbol `%s`" w
   | Could_not_infer       -> f "could not infer type"
 
 (* Other errors *)

@@ -24,7 +24,7 @@ let show_prim =
       let s' = if s then 's' else 'u' in
       f "$i.%c.%d" s' w
     | PFloat w -> f "$f.%d" w
-    | PVoid -> "%v"
+    | PVoid -> "$v"
 
 let show_type ty debug =
   let vnames = Hashtbl.create 10 in

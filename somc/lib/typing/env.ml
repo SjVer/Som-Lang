@@ -2,29 +2,33 @@ module SMap = Map.Make(String)
 
 type t =
   {
-    vars: Types.t SMap.t;
-    sects: t SMap.t;
+    symbols: Types.t SMap.t; (* types of variables *)
+    aliases: Types.t SMap.t; (* type aliases *)
+    sections: t SMap.t;
     (* classes: string list SMap.t; *)
   }
 
 let empty =
   {
-    vars=SMap.empty;
-    sects=SMap.empty;
+    symbols=SMap.empty;
+    aliases=SMap.empty;
+    sections=SMap.empty;
   }
 
-let extend_var env name typ =
-  {env with vars=SMap.add name typ env.vars}
-let extend_sect env name sect =
-  {env with sects=SMap.add name sect env.sects}
+let add_symbol  e n t = {e with symbols=SMap.add n t e.symbols}
+let add_alias   e n t = {e with aliases=SMap.add n t e.aliases}
+let add_section e n s = {e with sections=SMap.add n s e.sections}
 
-let lookup_var env name = SMap.find name env.vars
-let lookup_sect env name = SMap.find name env.sects
+let get_symbol  e n = SMap.find n e.symbols
+let get_alias   e n = SMap.find n e.aliases
+let get_section e n = SMap.find n e.sections
 
-let lookup_w_path env path =
+let get_w_path env path =
   let rec go env' = function
-    | [n] -> lookup_var env' n
-    | n :: ns -> go (lookup_sect env' n) ns
+    | [n] -> get_symbol env' n
+    | n :: ns -> go (get_section env' n) ns
     | [] -> assert false
   in
   go env (Path.to_list path)
+
+let externals : Types.t SMap.t ref = ref SMap.empty

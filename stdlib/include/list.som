@@ -25,30 +25,31 @@
     SOFTWARE.
 ---
 
-!!.warn_redef "redefinition may break stdlib"
+-- !!.stdlib
+-- !!.warn_redef "redefinition may break stdlib"
 
-'a List = empty | cons 'a; 'a List.
+'a List := empty | cons 'a; 'a List.
 
 concat: 'a List -> 'a List -> 'a List.
-concat l1 l2 = l1 ??
+@concat l1 l2 = l1 ??
   empty -> l2,
   cons (lh; lr) -> cons (lh; concat lr l2).
 
 append: 'a List -> 'a -> 'a List.
-append l x = concat l (cons (x; empty)).
+@append l x = concat l (cons (x; empty)).
 
 rev_concat: 'a List -> 'a List -> 'a List.
-rev_concat acc l = l ??
+@rev_concat acc l = l ??
   empty -> acc,
   cons (lh; lr) -> rev_concat (cons (lh; acc)) lr.
 
 rev: 'a List -> 'a List.
-rev l = rev_concat empty l.
+@rev l = rev_concat empty l.
 
 prepend: 'a List -> 'a -> 'a List.
-prepend l x = rev_concat l (cons (x; empty)).
+@prepend l x = rev_concat l (cons (x; empty)).
 
 map: ('a -> 'b) -> 'a List -> 'b List.
-map f l = l ??
+@map f l = l ??
   empty -> empty,
   cons (lh; lr) -> cons (f lh; map f lr).
