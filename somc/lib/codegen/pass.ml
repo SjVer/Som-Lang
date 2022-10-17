@@ -78,11 +78,14 @@ let get_pass name =
     | [] ->
       let open Report in
       let open Error in
-      let e = Nonexistent_pass name in
-      report (Other_error e) None [
-        "for a list of supported passes go to\n\
-        https://documentation.isnt.written.yet."
-      ];
+      report {
+        error=Other_error (Nonexistent_pass name);
+        span=None;
+        notes=[
+          "for a list of supported passes go to\n\
+          https://documentation.isnt.written.yet."
+        ];
+      };
       exit 1;
 
     | fn :: fns -> match fn name with

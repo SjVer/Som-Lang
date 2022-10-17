@@ -20,7 +20,8 @@ let explain_ecode code =
     Printf.printf "%s error E%03d:%s\n" kind code name;
     exit 0
   | None ->
-    report (Error.Other_error (Error.Cannot_explain code)) None [];
+    let open Error in
+    report (simple (Other_error (Error.Cannot_explain code)));
     exit 1
       
 (* cli parsing & entrypoint *)

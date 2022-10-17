@@ -1,7 +1,6 @@
 ---
-	Module std/prelude
-	Standard module implicitly imported by default into all Som modules unless
-	explicitly disabled using the `no_prelude` or `no_stdlib` directive.
+	Module std/ops
+	Standard module containing functions for basic operators.
 
 	This file is part of the Som standard library.
 
@@ -29,33 +28,52 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
--- private imports
--- #std/io::{
--- 	stderr => _stderr,
--- 	putsf => _putsf
--- }
+-- arithmetic ops
 
--- public imports
-#std/types::*
--- #std/str::{Str, fmt}
--- #std/list::List
-#std/ops
+add: Int -> Int -> Int.
+@add a b = #_som_std_ops_add a b.
 
--- terminates the calling process immeddiately with the given status
--- !!no_return
-exit: Int -> !.
-@exit status = #_som_std_prelude_exit status.
+sub: Int -> Int -> Int.
+@sub a b = #_som_std_ops_sub a b.
 
--- checks if the given condition is true and if it isn't terminates
--- the calling process with the given error message
--- assert: Bln Str -> !.
--- assert cond msg =
--- 	cond ? () :
--- 		_putsf _stderr (fmt "Assertion failed: {}" msg),
---         exit 1.
+mul: Int -> Int -> Int.
+@mul a b = #_som_std_ops_mul a b.
 
--- declaration to enforce correct signature
--- and warn if the function isn't defined
--- !!warn_no_def
--- !!no_mangle
--- main: Str List -> !Int.
+div: Int -> Int -> Int.
+@div a b = #_som_std_ops_div a b.
+
+pow: Int -> Int -> Int.
+@pow a b = #_som_std_ops_pow a b.
+
+mod: Int -> Int -> Int.
+@mod a b = #_som_std_ops_mod a b.
+
+-- logical ops
+
+
+and: Bln -> Bln -> Bln.
+@and a b = #_som_std_ops_and a b.
+
+xor: Bln -> Bln -> Bln.
+@xor a b = #_som_std_ops_xor a b.
+
+or: Bln -> Bln -> Bln.
+@or a b = #_som_std_ops_or a b.
+
+-- comparison ops
+
+eq: Int -> Int -> Bln.
+@eq a b = #_som_std_ops_eq a b.
+
+gr: Int -> Int -> Bln.
+@gr a b = #_som_std_ops_gr a b.
+
+gre: Int -> Int -> Bln.
+@gre a b = or (gr a b) (eq a b).
+-- @gre a b = (gr a b) ? 1 : (eq a b).
+
+ls: Int -> Int -> Bln.
+@ls a b = #_som_std_ops_ls a b.
+
+lse: Int -> Int -> Bln.
+@lse a b = or (ls a b) (eq a b).

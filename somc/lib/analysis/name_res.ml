@@ -85,6 +85,7 @@ let resolve_symbol ast =
     | TL_Definition b -> (match b.patt.item with
       | PA_Variable n -> n
       | _ -> "")
+    | TL_Type_Definition d -> d.name.item
     | TL_Section (n, _) -> n
     | _ -> ""
   in
@@ -154,7 +155,7 @@ let resolve_import names ({dir; path; kind} : import) s =
 let resolve =
   let names = ref [] in
   (* execute on each toplevel node *)
-  let go node =
+  let go (node: toplevel node) =
     let ret_gh i =
       {
         span={node.span with ghost=true};
@@ -166,8 +167,8 @@ let resolve =
         let new_tls = resolve_import names i node.span in
         List.map ret_gh new_tls
       | _ -> [node]
-    with Error (e, s, n) ->
-      Report.report e s n;
+    with Error e ->
+      Report.report e;
       [node]
   in
   let rec go' ast = function

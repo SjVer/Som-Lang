@@ -18,11 +18,11 @@ let mkbind patt expr = {patt; expr}
 let mkimp dir path kind = {dir; path; kind}
 let mktypdecl name params typ = {name; params; typ}
 let mkgop locs name = 
-  let identif = Ident.from_list ["std"; "ops"; name]
+  let identif = Ident.from_list ["ops"; name]
   in EX_Identifier (mkgnode locs identif)
 
-let nil_constr = Ident.from_list ["std"; "list"; "Nil"]
-let cons_constr = Ident.from_list ["std"; "list"; "Cons"]
+let nil_constr = Ident.from_list ["list"; "Nil"]
+let cons_constr = Ident.from_list ["list"; "Cons"]
 
 let rec mkglist endlocs = function
   | [] -> 
@@ -219,7 +219,10 @@ import_rest:
   | list(path_segment DBL_COLON {$1}) colon_import_kind { $1, $2 }
 ;
 
-%inline path_segment: LOWERNAME { mknode $sloc $1 };
+%inline path_segment:
+  | LOWERNAME { mknode $sloc $1 }
+  | UPPERNAME { mknode $sloc $1 }
+;
 
 %inline noncolon_import_kind:
   | /* empty */ { mknode $sloc IK_Simple }
@@ -313,21 +316,26 @@ base_expr:
   | SLASH         { "div" }
   | CARET         { "pow" }
   | MODULO        { "mod" }
+  | DBL_AMPERSAND { "and" }
+  | DBL_CARET     { "xor" }
+  | DBL_PIPE      { "or"  }
+  | EQUAL         { "eq"  }
+  | NOTEQUAL      { "neq" }
   | GREATER       { "gr"  }
   | GREATEREQUAL  { "gre" }
   | LESSER        { "ls"  }
   | LESSEREQUAL   { "lse" }
-  | EQUAL         { "eq"  }
-  | NOTEQUAL      { "neq" }
-  | DBL_AMPERSAND { "and" }
-  | DBL_CARET     { "xor" }
-  | DBL_PIPE      { "or"  }
 ;
 
 %inline unary_op: unary_op_ { mkgop $sloc $1 }
 %inline unary_op_:
   | MINUS { "neg" }
   | BANG  { "not" }
+;
+
+%inline operator:
+  | infix_op { $1 }
+  // | unary_op { $1 }
 ;
 
 single_expr:
@@ -343,6 +351,8 @@ single_expr:
   | CHARACTER { mknode $sloc (EX_Literal (LI_Char $1)) }
   | EMPTYPARENS { mknode $sloc (EX_Literal LI_Nil) }
 
+  | LPAREN operator RPAREN { mknode $sloc $2 }
+  | LPAREN operator error { unclosed "(" ")" "operator" $loc($1) }
   | lower_longident { mknode $sloc (EX_Identifier $1) }
   | HASH LOWERNAME { mknode $sloc (EX_External $2) }
 

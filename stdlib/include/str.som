@@ -1,5 +1,5 @@
 ---
-	Module std::str
+	Module std/str
 	Standard module containing the basic Str type as well as functions for
 	performing operations on- and with strings.
 
@@ -29,7 +29,7 @@
 -- !!.stdlib
 !!.warn_redef "redefinition may break stdlib"
 
-#std::list::List => _List
+#std/list::List => _List
 
 Str := $i.u.8 Array.
 

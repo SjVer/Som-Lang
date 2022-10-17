@@ -43,8 +43,8 @@ contexts:
     - include: import
     - include: typedef
     - include: type
-    - include: definition
     - include: declaration
+    - include: definition
     - include: expression
     - include: invalid
 
@@ -222,16 +222,16 @@ contexts:
   #         pop: true
 
   declaration:
-    - match: ({{lname}})\s*(\[)(?=.*\]\s*:(?!:))
-      captures:
-        1: entity.name.function.som
-        2: punctuation.section.brackets.begin.som
+    # - match: ({{lname}})\s*(\[)(?=.*\]\s*:(?!:))
+    #   captures:
+    #     1: entity.name.function.som
+    #     2: punctuation.section.brackets.begin.som
 
-      embed: generic_embedded
-      escape: (\])\s*(:(?!:))?
-      escape_captures:
-        1: punctuation.section.brackets.end.som
-        2: punctuation.separator.som
+    #   embed: generic_embedded
+    #   escape: (\])\s*(:(?!:))?
+    #   escape_captures:
+    #     1: punctuation.section.brackets.end.som
+    #     2: punctuation.separator.som
 
     - match: ({{lname}})\s*(:(?!:))
       captures:

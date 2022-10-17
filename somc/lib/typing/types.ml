@@ -26,20 +26,20 @@ let show_prim =
     | PFloat w -> f "$f.%d" w
     | PVoid -> "$v"
 
-let show_type ty debug =
-  let vnames = Hashtbl.create 10 in
+let show ty debug =
+  let gnames = Hashtbl.create 10 in
   let unames = Hashtbl.create 10 in
-	let vcount = ref 0 in
+	let gcount = ref 0 in
 	let ucount = ref 0 in
 	let next_name t =
     let i = match t with
-      | `V -> incr vcount; !vcount - 1
+      | `G -> incr gcount; !gcount - 1
       | `U -> incr ucount; !ucount - 1
     in
     let name = String.make 1 (Char.chr (97 + i mod 26)) ^
 			if i >= 26 then string_of_int (i / 26) else ""
     in match t with
-      | `V -> "'" ^ name
+      | `G -> "'" ^ name
       | `U -> "'_" ^ name
 	in
   let do_var t map id =
@@ -56,11 +56,9 @@ let show_type ty debug =
   let rec go prim = function
     | TName p -> Path.to_string p
     | TPrim p -> show_prim p
-    | TVar {contents=Unbound (id, _)} ->
-      do_var `U unames id
+    | TVar {contents=Unbound (id, _)} -> do_var `U unames id
     | TVar {contents=Link ty} -> go prim ty
-    | TVar {contents=Generic id} ->
-      do_var `V vnames id
+    | TVar {contents=Generic id} -> do_var `G gnames id
     | TApp (t1, t2) ->
       ret prim (go false t1 ^ " " ^ go true t2)
     | TEff t -> "!" ^ go true t
@@ -73,8 +71,8 @@ let show_type ty debug =
 
   in
   let ty_str = go false ty in
-  if debug && !vcount > 0 then
-    let names = Hashtbl.fold (fun _ v a -> v :: a) vnames [] in
+  if debug && !gcount > 0 then
+    let names = Hashtbl.fold (fun _ v a -> v :: a) gnames [] in
     String.concat " " (List.sort String.compare names) ^ " . " ^ ty_str
   else
     ty_str

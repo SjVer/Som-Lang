@@ -1,6 +1,6 @@
 -- hello_world.som
 
-#std::io::puts
+#std/io::puts
 
 main args = 
 	puts "Hello World!\n",

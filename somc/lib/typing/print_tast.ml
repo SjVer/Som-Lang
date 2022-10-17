@@ -7,7 +7,7 @@ let p i str span =
   print_newline ()
 let pt i str typ span =
   print_string [] (String.make i '\t' ^ str);
-  print_string [Foreground Cyan] (" : " ^ Types.show_type typ true);
+  print_string [Foreground Cyan] (" : " ^ Types.show typ true);
   print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
   print_newline ()
 
@@ -94,23 +94,22 @@ and print_toplevel_node i node =
       print_tast (i + 1) tast
 
 and print_tast i nodes =
-  let first = ref true in
-
-  let go i (tl: toplevel node) =
+  let f nl i (tl: toplevel node) =
     if Span.is_in_stdlib tl.span then ()
     else begin
-      print_toplevel_node i tl;
-      if !first then first := false
-      else print_newline ()
+      (if nl then print_newline ());
+      print_toplevel_node i tl
     end
   in
 
-  match nodes with
-  | [] -> ()
-  | [n] -> go i n
-  | n :: ns ->
-    go i n;
-    print_tast i ns
+  let rec go nl = function
+    | [] -> ()
+    | [n] -> f nl i n
+    | n :: ns ->
+      f nl i n;
+      go (not (Span.is_in_stdlib n.span)) ns
+
+  in go false nodes
 
 (* expose functions *)
 

@@ -1,7 +1,6 @@
 ---
-	Module std/prelude
-	Standard module implicitly imported by default into all Som modules unless
-	explicitly disabled using the `no_prelude` or `no_stdlib` directive.
+	Module std/types
+	Standard module containing basic type aliases.
 
 	This file is part of the Som standard library.
 
@@ -29,33 +28,14 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
--- private imports
--- #std/io::{
--- 	stderr => _stderr,
--- 	putsf => _putsf
--- }
+-- useful aliases for basic types
 
--- public imports
-#std/types::*
--- #std/str::{Str, fmt}
--- #std/list::List
-#std/ops
-
--- terminates the calling process immeddiately with the given status
--- !!no_return
-exit: Int -> !.
-@exit status = #_som_std_prelude_exit status.
-
--- checks if the given condition is true and if it isn't terminates
--- the calling process with the given error message
--- assert: Bln Str -> !.
--- assert cond msg =
--- 	cond ? () :
--- 		_putsf _stderr (fmt "Assertion failed: {}" msg),
---         exit 1.
-
--- declaration to enforce correct signature
--- and warn if the function isn't defined
--- !!warn_no_def
--- !!no_mangle
--- main: Str List -> !Int.
+Bln := $i.u.1.  -- boolean
+Nyb := $i.u.4.  -- nybble
+Byt := $i.u.8.  -- byte
+Chr := $i.u.8.  -- character
+Int := $i.s.32. -- integer
+Lng := $i.s.64. -- long
+Flt := $f.32.   -- float
+Dbl := $f.64.   -- double
+Nll := $v.      -- null

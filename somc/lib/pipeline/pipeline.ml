@@ -16,18 +16,18 @@ module ReadFile = Query.Make(struct
 end)
 
 module ParseFile = Query.Make(struct
-  type a = string
+  type a = string * bool
   type r = Parse.Ast.ast
-  let c f =
+  let c (f, i) =
     let source = ReadFile.call f in
-    Parse.parse f source
-  end)
+    Parse.parse f source i
+end)
 
-  module AnalyzeFile = Query.Make(struct
-  type a = string
+module AnalyzeFile = Query.Make(struct
+  type a = string * bool
   type r = Parse.Ast.ast
-  let c f =
-    let ast = ParseFile.call f in
+  let c (f, i) =
+    let ast = ParseFile.call (f, i) in
     Analysis.check ast
 end)
 
@@ -35,8 +35,9 @@ module TypecheckFile = Query.Make(struct
   type a = string
   type r = Typing.TAst.tast
   let c f =
-    let ast = AnalyzeFile.call f in
-    let _, tast = Typing.typecheck Typing.Env.empty ast in
+    let ast = AnalyzeFile.call (f, false) in
+    let ast' = Analysis.add_implicit_import_prelude ast in
+    let _, tast = Typing.typecheck Typing.Env.empty ast' in
     tast
 end)
 
@@ -44,4 +45,4 @@ end)
    have to solve dependency cycles *)
 let _ =
   Report.Util.read_file_fn := ReadFile.call;
-  Analysis.Name_res.get_ast_fn := AnalyzeFile.call;
+  Analysis.Name_res.get_ast_fn := fun f -> AnalyzeFile.call (f, true);

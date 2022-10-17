@@ -113,8 +113,8 @@ let rec unify span ty1 ty2 =
     | TTup ts1, TTup ts2 -> List.iter2 (unify span) ts1 ts2
 
     | _ ->
-      let ty1' = show_type (generalize (-1) ty1) false in
-      let ty2' = show_type (generalize (-1) ty2) false in
+      let ty1' = show (generalize (-1) ty1) false in
+      let ty2' = show (generalize (-1) ty2) false in
       error (Expected (ty1', ty2')) (Some span)
 
 (** asserts that the given type is a function type *)
@@ -126,7 +126,7 @@ let rec match_fun_ty span = function
     let return_ty = new_var level in
     tvar := Link (TFun (param_ty, return_ty));
     param_ty, return_ty
-  | t -> error (Expected_funtion (show_type t false)) (Some span)
+  | t -> error (Expected_funtion (show t false)) (Some span)
 
 (* inference functions *)
 
@@ -235,8 +235,8 @@ let rec infer_expr ?(level=0) env exp =
 let infer_expr env e =
   let e' =
     try infer_expr ~level:0 env e
-    with Error (err, s, n) ->
-      Report.report err s n;
+    with Error err ->
+      Report.report err;
       let span = {e.span with Span.ghost=true} in
       mk span (new_var 0) EX_Error
   in set_ty (generalize (-1) e'.typ) e'

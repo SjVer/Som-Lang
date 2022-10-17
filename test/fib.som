@@ -1,5 +1,5 @@
-#std::io::puts
-#std::str::show
+#std/io::puts
+#std/str::show
 
 -- forward decl
 fib: Int -> Int;;

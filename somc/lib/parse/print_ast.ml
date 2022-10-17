@@ -177,23 +177,21 @@ and print_toplevel_node i node =
       print_toplevel_node (i + 1) tl
 
 and print_ast i nodes =
-  let first = ref true in
-
-  let go i tl =
+  let f nl i (tl: toplevel node) =
     if Span.is_in_stdlib tl.span then ()
     else begin
-      print_toplevel_node i tl;
-      if !first then first := false
-      else print_newline ()
+      if nl then print_newline ();
+      print_toplevel_node i tl
     end
   in
 
-  match nodes with
-  | [] -> ()
-  | [n] -> go i n
-  | n :: ns ->
-    go i n;
-    print_ast i ns
+  let rec go nl = function
+    | [] -> ()
+    | [n] -> f nl i n
+    | n :: ns ->
+      f nl i n;
+      go true ns
+  in go false nodes
 
 (* expose functions *)
 

@@ -15,6 +15,17 @@ let empty =
     sections=SMap.empty;
   }
 
+(* returns an env that contains all the bindings
+   that newenv contains but oldenv doesn't contain *)
+let diff oldenv newenv =
+  let f m n _ = not (Option.is_some (SMap.find_opt n m)) in
+  let filter nm om = SMap.filter (f om) nm in
+  {
+    symbols=filter newenv.symbols oldenv.symbols;
+    aliases=filter newenv.aliases oldenv.aliases;
+    sections=filter newenv.sections oldenv.sections;
+  }
+
 let add_symbol  e n t = {e with symbols=SMap.add n t e.symbols}
 let add_alias   e n t = {e with aliases=SMap.add n t e.aliases}
 let add_section e n s = {e with sections=SMap.add n s e.sections}

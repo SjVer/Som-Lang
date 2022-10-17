@@ -1,0 +1,2 @@
+(library
+ (name language_server))

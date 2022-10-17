@@ -19,12 +19,6 @@ let add_implicit_import_prelude ast =
   let tls = Name_res.resolve_import (ref []) import span in
   List.map node tls @ ast
 
-let added_implicit_import = ref false
-
 let check ast =
   let ast' = Name_res.resolve ast in
-
-  if not !added_implicit_import then begin
-    added_implicit_import := true;
-    add_implicit_import_prelude ast'
-  end else ast'
+  ast'

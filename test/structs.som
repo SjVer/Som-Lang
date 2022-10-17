@@ -1,5 +1,5 @@
-#std::io::puts
-#std::str::{fmt, show, Str}
+#std/io::puts
+#std/str::{fmt, show, Str}
 
 Rect = {
 	width: Int

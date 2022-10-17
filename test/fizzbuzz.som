@@ -1,6 +1,6 @@
 -- import some functions
-#std::io::puts
-#std::str::show
+#std/io::puts
+#std/str::show
 
 -- define a custom integer type
 -- of 69 bits just bc we can

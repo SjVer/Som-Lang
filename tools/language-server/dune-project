@@ -1,0 +1,19 @@
+(lang dune 3.4)
+
+(name language_server)
+
+(source
+ (github SjVer/Som-Lang))
+
+(authors "Sjoerd Vermeulen")
+
+(maintainers "Sjoerd Vermeulen")
+
+(license MIT)
+
+(documentation https://github.com/SjVer/Som-Lang)
+
+(package
+ (name language_server)
+ (synopsis "Language server for Som")
+ (depends ocaml dune))

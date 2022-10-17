@@ -55,32 +55,31 @@ let report_note note =
   String.concat "\n       " (String.split_on_char '\n' note)
     |> prerr_endline
 
-(* main functions *)
-
-let report error span notes =
-  Util.maybe_newline ();
-
-  (* print "somekindof error[code]: msg" *)
-  let (header, msg) = get_error_header_and_msg error in
-  prerr_string red header;
-
-  begin match error with Other_error _ -> () | _ ->
-  prerr_string red (f "[E%03d]" (int_from_error error))
-  end;
-
-  prerr_string [Bold] (": " ^ msg);
-  prerr_newline ();
-  
-  (* print span if given *)
+let report_span_and_notes span notes =
   let print_tail = List.length notes > 0 in
   begin match span with
     | Some span -> report_span Red span print_tail
     | None -> ()
   end;
-
-  (* print notes *)
   List.iter report_note notes
 
+(* main functions *)
+
+let report e =
+  Util.maybe_newline ();
+
+  (* print "somekindof error[code]: msg" *)
+  let (header, msg) = get_error_header_and_msg e.error in
+  prerr_string red header;
+
+  begin match e.error with Other_error _ -> () | _ ->
+  prerr_string red (f "[E%03d]" (int_from_error e.error))
+  end;
+
+  prerr_string [Bold] (": " ^ msg);
+  prerr_newline ();
+  report_span_and_notes e.span e.notes
+  
 let warning, note =
   let go color header msg span =
     if !(Config.Cli.args).mute then ()
