@@ -1,6 +1,7 @@
 (lang dune 3.4)
 
 (name language_server)
+(using menhir 2.1)
 
 (source
  (github SjVer/Som-Lang))

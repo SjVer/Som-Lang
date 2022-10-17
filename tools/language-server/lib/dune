@@ -1,2 +1,19 @@
 (library
- (name language_server))
+ (name language_server)
+ (libraries
+  somc
+  logs
+  ; str
+  ; jsonrpc
+  lsp
+  ; lsp.stdune
+  lsp.fiber
+  ; mtime
+  ; mtime.clock.os
+  ; omd
+  ; result
+  ; yojson
+  ; ppx_yojson_conv_lib
+ ))
+
+(vendored_dirs vendor)
