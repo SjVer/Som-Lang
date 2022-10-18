@@ -3,12 +3,5 @@
  (name main)
  (libraries
   language_server
-  ; unix
-  ; cmdliner
-  lsp
   logs
-  ; yojson
-  ; lsp.stdune
-  lsp.fiber
-  lsp.fiber_unix
  ))

@@ -6,7 +6,7 @@ module Log = (val Logs.src_log (Logs.Src.create __MODULE__))
 (** the 'entrypoint's for lsp requests *)
 
 let process_request (type res) _client:
-  res Client_request.t -> (res, JsonError.t) result Fiber.t =
+  res Client_request.t -> (res, JsonError.t) result =
   function
     | Initialize _ ->
       On_init.handle ()
@@ -14,14 +14,14 @@ let process_request (type res) _client:
         code = InternalError;
         message = msg;
         data = None;
-      }) |> Fiber.return
+      })
     | _ ->
       Log.err (fun f -> f "Unknown request");
       Error JsonError.{
         code = InternalError;
         message = "Unknown request";
         data = None
-      } |> Fiber.return
+      }
 
 let handle client req =
   try process_request client req
@@ -33,4 +33,4 @@ let handle client req =
       code = InternalError;
       message = e;
       data = None
-    } |> Fiber.return
+    }
