@@ -1,8 +1,9 @@
 (* properties *)
 
 let name = "somc"
+let version = "0.1.0"
 let usage_msg = name ^ " [options] files..."
-let version_msg = name ^ " 0.1.0"
+let version_msg = name ^ " " ^ version
 let description = "Official Som compiler"
 
 (* global config struct type *)

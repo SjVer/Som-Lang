@@ -25,27 +25,20 @@ type server =
     client: client;
   }
 
-let client io : client =
-  (* let request r =
-    let id = `Int 0 in
-    let r' = Server_request.to_jsonrpc_request r ~id in
-    Io.send io (Jsonrpc.Message {r' with id = Some r'.id});
-    Fiber.return (Ok )
-  in *)
-  let notify n =
-    let n' = Server_notification.to_jsonrpc n in
-    Io.send io (Jsonrpc.Message {n' with id = None})
-  in
-  {
-    (* request; *)
-    notify;
-  }
-
 let make io : server =
+  let client =
+    let notify n =
+      let n' = Server_notification.to_jsonrpc n in
+      Io.send io (Jsonrpc.Message {n' with id = None})
+    in
+    {
+      notify;
+    }
+  in
   {
     request = On_request.handle;
     notify = On_notification.handle;
-    client = client io;
+    client;
   }
 
 (* server stuff *)
@@ -54,11 +47,15 @@ let kind_of_packet =
   let k r = Result.get_ok r in
   
   let open Jsonrpc in function
-    | Message ({id=Some id; method_=_; params=_} as r) ->
-      `Request (id, Client_request.of_jsonrpc {r with id} |> k)
+    | Message {id=None; method_="exit"; params=_} ->
+      `Exit
     | Message ({id=None; method_=_; params=_} as r) ->
       `Notification (Client_notification.of_jsonrpc {r with id=()} |> k)
+    | Message ({id=Some id; method_=_; params=_} as r) ->
+      `Request (id, Client_request.of_jsonrpc {r with id} |> k)
     | Response _ -> failwith "response"
+
+let run_async f = Lwt.async (fun () -> f () |> Lwt.return)
 
 let run io server =
   (* send error with id or do smth with result *)
@@ -69,35 +66,30 @@ let run io server =
       Lsp.Io.send io (Jsonrpc.Response e)
   in
 
-  let process_request id r () =
-    let reply = server.request server.client r in
-    (id, reply) ||| (fun reply' ->
-      let reply_json = Client_request.yojson_of_result r reply' in
-      Lsp.Io.send io (Jsonrpc.Response (Jsonrpc.Response.ok id reply_json))
-    )
-  in
-
-  let run_async f = Lwt.async (fun () -> f () |> Lwt.return) in
-
-  let rec loop shutting_down =
-    match Io.read io with
-    | None -> loop shutting_down
-    | Some p ->
-      try
-        match kind_of_packet p with
-          | `Request (id, Client_request.E r) ->
-            run_async (process_request id r);
-            loop shutting_down
-          | _ ->
-            print_endline "test";
-            loop shutting_down
-      with Invalid_argument _ ->
-        (* if [kind_of_packet] failed *)
-        let e = Jsonrpc.Response.error (`Int 0) {
+  let rec loop () =
+    try match Io.read io with
+      | None -> loop ()
+      | Some p -> match kind_of_packet p with
+        | `Exit -> Log.info (fun f -> f "Received exit")
+        | `Notification n ->
+          begin fun () ->
+            server.notify server.client n
+          end |> run_async |> loop
+        | `Request (id, Client_request.E r) ->
+          begin fun () ->
+            let reply = server.request server.client r in
+            (id, reply) ||| (fun reply' ->
+              let reply_json = Client_request.yojson_of_result r reply' in
+              Lsp.Io.send io (Jsonrpc.Response (Jsonrpc.Response.ok id reply_json))
+            )
+          end |> run_async |> loop
+    with _ ->
+      (* if [kind_of_packet] failed *)
+      let e = Jsonrpc.Response.error (`String "") {
           code = InternalError;
-          message = "idk";
+          message = "Invalid packet";
           data = None;
-        } in
-        Lsp.Io.send io (Jsonrpc.Response e)
+        }
+      in Io.send io (Jsonrpc.Response e) |> loop
       
-  in loop false
+  in loop ()

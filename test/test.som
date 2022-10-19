@@ -1,4 +1,5 @@
 int_id: Int -> Int.
 @int_id x = x.
 
+-- comment
 @main = int_id.

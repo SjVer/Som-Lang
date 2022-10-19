@@ -1,0 +1,181 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Som",
+	"scopeName": "source.som",
+
+	"patterns": [
+		{ "include": "#comment" },
+		{ "include": "#expression" }
+	],
+
+	"repository": {
+		"comment": {
+			"patterns": [
+				{
+					"name": "comment.block.som",
+					"begin": "---",
+					"end": "---"
+				},
+				{
+					"name": "comment.line.som",
+					"match": "--.*$"
+				}
+			]
+		},
+
+		"expression": {
+			"name": "meta.expression.som",
+			"patterns": [
+				{ "include": "#operator" },
+				{ "include": "#number" },
+				{ "include": "#variable" },
+				{ "include": "#string" }
+			]
+		},
+		"operator": {
+			"patterns": [
+				{
+					"name": "keyword.operator.bitwise.shift.som",
+					"match": "<<|>>"
+				},
+				{
+					"name": "keyword.operator.comparison.som",
+					"match": "=|/="
+				},
+				{
+					"name": "keyword.operator.relational.som",
+					"match": "<=|>=|<>|<|>"
+				},
+				{
+					"name": "keyword.operator.logical.som",
+					"match": "\\!|&&|\\|\\||\\^\\^"
+				},
+				{
+					"name": "keyword.operator.bitwise.som",
+					"match": "&|\\|"
+				},
+				{
+					"name": "keyword.operator.arithmetic.som",
+					"match": "\\+|-|\\*|/|\\^|\\%"
+				},
+				{
+					"match": "\\?|:",
+					"name": "keyword.operator.ternary.som"
+				}
+			]
+		},
+		"number": {
+			"patterns": [
+				{
+					"name": "constant.numeric.hexadecimal.som",
+					"match": "\\b0(x|X)[0-f]+\\b"
+				},
+				{
+					"name": "constant.numeric.octal.som",
+					"match": "\\b0(c|C)[0-7]+\\b"
+				},
+				{
+					"name": "constant.numeric.binary.som",
+					"match": "\\b0(b|B)[0-1]+\\b"
+				},
+				{
+					"name": "constant.numeric.decimal.som",
+					"match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+				}
+			]
+		},
+		"variable": {
+			"patterns": [
+				{
+					"match": "\\b(_*[a-z][A-Za-z_0-9]*)\\s*(\\:\\:)",
+					"captures": {
+						"1": { "name": "entity.name.section.som" },
+						"2": { "name": "punctuation.accessor.double-colon.som" }
+					}
+				},
+				{
+					"match": "\\b_*[a-z][A-Za-z_0-9]*\\'*"
+				},
+				{
+					"match": "\\'_*[a-z][A-Za-z_0-9]*(?!\\')"
+				}
+			]
+		},
+		"string": {
+			"patterns": [
+				{
+					"begin": "\"",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.begin.som"
+						}
+					},
+					"name": "string.quoted.double.som",
+					"patterns": [
+						{
+							"include": "#string_escaped_char"
+						},
+						{
+							"include": "#string_placeholder"
+						}
+					],
+					"end": "\"",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.end.som"
+						}
+					}
+				},
+				{
+					"begin": "'",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.begin.som"
+						}
+					},
+					"end": "'",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.string.end.som"
+						}
+					},
+					"name": "string.quoted.single.som",
+					"patterns": [
+						{
+							"include": "#string_escaped_char"
+						}
+					]
+				}
+			]
+		},
+
+		"string_escaped_char": {
+			"patterns": [
+				{
+					"match": "\\\\(a|b|f|n|r|t|v|0|\\\\|'|\")",
+					"name": "constant.character.escape.som"
+				},
+				{
+					"match": "\\\\.",
+					"name": "invalid.illegal.unknown-escape.som"
+				}
+			]
+		},
+		"string_placeholder": {
+			"patterns": [
+				{
+					"match": "%(d|s|f|c)",
+					"name": "constant.other.placeholder.som"
+				},
+				{
+					"match": "(%)(?!\"\\s*(PRI|SCN))",
+					"captures": {
+						"1": {
+							"name": "invalid.illegal.placeholder.som"
+						}
+					}
+				}
+			]
+		}
+	}
+}

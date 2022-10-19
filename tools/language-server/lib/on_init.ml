@@ -26,7 +26,7 @@ let init_info =
       ()
   in
   InitializeResult.create
-    ~serverInfo:{ name = "som-lsp"; version = Some "%%VERSION%%" }
+    ~serverInfo:{ name = "som-lsp"; version = Some Somc.Config.Cli.version }
     ~capabilities ()
 
 let handle () = Ok init_info

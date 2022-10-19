@@ -12,7 +12,7 @@
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}"
             ],
-            "preLaunchTask": "grammar",
+            "preLaunchTask": "prepare",
             
         }
     ]
