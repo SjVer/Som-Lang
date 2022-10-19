@@ -1,6 +1,15 @@
 open Lsp
 module JSonError = Jsonrpc.Response.Error
 
+(* log stuff *)
+
+module Log = (val Logs.src_log (Logs.Src.create "som-lsp"))
+
+let setup_log () =
+  Logs.set_reporter (Logs.format_reporter ());
+  Logs.set_level (Some Logs.Info);
+  Log.info (fun f -> f "Initialized logging")
+
 (* type stuff *)
 
 type client =
@@ -32,7 +41,7 @@ let client io : client =
     notify;
   }
 
-let server io : server =
+let make io : server =
   {
     request = On_request.handle;
     notify = On_notification.handle;
@@ -51,7 +60,7 @@ let kind_of_packet =
       `Notification (Client_notification.of_jsonrpc {r with id=()} |> k)
     | Response _ -> failwith "response"
 
-let run_server io server =
+let run io server =
   (* send error with id or do smth with result *)
   let (|||) (id, r) on_ok = match r with
     | Ok v -> on_ok v
@@ -73,18 +82,22 @@ let run_server io server =
   let rec loop shutting_down =
     match Io.read io with
     | None -> loop shutting_down
-    | Some p -> try match kind_of_packet p with
-      | `Request (id, Client_request.E r) ->
-        run_async (process_request id r);
-        loop shutting_down
-      | _ ->
-        loop shutting_down
-    with Invalid_argument _ ->
-      let e = Jsonrpc.Response.error (`Int 0) {
-        code = InternalError;
-        message = "idk";
-        data = None;
-      } in
-      Lsp.Io.send io (Jsonrpc.Response e)
+    | Some p ->
+      try
+        match kind_of_packet p with
+          | `Request (id, Client_request.E r) ->
+            run_async (process_request id r);
+            loop shutting_down
+          | _ ->
+            print_endline "test";
+            loop shutting_down
+      with Invalid_argument _ ->
+        (* if [kind_of_packet] failed *)
+        let e = Jsonrpc.Response.error (`Int 0) {
+          code = InternalError;
+          message = "idk";
+          data = None;
+        } in
+        Lsp.Io.send io (Jsonrpc.Response e)
       
   in loop false

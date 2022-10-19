@@ -2,6 +2,6 @@
  (public_name language_server)
  (name main)
  (libraries
-  language_server
+  server
   logs
  ))
