@@ -7,7 +7,9 @@ module Log = (val Logs.src_log (Logs.Src.create __MODULE__))
 
 let worker _client: Client_notification.t -> unit =
   let open Client_notification in function
-    | Unknown_notification _ | _ -> ()
+    | Unknown_notification n ->
+      Log.warn (fun f -> f "Unknown notification '%s'" n.method_)
+    | _ -> ()
 
 let handle client noti =
   try worker client noti

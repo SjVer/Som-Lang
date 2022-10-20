@@ -16,9 +16,9 @@ let process_request (type res) _client:
         data = None;
       })
     | _ ->
-      Log.err (fun f -> f "Unknown request");
+      Log.info (fun f -> f "Invalid request");
       Error JsonError.{
-        code = InternalError;
+        code = InvalidRequest;
         message = "Unknown request";
         data = None
       }

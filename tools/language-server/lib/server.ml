@@ -7,7 +7,7 @@ module Log = (val Logs.src_log (Logs.Src.create "som-lsp"))
 
 let setup_log () =
   Logs.set_reporter (Logs.format_reporter ());
-  Logs.set_level (Some Logs.Info);
+  Logs.set_level (Some Logs.Debug);
   Log.info (fun f -> f "Initialized logging")
 
 (* type stuff *)
@@ -63,24 +63,30 @@ let run io server =
     | Ok v -> on_ok v
     | Error (e : JSonError.t) ->
       let e = Jsonrpc.Response.error id e in
-      Lsp.Io.send io (Jsonrpc.Response e)
+      Io.send io (Jsonrpc.Response e)
   in
 
   let rec loop () =
     try match Io.read io with
-      | None -> loop ()
-      | Some p -> match kind_of_packet p with
+      | None ->
+        Log.warn (fun f -> f "No packet");
+        loop ()
+      | Some p ->
+        match kind_of_packet p with
         | `Exit -> Log.info (fun f -> f "Received exit")
         | `Notification n ->
+          Log.debug (fun f -> f "Received notification");
           begin fun () ->
             server.notify server.client n
           end |> run_async |> loop
         | `Request (id, Client_request.E r) ->
+          Log.debug (fun f -> f "Received request");
           begin fun () ->
             let reply = server.request server.client r in
             (id, reply) ||| (fun reply' ->
+              Log.info (fun f -> f "Sending reply");
               let reply_json = Client_request.yojson_of_result r reply' in
-              Lsp.Io.send io (Jsonrpc.Response (Jsonrpc.Response.ok id reply_json))
+              Io.send io (Jsonrpc.Response (Jsonrpc.Response.ok id reply_json))
             )
           end |> run_async |> loop
     with _ ->
