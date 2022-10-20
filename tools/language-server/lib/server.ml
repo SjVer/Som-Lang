@@ -1,5 +1,8 @@
 open Lsp
+open T
+
 module JSonError = Jsonrpc.Response.Error
+module Store = Store
 
 (* log stuff *)
 
@@ -7,23 +10,8 @@ module Log = (val Logs.src_log (Logs.Src.create "som-lsp"))
 
 let setup_log () =
   Logs.set_reporter (Logs.format_reporter ());
-  Logs.set_level (Some Logs.Debug);
+  Logs.set_level (Some Logs.Info);
   Log.info (fun f -> f "Initialized logging")
-
-(* type stuff *)
-
-type client =
-  {
-    (* request: 'a. 'a Server_request.t -> ('a, JSonError.t) result Fiber.t; *)
-    notify: Server_notification.t -> unit;
-  }
-
-type server =
-  {
-    request: 'r . client -> 'r Client_request.t -> ('r, JSonError.t) result;
-    notify: client -> Client_notification.t -> unit;
-    client: client;
-  }
 
 let make io : server =
   let client =
@@ -77,14 +65,13 @@ let run io server =
         | `Notification n ->
           Log.debug (fun f -> f "Received notification");
           begin fun () ->
-            server.notify server.client n
+            server.notify server n
           end |> run_async |> loop
         | `Request (id, Client_request.E r) ->
           Log.debug (fun f -> f "Received request");
           begin fun () ->
-            let reply = server.request server.client r in
+            let reply = server.request server r in
             (id, reply) ||| (fun reply' ->
-              Log.info (fun f -> f "Sending reply");
               let reply_json = Client_request.yojson_of_result r reply' in
               Io.send io (Jsonrpc.Response (Jsonrpc.Response.ok id reply_json))
             )

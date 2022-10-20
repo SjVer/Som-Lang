@@ -3,3 +3,9 @@ int_id: Int -> Int.
 
 -- comment
 @main = int_id.
+
+@f =
+  1
+  +
+  2
+  .

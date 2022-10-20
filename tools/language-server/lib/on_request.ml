@@ -1,30 +1,26 @@
 open Lsp
+open Lsp.Types
+open Util
 
 module JsonError = Jsonrpc.Response.Error
 module Log = (val Logs.src_log (Logs.Src.create __MODULE__))
 
+let map_error = Result.map_error
+
 (** the 'entrypoint's for lsp requests *)
 
-let process_request (type res) _client:
+let process_request (type res) server:
   res Client_request.t -> (res, JsonError.t) result =
-  function
+  let open Client_request in function
     | Initialize _ ->
       On_init.handle ()
-      |> Result.map_error (fun msg -> JsonError.{
-        code = InternalError;
-        message = msg;
-        data = None;
-      })
-    | _ ->
-      Log.info (fun f -> f "Invalid request");
-      Error JsonError.{
-        code = InvalidRequest;
-        message = "Unknown request";
-        data = None
-      }
+      |> map_error internal_error_f
+    | TextDocumentHover {textDocument = {uri}; position} ->
+      Textdoc_methods.hover server (uri_from_docuri uri) position
+    | _ -> Error (internal_error_f "Unknown request")
 
-let handle client req =
-  try process_request client req
+let handle server req =
+  try process_request server req
   with e ->
     let bt = Printexc.get_backtrace () in
     let e = Printexc.to_string e in
