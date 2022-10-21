@@ -35,7 +35,7 @@
             {
                 "language": "som",
                 "scopeName": "source.som",
-                "path": "./syntaxes/som.tmLanguage.json"
+                "path": "./syntaxes/som-lang.tmLanguage.json"
             }
         ],
         "snippets": [
@@ -48,22 +48,36 @@
             {
                 "title": "Som",
                 "properties": {
-                    "som.languageServerPath": {
+                    "som-lang.languageServerPath": {
                         "type": "string",
                         "default": "/usr/bin/som-language-server",
                         "description": "The path to the Som language server (/usr/bin/som-langage-server by default)"
                     },
-                    "som.enableLanguageServer": {
+                    "som-lang.enableLanguageServer": {
                         "type": "boolean",
                         "default": true,
                         "description": "Enable the Som Language server by default (requires reload)"
                     },
-                    "som.searchPaths": {
+                    "som-lang.searchPaths": {
                         "type": "array",
                         "default": [],
                         "description": "A list of the paths used to search for included files."
                     }
                 }
+            }
+        ],
+        "commands": [
+            {
+                "command": "som-lang.startLanguageServer",
+                "title": "Som: Start language server"
+            },
+            {
+                "command": "som-lang.restartLanguageServer",
+                "title": "Som: Restart language server"
+            },
+            {
+                "command": "som-lang.stopLanguageServer",
+                "title": "Som: Stop language server"
             }
         ]
     },

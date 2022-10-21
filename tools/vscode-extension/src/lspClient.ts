@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import { createContext } from 'vm';
 import { window, ExtensionContext, StatusBarAlignment, WorkspaceConfiguration, workspace } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node';
 
@@ -26,7 +27,8 @@ function setStatusbarItem(conf: WorkspaceConfiguration) {
 }
 
 export function start(conf: WorkspaceConfiguration, ctx: ExtensionContext) {
-	setStatusbarItem(conf);
+	if (client) client.stop();
+	else setStatusbarItem(conf);
 
 	const exepath = conf.get<string>("languageServerPath");
 

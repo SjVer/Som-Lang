@@ -9,7 +9,7 @@ and 'a node =
 (* ====================== Toplevel ===================== *)
 
 and toplevel =
-  | TL_Declaration of string * typ node (** `string: typ.` *)
+  | TL_Declaration of string node * typ node (** `string: typ.` *)
   | TL_Definition of value_binding (** `patt = expr.` *)
   | TL_Type_Definition of type_definition (** `string := type.` *)
   | TL_Import of import (** `#import` *)

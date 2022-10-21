@@ -1,6 +1,7 @@
 module Env = Env
 module TAst = Tast
 module PrintTAst = Print_tast
+module Types = Types
 module Path = Path
 
 open Parse.Ast
@@ -89,8 +90,9 @@ let rec typecheck_tl_node env node =
   match item with
     | TL_Declaration (n, t) ->
       let t' = parse_type env t.item in
-      let env' = Env.add_symbol env (n ^ "\\decl") t' in
-      env', mk span (TL_Declaration (n, t'))
+      let env' = Env.add_symbol env (n.item ^ "\\decl") t' in
+      let tnode = {span = t.span; item=t'} in
+      env', mk span (TL_Declaration (n, tnode))
 
     | TL_Definition {patt; expr} ->
       let env', patt' = infer_patt ~level:0 env patt in

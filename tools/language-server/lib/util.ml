@@ -11,7 +11,7 @@ let internal_error_f =
   })
 
 let markdown str =
-  MarkupContent.create MarkupKind.Markdown str
+  MarkupContent.create ~kind:MarkupKind.Markdown ~value:str
 
 let highlight str =
   MarkedString.{value = str; language = Some "som"}
@@ -19,5 +19,17 @@ let highlight str =
 let uri_from_docuri uri =
   Uri.t_of_yojson (DocumentUri.yojson_of_t uri)
 
-let incr_pos (pos: Types.Position.t) =
-  Types.Position.create (pos.line + 1) (pos.character + 1)
+let incr_pos (pos: Position.t) =
+  Position.create
+    ~line:(pos.line + 1)
+    ~character:(pos.character + 1)
+
+let range_from_span (span: Somc.Span.t) =
+  let start = Position.create
+    ~line:(span.start.line - 1)
+    ~character:(span.start.col - 1)
+  and end_ = Position.create
+    ~line:(span.end_.line - 1)
+    ~character:(span.end_.col - 1)
+  in
+  Range.create ~start ~end_

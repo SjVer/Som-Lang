@@ -20,7 +20,7 @@ let parse file source is_import =
         []
       end else begin
         Report.report (simple (Other_error (Could_not_compile file)));
-        exit 1
+        Report.exit 1
       end
     | Parser.Error ->
       let span = span_from_lexbuf lexbuf false in
@@ -29,4 +29,4 @@ let parse file source is_import =
         span=Some span;
         notes=[];
       };
-      exit 1
+      Report.exit 1

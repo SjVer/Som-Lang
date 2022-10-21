@@ -11,3 +11,7 @@ let include_dir = Filename.dir_sep ^ _path ["usr"; "share"; "som"; "include"]
 let prelude_dir = _path [include_dir; "std"]
 let prelude_ident = "prelude"
 let prelude_file = _path [prelude_dir; prelude_ident] ^ ".som"
+
+(* globals *)
+
+let in_lsp_mode = ref false

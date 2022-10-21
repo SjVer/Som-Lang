@@ -5,8 +5,11 @@ module Log = (val Logs.src_log (Logs.Src.create __MODULE__))
 
 (** the 'entrypoint's for lsp notification *)
 
-let worker _server: Client_notification.t -> unit =
+let worker (server: T.server): Client_notification.t -> unit =
   let open Client_notification in function
+    | TextDocumentDidChange p ->
+      Util.uri_from_docuri p.textDocument.uri
+      |> Store.add server.store
     | Unknown_notification n ->
       Log.warn (fun f -> f "Unknown notification '%s'" n.method_)
     | _ -> ()

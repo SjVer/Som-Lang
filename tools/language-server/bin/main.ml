@@ -5,7 +5,8 @@ let run () =
   setup_log ();
   
   let io = Io.make stdin stdout in
-  let server = make io in
+  let store = Store.create () in
+  let server = make io store in
   
   Log.info (fun f -> f "Starting server");
   run io server;

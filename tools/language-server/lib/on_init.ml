@@ -5,16 +5,22 @@ let init_info =
 
   let capabilities =
     ServerCapabilities.create
-      ~completionProvider:(
+      (* ~completionProvider:(
         CompletionOptions.create
           ~triggerCharacters:["."]
           ()
-        )
+        ) *)
       ~hoverProvider:t
       (* ~declarationProvider:t *)
       (* ~definitionProvider:t *)
       (* ~typeDefinitionProvider:t *)
       (* ~codeLensProvider: *)
+
+      ~textDocumentSync:
+        (`TextDocumentSyncOptions
+          (TextDocumentSyncOptions.create ~change:Full ~openClose:true ~willSave:false
+             ~willSaveWaitUntil:false ()))
+
       ()
   in
   InitializeResult.create

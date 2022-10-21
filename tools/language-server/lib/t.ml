@@ -12,5 +12,5 @@ type server =
     request: 'r . server -> 'r Client_request.t -> ('r, JSonError.t) result;
     notify: server -> Client_notification.t -> unit;
     client: client;
-    (* store: Store.t; *)
+    store: Store.t;
   }

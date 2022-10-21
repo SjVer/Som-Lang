@@ -182,15 +182,18 @@ import:
 ;
 
 declaration:
-  | LOWERNAME COLON typ { mknode $sloc (TL_Declaration ($1, $3)) }
+  LOWERNAME COLON typ {
+    let nnode = mknode $loc($1) $1 in
+    mknode $sloc (TL_Declaration (nnode, $3))
+  }
 ;
 
 definition:
-  | binding(expr) { mknode $sloc (TL_Definition $1) }
+  binding(expr) { mknode $sloc (TL_Definition $1) }
 ;
 
 type_definition:
-  | list(PRIMENAME { mknode $sloc $1}) UPPERNAME COLONEQUAL type_definition_body
+  list(PRIMENAME { mknode $sloc $1}) UPPERNAME COLONEQUAL type_definition_body
     { mknode $sloc (TL_Type_Definition (mktypdecl (mknode $loc($2) $2) $1 $4)) }
 ;
 

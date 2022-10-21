@@ -86,8 +86,7 @@ let get_pass name =
           https://documentation.isnt.written.yet."
         ];
       };
-      exit 1;
-
+      Report.exit 1
     | fn :: fns -> match fn name with
       | Some pass -> pass
       | None -> try_get fns

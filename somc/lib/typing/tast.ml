@@ -12,7 +12,7 @@ and 'a tnode =
 (* ====================== Toplevel ====================== *)
 
 and toplevel =
-  | TL_Declaration of string * Types.t
+  | TL_Declaration of string node * Types.t node
   | TL_Definition of value_binding
   | TL_Section of string * tast
 

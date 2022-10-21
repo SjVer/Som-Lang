@@ -13,8 +13,8 @@ let process_request (type res) server:
   res Client_request.t -> (res, JsonError.t) result =
   let open Client_request in function
     | Initialize _ ->
-      On_init.handle ()
-      |> map_error internal_error_f
+      On_init.handle () |> map_error internal_error_f
+    | Shutdown -> Ok ()
     | TextDocumentHover {textDocument = {uri}; position} ->
       Textdoc_methods.hover server (uri_from_docuri uri) position
     | _ -> Error (internal_error_f "Unknown request")

@@ -4,6 +4,8 @@ open T
 module JSonError = Jsonrpc.Response.Error
 module Store = Store
 
+let () = Somc.Config.in_lsp_mode := true
+
 (* log stuff *)
 
 module Log = (val Logs.src_log (Logs.Src.create "som-lsp"))
@@ -13,7 +15,7 @@ let setup_log () =
   Logs.set_level (Some Logs.Info);
   Log.info (fun f -> f "Initialized logging")
 
-let make io : server =
+let make io store : server =
   let client =
     let notify n =
       let n' = Server_notification.to_jsonrpc n in
@@ -27,6 +29,7 @@ let make io : server =
     request = On_request.handle;
     notify = On_notification.handle;
     client;
+    store;
   }
 
 (* server stuff *)

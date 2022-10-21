@@ -8,6 +8,8 @@ open Span
 open ANSITerminal
 open Util
 
+exception Exit of int
+
 let report_single_line_span color span lines digits =
   (* print line before *)
   if span.start.line >= 2 then begin
@@ -65,24 +67,31 @@ let report_span_and_notes span notes =
 
 (* main functions *)
 
+let exit code =
+  if !Config.in_lsp_mode then
+    raise (Exit code)
+  else exit code
+
 let report e =
-  Util.maybe_newline ();
+  if !Config.in_lsp_mode then () else begin
+    Util.maybe_newline ();
 
-  (* print "somekindof error[code]: msg" *)
-  let (header, msg) = get_error_header_and_msg e.error in
-  prerr_string red header;
+    (* print "somekindof error[code]: msg" *)
+    let (header, msg) = get_error_header_and_msg e.error in
+    prerr_string red header;
 
-  begin match e.error with Other_error _ -> () | _ ->
-  prerr_string red (f "[E%03d]" (int_from_error e.error))
-  end;
+    begin match e.error with Other_error _ -> () | _ ->
+    prerr_string red (f "[E%03d]" (int_from_error e.error))
+    end;
 
-  prerr_string [Bold] (": " ^ msg);
-  prerr_newline ();
-  report_span_and_notes e.span e.notes
+    prerr_string [Bold] (": " ^ msg);
+    prerr_newline ();
+    report_span_and_notes e.span e.notes
+  end
   
 let warning, note =
   let go color header msg span =
-    if !(Config.Cli.args).mute then ()
+    if !(Config.Cli.args).mute || !Config.in_lsp_mode then ()
     else begin
       Util.maybe_newline ();
       prerr_string [Bold; Foreground color] header;

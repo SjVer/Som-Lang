@@ -144,7 +144,7 @@ and print_toplevel_node i node =
   let { span; item } = node in
   match item with
     | TL_Declaration (n, t) ->
-      p i ("TL_Declaration " ^ n) span;
+      p i ("TL_Declaration " ^ n.item) span;
       print_type_node (i + 1) t
     
     | TL_Definition { patt; expr } ->
