@@ -43,6 +43,8 @@ end)
 
 (* export functions bc otherwise i'd somehow
    have to solve dependency cycles *)
-let _ =
+let init () =
   Report.Util.read_file_fn := ReadFile.call;
-  Analysis.Name_res.get_ast_fn := fun f -> AnalyzeFile.call (f, true);
+  Analysis.Name_res.get_ast_fn := fun f -> AnalyzeFile.call (f, true)
+
+let () = init ()

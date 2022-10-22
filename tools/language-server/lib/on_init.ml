@@ -16,10 +16,20 @@ let init_info =
       (* ~typeDefinitionProvider:t *)
       (* ~codeLensProvider: *)
 
-      ~textDocumentSync:
-        (`TextDocumentSyncOptions
-          (TextDocumentSyncOptions.create ~change:Full ~openClose:true ~willSave:false
-             ~willSaveWaitUntil:false ()))
+      ~semanticTokensProvider:(`SemanticTokensOptions
+        (SemanticTokensOptions.create
+          ~legend:Semantics.legend
+          ~range:false
+          ~full:t
+          ()))
+
+      ~textDocumentSync:(`TextDocumentSyncOptions
+          (TextDocumentSyncOptions.create
+            ~change:Full
+            ~openClose:true
+            ~willSave:false
+            ~willSaveWaitUntil:false
+            ()))
 
       ()
   in

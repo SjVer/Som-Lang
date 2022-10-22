@@ -15,8 +15,13 @@ let process_request (type res) server:
     | Initialize _ ->
       On_init.handle () |> map_error internal_error_f
     | Shutdown -> Ok ()
-    | TextDocumentHover {textDocument = {uri}; position} ->
-      Textdoc_methods.hover server (uri_from_docuri uri) position
+    | TextDocumentHover p ->
+      Requests.hover server p.textDocument.uri p.position
+    | SemanticTokensFull p ->
+      Requests.semantic_tokens server p.textDocument.uri
+    | UnknownRequest r ->
+      let msg = Util.fmt "Unknown request '%s'" r.meth in
+      Error (internal_error_f msg)
     | _ -> Error (internal_error_f "Unknown request")
 
 let handle server req =

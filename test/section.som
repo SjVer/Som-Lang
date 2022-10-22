@@ -1,4 +1,5 @@
-#std/io
-
 @int = 1.
 @char = 'c'.
+
+@id x = x.
+@ignore _ = ().

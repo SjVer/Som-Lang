@@ -19,6 +19,7 @@ let show_version () =
   exit 0
 
 let () =
+  Somc.Pipeline.init ();
   let usage_msg = Sys.argv.(0) ^ " [--help|--version]" in
   Arg.parse [
     "--version", Arg.Unit show_version, "Prints version info";

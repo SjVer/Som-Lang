@@ -9,6 +9,7 @@ open ANSITerminal
 open Util
 
 exception Exit of int
+let diagnostics = ref []
 
 let report_single_line_span color span lines digits =
   (* print line before *)
@@ -72,17 +73,30 @@ let exit code =
     raise (Exit code)
   else exit code
 
+(* TODO: refactor all this massively *)
+
+let add_diagnostic span msg code:
+  [ `Error | `Note | `Warning ] -> unit =
+  fun severity ->
+    let d = (span, severity, msg, code) in
+    diagnostics := !diagnostics @ [d]
+
 let report e =
-  if !Config.in_lsp_mode then () else begin
+  let (header, msg) = get_error_header_and_msg e.error in
+  let code = match e.error with
+    | Other_error _ -> None
+    | e -> Some (int_from_error e)
+  in
+
+  if !Config.in_lsp_mode then
+    Option.iter
+      (fun s -> add_diagnostic s msg code `Error)
+      e.span
+  else begin
     Util.maybe_newline ();
 
-    (* print "somekindof error[code]: msg" *)
-    let (header, msg) = get_error_header_and_msg e.error in
     prerr_string red header;
-
-    begin match e.error with Other_error _ -> () | _ ->
-    prerr_string red (f "[E%03d]" (int_from_error e.error))
-    end;
+    Option.iter (fun c -> prerr_string red (f "[E%03d]" c)) code;
 
     prerr_string [Bold] (": " ^ msg);
     prerr_newline ();
@@ -90,8 +104,12 @@ let report e =
   end
   
 let warning, note =
-  let go color header msg span =
-    if !(Config.Cli.args).mute || !Config.in_lsp_mode then ()
+  let go color sev header msg span =
+    if !(Config.Cli.args).mute then ()
+    else if !Config.in_lsp_mode then
+      Option.iter
+        (fun s -> add_diagnostic s msg None sev)
+        span
     else begin
       Util.maybe_newline ();
       prerr_string [Bold; Foreground color] header;
@@ -104,4 +122,5 @@ let warning, note =
         | None -> ()
   end
   in
-  go Yellow "warning", go Cyan "note"
+  go Yellow `Warning "warning",
+  go Cyan `Note "note"

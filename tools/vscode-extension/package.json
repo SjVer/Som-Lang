@@ -35,7 +35,7 @@
             {
                 "language": "som",
                 "scopeName": "source.som",
-                "path": "./syntaxes/som-lang.tmLanguage.json"
+                "path": "./syntaxes/som.tmLanguage.json"
             }
         ],
         "snippets": [
