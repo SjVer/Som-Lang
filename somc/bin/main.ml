@@ -21,7 +21,8 @@ let explain_ecode code =
     exit 0
   | None ->
     let open Error in
-    report (simple (Other_error (Error.Cannot_explain code)));
+    Report.make_error (Other_error (Error.Cannot_explain code)) None
+    |> Report.report;
     exit 1
       
 (* cli parsing & entrypoint *)

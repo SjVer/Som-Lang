@@ -30,50 +30,49 @@
 
 -- arithmetic ops
 
-add: Int -> Int -> Int.
-@add a b = #_som_std_ops_add a b.
+@add a b : Int -> Int -> Int =
+   #_som_std_ops_add a b.
 
-sub: Int -> Int -> Int.
-@sub a b = #_som_std_ops_sub a b.
+@sub a b : Int -> Int -> Int =
+   #_som_std_ops_sub a b.
 
-mul: Int -> Int -> Int.
-@mul a b = #_som_std_ops_mul a b.
+@mul a b : Int -> Int -> Int =
+   #_som_std_ops_mul a b.
 
-div: Int -> Int -> Int.
-@div a b = #_som_std_ops_div a b.
+@div a b : Int -> Int -> Int =
+   #_som_std_ops_div a b.
 
-pow: Int -> Int -> Int.
-@pow a b = #_som_std_ops_pow a b.
+@pow a b : Int -> Int -> Int =
+   #_som_std_ops_pow a b.
 
-mod: Int -> Int -> Int.
-@mod a b = #_som_std_ops_mod a b.
+@mod a b : Int -> Int -> Int =
+   #_som_std_ops_mod a b.
 
 -- logical ops
 
+@and a b : Bln -> Bln -> Bln =
+   #_som_std_ops_and a b.
 
-and: Bln -> Bln -> Bln.
-@and a b = #_som_std_ops_and a b.
+@xor a b : Bln -> Bln -> Bln =
+   #_som_std_ops_xor a b.
 
-xor: Bln -> Bln -> Bln.
-@xor a b = #_som_std_ops_xor a b.
-
-or: Bln -> Bln -> Bln.
-@or a b = #_som_std_ops_or a b.
+@or a b : Bln -> Bln -> Bln =
+   #_som_std_ops_or a b.
 
 -- comparison ops
 
-eq: Int -> Int -> Bln.
-@eq a b = #_som_std_ops_eq a b.
+@eq a b : Int -> Int -> Bln =
+   #_som_std_ops_eq a b.
 
-gr: Int -> Int -> Bln.
-@gr a b = #_som_std_ops_gr a b.
+@gr a b : Int -> Int -> Bln =
+   #_som_std_ops_gr a b.
 
-gre: Int -> Int -> Bln.
-@gre a b = or (gr a b) (eq a b).
+@gre a b : Int -> Int -> Bln =
+   or (gr a b) (eq a b).
 -- @gre a b = (gr a b) ? 1 : (eq a b).
 
-ls: Int -> Int -> Bln.
-@ls a b = #_som_std_ops_ls a b.
+@ls a b : Int -> Int -> Bln =
+   #_som_std_ops_ls a b.
 
-lse: Int -> Int -> Bln.
-@lse a b = or (ls a b) (eq a b).
+@lse a b : Int -> Int -> Bln =
+   or (ls a b) (eq a b).

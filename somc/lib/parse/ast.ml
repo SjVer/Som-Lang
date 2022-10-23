@@ -59,6 +59,7 @@ and expr =
   | EX_Binding of value_binding * expr node (** `patt = expr => expr` *)
   | EX_Lambda of value_binding (** `\patt => expr` *)
   | EX_Sequence of expr node * expr node (** `expr, expr` *)
+  | EX_Constraint of expr node * typ node (** `expr : typ` *)
   | EX_Application of expr node * expr node list (** `appl expr ...` *)
   | EX_Tuple of expr node list (** `expr; expr; ...` *)
   | EX_Construct of Ident.t node * expr node option (** `String expr` *)

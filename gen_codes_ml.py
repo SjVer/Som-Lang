@@ -14,6 +14,10 @@ ANY_TO_INT_BODY_FMT = "  | {uppername}_error e -> int_from_{name}_error e\n"
 FROM_INT_DECL_FMT = "\nlet error_name_from_int = function\n"
 FROM_INT_BODY_FMT = "  | {index} -> Some (\"{kind}\", \"{name}\")\n"
 FROM_INT_TAIL_FMT = "  | _ -> None"
+GET_CODE_OPT_FN = """
+let get_code_opt = function
+  | Other_error _ -> None
+  | e -> Some (int_from_error e)"""
 
 ENUM_REGEX = r"type (\w+)_error =\n(.*?)\nlet"
 VARIANT_REGEX = r"\s*(\w+)(?: (.*?)\n)?"
@@ -103,6 +107,8 @@ def generate_file(enums: List[Enum]):
                 name = name
             )
     txt += FROM_INT_TAIL_FMT
+    
+    txt += GET_CODE_OPT_FN
     
     # print("output:\n")
     # print("  " + "  ".join(txt.splitlines(True)) + "\n")

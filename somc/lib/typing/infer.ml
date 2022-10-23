@@ -4,23 +4,9 @@ open Report.Error
 
 module Ast = Parse.Ast
 
-module ID = struct
-  let current = ref 0
-
-  let next () =
-    let id = !current in
-    current := id + 1;
-    id
-
-  let reset () =
-    current := 0
-
-end
-
-let error e span = raise_error (Type_error e) span []
-
-let new_var level = TVar (ref (Unbound (ID.next (), level)))
-let new_gen_var () = TVar (ref (Generic (ID.next ())))
+let error e span =
+  Report.make_error (Type_error e) span
+  |> Report.raise
 
 let mk s t i = {span=s; item=i; typ=t}
 
@@ -45,14 +31,14 @@ let rec generalize level = function
   
   | TVar {contents = Generic _}
   | TVar {contents = Unbound _}
-  | TName _ | TPrim _ as ty -> ty
+  | TName _ | TPrim _ | TError | TNever as ty -> ty
 
 (** instantiates type [ty] replacing Generic
     type variables with fresh ones *)
 let instantiate level ty =
   let id_var_map = Hashtbl.create 20 in
   let rec go ty = match ty with
-    | TName _ | TPrim _ -> ty
+    | TName _ | TPrim _ | TError | TNever -> ty
     | TVar {contents = Link ty} -> go ty
     | TVar {contents = Generic id} -> begin
         try Hashtbl.find id_var_map id
@@ -73,7 +59,7 @@ let instantiate level ty =
   if 'b comes from a higher level than 'a *)
 let occurs_check_adjust_levels id level =
   let rec go = function
-    | TName _ | TPrim _ -> ()
+    | TName _ | TPrim _ | TError | TNever -> ()
     | TVar {contents = Link ty} -> go ty
     | TVar {contents = Generic _} -> ()
     | TVar ({contents = Unbound (other_id, other_level)} as other) ->
@@ -92,6 +78,8 @@ let rec unify span ty1 ty2 =
   else match (ty1, ty2) with
     | TName n1, TName n2 when n1 = n2 -> ()
     | TPrim p1, TPrim p2 when p1 = p2 -> ()
+    | TError, _ | _, TError
+    | TNever, _ | _, TNever -> ()
 
     | TFun (p1, r1), TFun (p2, r2) ->
       unify span p1 p2;
@@ -167,6 +155,22 @@ let rec infer_expr ?(level=0) env exp =
       let e2' = infer_expr ~level env e2 in
       mk s e2'.typ (EX_Sequence (e1', e2'))
   
+    | EX_Constraint (e, t) ->
+      let t' = Parse_type.parse env level t.item in
+      let e' = infer_expr ~level env e in
+      begin
+        try unify s t' e'.typ
+        with Report.Error _ ->
+          let t'' = show t' false in
+          let e'' = show e'.typ false in
+          Report.make_error
+            (Type_error (Expected (t'', e'')))
+            (Some s)
+          |> Report.add_note "type expected due to type constraint"
+          |> Report.report
+      end;
+      set_ty t' e'
+
     | EX_Application (f, es) ->
       assert (es <> []);
       let f' = infer_expr ~level env f in
@@ -206,7 +210,7 @@ let rec infer_expr ?(level=0) env exp =
         | LI_Char c   -> LI_Char c,   name "Chr"
         | LI_Float f  -> LI_Float f,  name "Flt"
         | LI_Int i    -> LI_Int i,    name "Int"
-        | LI_Nil      -> LI_Nil,      name "Nil"
+        | LI_Nil      -> LI_Nil,      name "Nll"
         | LI_String s -> LI_String s, name "Str"
       in mk s t (EX_Literal l')
     
@@ -235,9 +239,10 @@ let rec infer_expr ?(level=0) env exp =
 let infer_expr env e =
   let e' =
     try infer_expr ~level:0 env e
-    with Error err ->
+    with Report.Error err ->
       Report.report err;
       let span = {e.span with Span.ghost=true} in
       mk span (new_var 0) EX_Error
-  in set_ty (generalize (-1) e'.typ) e'
-  (* in e' *)
+  in
+  (* e' *)
+  set_ty (generalize (-1) e'.typ) e'

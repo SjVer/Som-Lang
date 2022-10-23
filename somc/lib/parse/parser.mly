@@ -5,7 +5,8 @@ open Span
 
 let raise_error e locs notes =
   let s = span_from_lexlocs locs false in
-  raise_error (Syntax_error e) (Some s) notes
+  Report.make (`Error (Syntax_error e)) (Some s) notes []
+  |> Report.raise
 
 let unclosed s e what locs =
   raise_error (Unclosed s) locs
@@ -18,11 +19,11 @@ let mkbind patt expr = {patt; expr}
 let mkimp dir path kind = {dir; path; kind}
 let mktypdecl name params typ = {name; params; typ}
 let mkgop locs name = 
-  let identif = Ident.from_list ["ops"; name]
+  let identif = Ident.from_list ["_std_ops"; name]
   in EX_Identifier (mkgnode locs identif)
 
-let nil_constr = Ident.from_list ["list"; "Nil"]
-let cons_constr = Ident.from_list ["list"; "Cons"]
+let nil_constr = Ident.from_list ["_std_list"; "Nil"]
+let cons_constr = Ident.from_list ["_std_list"; "Cons"]
 
 let rec mkglist endlocs = function
   | [] -> 
@@ -246,11 +247,28 @@ import_rest:
 
 // ======================== binding helpers =======================
 
-binding(EXPR): AT pattern strict_binding(EXPR) { mkbind $2 $3 };
+t_constr: COLON typ { $2 }
+
+binding(EXPR):
+  AT pattern strict_binding(EXPR) {
+    let e = match $3 with
+      | (Some tnode, e) ->
+        {
+          span = {e.span with ghost = true};
+          item = EX_Constraint (e, tnode);
+        }
+      | (None, e) -> e
+    in
+    mkbind $2 e
+  }
+;
 
 strict_binding(EXPR):
-  | pattern strict_binding(EXPR) { mkgnode $sloc (EX_Lambda (mkbind $1 $2)) }
-  | EQUAL EXPR { $2 }
+  | pattern strict_binding(EXPR) {
+    let (t, e) = $2 in
+    t, mkgnode $sloc (EX_Lambda (mkbind $1 e))
+  }
+  | t_constr? EQUAL EXPR { $1, $3 }
   | error { expected "a pattern or '='" $sloc }
 ;
 
@@ -293,7 +311,12 @@ lambda_expr:
 ;
 
 tuple_expr:
-  | ssntl(SEMICOLON, base_expr) { mknode $sloc (EX_Tuple $1) }
+  | ssntl(SEMICOLON, constr_expr) { mknode $sloc (EX_Tuple $1) }
+  | constr_expr { $1 }
+;
+
+constr_expr:
+  | constr_expr t_constr { mknode $sloc (EX_Constraint ($1, $2)) }
   | base_expr { $1 }
 ;
 

@@ -3,12 +3,11 @@ open T
 
 module JSonError = Jsonrpc.Response.Error
 module Store = Store
+module Log = T.Log
 
 let () = Somc.Config.in_lsp_mode := true
 
 (* log stuff *)
-
-module Log = (val Logs.src_log (Logs.Src.create "som-lsp"))
 
 let setup_log () =
   Logs.set_reporter (Logs.format_reporter ());
@@ -38,8 +37,6 @@ let kind_of_packet =
   let k r = Result.get_ok r in
   
   let open Jsonrpc in function
-    | Message {id=None; method_="exit"; params=_} ->
-      `Exit
     | Message ({id=None; method_=_; params=_} as r) ->
       `Notification (Client_notification.of_jsonrpc {r with id=()} |> k)
     | Message ({id=Some id; method_=_; params=_} as r) ->
@@ -64,7 +61,6 @@ let run io server =
         loop ()
       | Some p ->
         match kind_of_packet p with
-        | `Exit -> Log.info (fun f -> f "Received exit")
         | `Notification n ->
           Log.debug (fun f -> f "Received notification");
           begin fun () ->
@@ -88,4 +84,5 @@ let run io server =
         }
       in Io.send io (Jsonrpc.Response e) |> loop
       
-  in loop ()
+  in
+  ignore (loop ())

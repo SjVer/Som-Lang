@@ -1,3 +1,15 @@
+module ID = struct
+  let current = ref 0
+
+  let next () =
+    let id = !current in
+    current := id + 1;
+    id
+
+  let reset () =
+    current := 0
+end
+
 type t =
   | TName of Path.t
   | TPrim of prim
@@ -6,6 +18,8 @@ type t =
   | TApp of t * t
   | TFun of t * t
   | TTup of t list
+  | TNever
+  | TError
 
 and var =
   | Unbound of int * int (** [id] and [level] *)
@@ -16,6 +30,9 @@ and prim =
   | PInt of bool * int
   | PFloat of int
   | PVoid
+
+let new_var level = TVar (ref (Unbound (ID.next (), level)))
+let new_gen_var () = TVar (ref (Generic (ID.next ())))
 
 let show_prim =
   let f = Printf.sprintf in
@@ -68,6 +85,8 @@ let show ty debug =
     | TTup ts ->
       let ts' = List.map (go true) ts in
       ret prim (String.concat "; " ts')
+    | TNever -> if debug then "<never>" else ""
+    | TError -> if debug then "<error>" else "_"
 
   in
   let ty_str = go false ty in

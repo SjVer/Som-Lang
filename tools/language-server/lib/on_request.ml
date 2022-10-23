@@ -3,7 +3,6 @@ open Lsp.Types
 open Util
 
 module JsonError = Jsonrpc.Response.Error
-module Log = (val Logs.src_log (Logs.Src.create __MODULE__))
 
 let map_error = Result.map_error
 
@@ -29,7 +28,7 @@ let handle server req =
   with e ->
     let bt = Printexc.get_backtrace () in
     let e = Printexc.to_string e in
-    Log.err (fun f -> f "Error handling request: %s\n%s" e bt);
+    T.Log.err (fun f -> f "Error handling request: %s\n%s" e bt);
     Error JsonError.{
       code = InternalError;
       message = e;

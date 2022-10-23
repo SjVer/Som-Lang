@@ -22,8 +22,9 @@ let kind_of_report span =
   else if span.start.line + 1 = span.end_.line then Double_line
   else Multi_line
 
-let cyan = [Bold; Foreground Cyan]
-let red = [Bold; Foreground Red]
+let bold c = [Bold; Foreground c]
+let cyan = bold Cyan
+let red = bold Red
 
 let report_lineno digits line =
   (* print " lineno | " *)

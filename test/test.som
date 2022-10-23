@@ -1,6 +1,4 @@
-@id x = x.
+@id x : 'a -> 'a = x.
+@ignore _ : _ -> Nll = ().
 
-id: 'a -> Nil.
-@ignore _ = ().
-
-@main = id 1; id 'c'; ignore "test".
+@main = ignore 1, id 'c', exit 0.

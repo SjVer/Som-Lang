@@ -37,25 +37,11 @@
 
 -- public imports
 #std/types::*
--- #std/str::{Str, fmt}
--- #std/list::List
-#std/ops
+-- #std/str => _std_str
+-- #std/list => _std_list
+#std/ops => _std_ops
 
--- terminates the calling process immeddiately with the given status
+-- terminates the calling process immediately with the given status
 -- !!no_return
-exit: Int -> !.
-@exit status = #_som_std_prelude_exit status.
-
--- checks if the given condition is true and if it isn't terminates
--- the calling process with the given error message
--- assert: Bln Str -> !.
--- assert cond msg =
--- 	cond ? () :
--- 		_putsf _stderr (fmt "Assertion failed: {}" msg),
---         exit 1.
-
--- declaration to enforce correct signature
--- and warn if the function isn't defined
--- !!warn_no_def
--- !!no_mangle
--- main: Str List -> !Int.
+@exit status : Int -> ! =
+  #_som_std_prelude_exit status.

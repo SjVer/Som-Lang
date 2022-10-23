@@ -10,13 +10,14 @@ module ReadFile = Query.Make(struct
       str
     with _ ->
       let file = f in
-      let open Report.Error in
-      let e = Other_error (Could_not_open file) in
-      Report.Error.raise_error e None []
+      let open Report in
+      let open Error in
+      make_error (Other_error (Could_not_open file)) None
+      |> raise
 end)
 
 module ParseFile = Query.Make(struct
-  type a = string * bool
+  type a = string * Span.t option
   type r = Parse.Ast.ast
   let c (f, i) =
     let source = ReadFile.call f in
@@ -24,7 +25,7 @@ module ParseFile = Query.Make(struct
 end)
 
 module AnalyzeFile = Query.Make(struct
-  type a = string * bool
+  type a = string * Span.t option
   type r = Parse.Ast.ast
   let c (f, i) =
     let ast = ParseFile.call (f, i) in
@@ -35,7 +36,7 @@ module TypecheckFile = Query.Make(struct
   type a = string
   type r = Typing.TAst.tast
   let c f =
-    let ast = AnalyzeFile.call (f, false) in
+    let ast = AnalyzeFile.call (f, None) in
     let ast' = Analysis.add_implicit_import_prelude ast in
     let _, tast = Typing.typecheck Typing.Env.empty ast' in
     tast
@@ -45,6 +46,7 @@ end)
    have to solve dependency cycles *)
 let init () =
   Report.Util.read_file_fn := ReadFile.call;
-  Analysis.Name_res.get_ast_fn := fun f -> AnalyzeFile.call (f, true)
+  Analysis.Name_res.get_ast_fn := fun f s ->
+    AnalyzeFile.call (f, (Some s))
 
 let () = init ()

@@ -78,14 +78,10 @@ let get_pass name =
     | [] ->
       let open Report in
       let open Error in
-      report {
-        error=Other_error (Nonexistent_pass name);
-        span=None;
-        notes=[
-          "for a list of supported passes go to\n\
-          https://documentation.isnt.written.yet."
-        ];
-      };
+      make_error (Other_error (Nonexistent_pass name)) None
+      |> add_note "for a list of supported passes go to\n\
+                  https://documentation.isnt.written.yet."
+      |> report;
       Report.exit 1
     | fn :: fns -> match fn name with
       | Some pass -> pass
@@ -99,5 +95,6 @@ let get_pass name =
   in {name; func}
 
 let add_pass pm pass =
-  Report.note ("registering LLVM pass " ^ pass.name) None;
+  Report.make_note ("registering LLVM pass " ^ pass.name) None
+  |> Report.report;
   pass.func pm

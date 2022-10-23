@@ -1,7 +1,9 @@
 open Parse.Ast
 open Report.Error
 
-let get_ast_fn = ref (fun (""|_): ast -> assert false)
+let get_ast_fn:
+  (string -> Span.t -> ast) ref =
+  ref (fun _ _ : ast -> assert false)
 
 (* 
   import algorithm:
@@ -30,26 +32,29 @@ let get_ast_fn = ref (fun (""|_): ast -> assert false)
 
 let file_not_found_error node =
   let e = Failed_to_import (node.item ^ Config.extension) in
-  raise_error (Other_error e) (Some node.span) [
-    Printf.sprintf
+  Report.make_error (Other_error e) (Some node.span)
+  |> Report.add_note (Printf.sprintf
       "try adding directory '%s/' or\n\
       file '%s.som' to the search paths."
-      node.item node.item
-  ]
+      node.item node.item)
+  |> Report.raise
 
 let symbol_not_found_error node =
   let e = Failed_to_resolve node.item in
-  raise_error (Type_error e) (Some node.span) []
+  Report.make_error (Type_error e) (Some node.span)
+  |> Report.raise
 
 let shadowed_symbol_warning n s =
   let msg = Printf.sprintf "import shadows previous import of `%s`" n in
-  Report.warning msg (Some s)
+  Report.make_warning msg (Some s)
+  |> Report.report
 
 let extract_sect from = function
   | TL_Section (_, ast) -> ast
   | _ ->
     let e = Cannot_import_from from.item in
-    raise_error (Type_error e) (Some from.span) []
+    Report.make_error (Type_error e) (Some from.span)
+    |> Report.raise
 
 (* finding files and resolving symbols *)
 
@@ -117,7 +122,7 @@ let resolve_import names ({dir; path; kind} : import) s =
   (* TODO: allow importing directories? *)
   let file, path' = resolve_file dir path in
 
-  let ast = (!get_ast_fn file) in
+  let ast = !get_ast_fn file s in
   let sym = resolve_symbol ast path' in
 
   let add_and_check_name n =
@@ -167,7 +172,7 @@ let resolve =
         let new_tls = resolve_import names i node.span in
         List.map ret_gh new_tls
       | _ -> [node]
-    with Error e ->
+    with Report.Error e ->
       Report.report e;
       [node]
   in

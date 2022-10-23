@@ -72,35 +72,14 @@ let get_other_error_msg = function
 
 (* Types *)
 
-type error_kind =
+type t =
   | Lexing_error of lexing_error
   | Syntax_error of syntax_error
   | Type_error of type_error
   | Other_error of other_error
 
-let get_error_header_and_msg = function
+let get_header_and_msg = function
   | Lexing_error e -> "lexing error", get_lexing_error_msg e
   | Syntax_error e -> "syntax error", get_syntax_error_msg e
   | Type_error e   -> "type error",   get_type_error_msg e
   | Other_error e  -> "error",        get_other_error_msg e
-
-type error =
-  {
-    error: error_kind;
-    span: Span.t option;
-    notes: string list;
-  }
-
-exception Error of error
-
-let simple error =
-  {
-    error;
-    span=None;
-    notes=[];
-  }
-
-let raise_error error span notes = raise (Error {error; span; notes})
-
-let add_note e note =
-  {e with notes=e.notes @ [note]}

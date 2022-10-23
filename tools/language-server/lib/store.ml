@@ -58,7 +58,7 @@ let parse s uri =
       let doc = get_doc s uri in
       let path = Uri.to_path (documentUri doc) in
       try
-        let ast = Parse.parse path (text doc) false in
+        let ast = Parse.parse path (text doc) None in
         set_status s uri (Parsed ast);
         ast
       with Exit _ -> []

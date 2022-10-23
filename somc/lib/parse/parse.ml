@@ -5,7 +5,7 @@ module Ident = Ident
 open Report.Error
 open Span
 
-let parse file source is_import =
+let parse file source import_span =
   let lexbuf = Lexing.from_string source in
 
   try
@@ -13,20 +13,24 @@ let parse file source is_import =
     Parser.prog Lexer.main lexbuf
 
   with
-    | Error e ->
+    | Report.Error e ->
       Report.report e;
-      if is_import then begin
-        Report.report (simple (Other_error (Failed_to_import file)));
-        []
-      end else begin
-        Report.report (simple (Other_error (Could_not_compile file)));
-        Report.exit 1
+      begin match import_span with
+        | Some _ ->
+          Report.make_error
+            (Other_error (Failed_to_import file))
+            import_span
+          |> Report.report;
+          []
+        | None ->
+          Report.make_error
+            (Other_error (Could_not_compile file))
+            None
+          |> Report.report;
+          Report.exit 1
       end
     | Parser.Error ->
       let span = span_from_lexbuf lexbuf false in
-      Report.report {
-        error=Syntax_error Unexpected;
-        span=Some span;
-        notes=[];
-      };
+      Report.make_error (Syntax_error Unexpected) (Some span)
+      |> Report.report;
       Report.exit 1

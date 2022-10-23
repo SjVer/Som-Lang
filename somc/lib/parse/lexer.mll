@@ -3,8 +3,9 @@ open Parser
 open Report.Error
 open Span
 
-let raise_error span e =
-  raise_error (Lexing_error e) (Some span)
+let raise_error span e notes =
+  Report.make (`Error (Lexing_error e)) (Some span) notes []
+  |> Report.raise
 
 let curr_span lexbuf = 
   let s = Lexing.lexeme_start_p lexbuf in

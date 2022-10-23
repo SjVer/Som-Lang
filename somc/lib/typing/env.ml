@@ -43,3 +43,11 @@ let get_w_path env path =
   go env (Path.to_list path)
 
 let externals : Types.t SMap.t ref = ref SMap.empty
+
+let check_alias_exists env name span =
+  try ignore (get_alias env name)
+  with Not_found ->
+    let open Report.Error in
+    let e = Type_error (Use_of_unbound ("type alias", name)) in
+    Report.make_error e (Some span)
+    |> Report.report

@@ -104,6 +104,11 @@ and print_expr_node i node =
       print_expr_node (i + 1) e1;
       print_expr_node (i + 1) e2
 
+    | EX_Constraint (e, t) ->
+      p i "EX_Contstraint" span;
+      print_expr_node (i + 1) e;
+      print_type_node (i + 1) t;
+
     | EX_Application (a, es) ->
       p i "EX_Application" span;
       print_expr_node (i + 1) a;

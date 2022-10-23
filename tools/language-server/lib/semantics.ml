@@ -26,6 +26,7 @@ module T = struct
   let regexp = 20
   let operator = 21
   let decorator = 22
+  let nil = 23
 
   let list =
     [ "namespace"
@@ -51,6 +52,7 @@ module T = struct
     ; "regexp"
     ; "operator"
     ; "decorator"
+    ; "nil"
     ]
 end
 
@@ -156,6 +158,8 @@ let mk span type_ modifiers =
   }
 
 let get_tokens ast =
+  let map f l = List.map f l |> List.flatten |> List.rev in
+
   let rec go_type node =
     let this = mk node.span in
     match node.item with
@@ -176,7 +180,7 @@ let get_tokens ast =
           | None -> [this']
         end 
       | TY_Function (t1, t2) -> go_type t2 @ go_type t1
-      | TY_Tuple ts -> List.flatten (List.map go_type ts)
+      | TY_Tuple ts -> map go_type ts
       | TY_Construct (t1, t2) -> begin
           let t2' = mk t2.span T.class_ [] in
           match t1 with
@@ -195,6 +199,21 @@ let get_tokens ast =
       | EX_Grouping g -> go_expr g
       | EX_Binding (b, e) ->
         go_expr e @ go_expr b.expr @ go_patt b.patt
+      | EX_Lambda b -> go_expr b.expr @ go_patt b.patt
+      | EX_Sequence (e1, e2) -> go_expr e2 @ go_expr e1
+      | EX_Constraint (e, t) -> go_type t @ go_expr e
+      | EX_Application (e, es) -> map go_expr es @ go_expr e
+      | EX_Tuple es -> map go_expr es
+      | EX_Construct (p, e) ->
+        Option.fold ~none:[] ~some:go_expr e
+          @ [mk p.span T.enum_member []]
+      | EX_Literal l ->
+          let typ = begin match l with
+            | LI_Int _ | LI_Float _ -> T.number
+            | LI_Char _ | LI_String _ -> T.string
+            | LI_Nil -> T.nil
+          end in
+          [mk node.span typ []]
       | _ -> [mk node.span T.number []]
   in
   let rec go_toplevel node =

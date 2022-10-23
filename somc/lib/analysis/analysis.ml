@@ -22,3 +22,5 @@ let add_implicit_import_prelude ast =
 let check ast =
   let ast' = Name_res.resolve ast in
   ast'
+
+(* TODO: don't desugar ops in parse but here for opts *)

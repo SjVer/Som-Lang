@@ -1,6 +1,8 @@
 open Lsp
 module JSonError = Jsonrpc.Response.Error
 
+module Log = (val Logs.src_log (Logs.Src.create "som-language-server"))
+
 type client =
   {
     (* request: 'a. 'a Server_request.t -> ('a, JSonError.t) result Fiber.t; *)

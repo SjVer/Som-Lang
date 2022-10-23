@@ -5,6 +5,7 @@
 
 	"patterns": [
 		{ "include": "#comment" },
+		{ "include": "#definition" },
 		{ "include": "#expression" }
 	],
 
@@ -21,6 +22,11 @@
 					"match": "--.*$"
 				}
 			]
+		},
+
+		"definition": {
+			"match": "@",
+			"name": "keyword.let.som"
 		},
 
 		"expression": {
@@ -94,10 +100,13 @@
 					}
 				},
 				{
+					"comment": "lowername",
 					"match": "\\b_*[a-z][A-Za-z_0-9]*\\'*"
 				},
 				{
-					"match": "\\'_*[a-z][A-Za-z_0-9]*(?!\\')"
+					"comment": "primename",
+					"match": "\\'_*[a-z][A-Za-z_0-9]*(?!\\')",
+					"name": "storage.type.variable.som"
 				}
 			]
 		},

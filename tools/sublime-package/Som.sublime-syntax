@@ -49,12 +49,19 @@ contexts:
     - include: invalid
 
   type:
+    - match: \:(?!:)
+      scope: punctuation.separator.som
+      push:
+        - include: type
+        - match: (?=\S)
+          pop: true
+
     # effect
     - match: (?<!!)!(?!!)
       scope: storage.modifier.effect.som
 
     # basic types
-    - match: '{{basictype}}|{{uname}}|{{pname}}|\.\.\.'
+    - match: '_|{{basictype}}|{{uname}}|{{pname}}|\.\.\.'
       scope: storage.type.som
       push:
         - match: ->
@@ -243,6 +250,7 @@ contexts:
       scope: keyword.definition.som
       push:
         - include: pattern
+        - include: type
         - match: (=)(\s*\.\.\.)?
           captures:
             1: keyword.operator.definition.som
