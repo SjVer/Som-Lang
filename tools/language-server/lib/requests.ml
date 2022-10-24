@@ -7,7 +7,7 @@ let semantic_tokens server uri =
   let ast = Store.parse server.T.store uri in
   if ast = [] then Ok (None)
   else begin
-    let tokens = Semantics.get_tokens ast in
+    let tokens = Semantics.get_tokens ast uri in
     let data = Semantics.encode_tokens tokens in
     Ok (Some (SemanticTokens.create ~data ()))
   end

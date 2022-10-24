@@ -6,6 +6,7 @@
 	"patterns": [
 		{ "include": "#comment" },
 		{ "include": "#definition" },
+		{ "include": "#keyword" },
 		{ "include": "#expression" }
 	],
 
@@ -29,6 +30,23 @@
 			"name": "keyword.let.som"
 		},
 
+		"keyword": {
+			"patterns": [
+				{
+					"name": "keyword.other.lambda.som",
+					"match": "\\\\"
+				},
+				{
+					"name": "keyword.other.in.som",
+					"match": "=>"
+				},
+				{
+					"name": "keyword.other.separator.som",
+					"match": ",|;"
+				}
+			]
+		},
+
 		"expression": {
 			"name": "meta.expression.som",
 			"patterns": [
@@ -41,27 +59,31 @@
 		"operator": {
 			"patterns": [
 				{
-					"name": "keyword.operator.bitwise.shift.som",
+					"name": "keyword.operator.arrow.som",
+					"match": "->"
+				},
+				{
+					"name": "keyword.operator.som",
 					"match": "<<|>>"
 				},
 				{
-					"name": "keyword.operator.comparison.som",
+					"name": "keyword.operator.som",
 					"match": "=|/="
 				},
 				{
-					"name": "keyword.operator.relational.som",
+					"name": "keyword.operator.som",
 					"match": "<=|>=|<>|<|>"
 				},
 				{
-					"name": "keyword.operator.logical.som",
+					"name": "keyword.operator.som",
 					"match": "\\!|&&|\\|\\||\\^\\^"
 				},
 				{
-					"name": "keyword.operator.bitwise.som",
+					"name": "keyword.operator.som",
 					"match": "&|\\|"
 				},
 				{
-					"name": "keyword.operator.arithmetic.som",
+					"name": "keyword.operator.som",
 					"match": "\\+|-|\\*|/|\\^|\\%"
 				},
 				{

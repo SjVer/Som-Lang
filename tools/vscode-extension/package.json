@@ -38,6 +38,7 @@
                 "path": "./syntaxes/som.tmLanguage.json"
             }
         ],
+        
         "snippets": [
             {
                 "language": "som",
@@ -80,11 +81,38 @@
                 "title": "Som: Stop language server"
             }
         ],
+
         "semanticTokenTypes": [
             {
-                "id": "nil",
-                "description": "nil literal",
-                "superType": ""
+                "id": "symbol",
+                "description": "symbol/variable",
+                "superType": "source"
+            },
+            {
+                "id": "constant",
+                "description": "constant literal",
+                "superType": "number"
+            },
+            {
+                "id": "builtinType",
+                "description": "builtin type",
+                "superType": "type"
+            },
+            {
+                "id": "typeVariable",
+                "description": "type variable",
+                "superType": "keyword"
+            }
+        ],
+        "semanticTokenScopes": [
+            {
+                "language": "som",
+                "scopes": {
+                    "symbol": ["source.symbol.som"],
+                    "constant": ["constant.language.som"],
+                    "builtinType": ["support.type.primitive.som"],
+                    "typeVariable": ["storage.type.variable.som"]
+                }
             }
         ]
     },
@@ -92,6 +120,7 @@
         "onLanguage:som"
     ],
     "main": "./out/main.js",
+    
     "scripts": {
         "vscode:prepublish": "clear; npm run compile",
         "compile": "clear; tsc --build",

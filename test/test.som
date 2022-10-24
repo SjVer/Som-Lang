@@ -1,4 +1,6 @@
 @id x : 'a -> 'a = x.
+
 @ignore _ : _ -> Nll = ().
 
-@main = ignore 1, id 'c', exit 0.
+@main = ignore (0xFF : $i.u.32), id 'c', exit 0.
+

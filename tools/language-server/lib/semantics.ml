@@ -2,13 +2,15 @@ open Lsp.Types
 open Somc.Parse.Ast
 open Somc.Span
 
+module Log = T.Log
+
 module T = struct
-  let module_ = 0
+  let namespace = 0
   let type_ = 1
   let class_ = 2
   let enum = 3
-  let module_type = 4
-  let record = 5
+  let interface = 4
+  let struct_ = 5
   let type_parameter = 6
   let parameter = 7
   let variable = 8
@@ -26,7 +28,10 @@ module T = struct
   let regexp = 20
   let operator = 21
   let decorator = 22
-  let nil = 23
+  let symbol = 23
+  let constant = 24
+  let builtin_type = 25
+  let type_variable = 26
 
   let list =
     [ "namespace"
@@ -52,7 +57,10 @@ module T = struct
     ; "regexp"
     ; "operator"
     ; "decorator"
-    ; "nil"
+    ; "symbol"
+    ; "constant"
+    ; "builtinType"
+    ; "typeVariable"
     ]
 end
 
@@ -120,7 +128,19 @@ type token =
     length: int;
   }
 
-(** Head of list is last token! *)
+let sort_tokens tokens =
+  (* sorts from last to first token *)
+  let f a b =
+    if a.line > b.line then -1
+    else if a.line < b.line then +1
+    else begin
+      if a.col > b.col then -1
+      else if a.col < b.col then +1
+      else 0 
+    end
+  in
+  List.sort f tokens
+
 let encode_tokens tokens =
   let len = List.length tokens in
   let data = Array.init (len * 5) (fun _ -> 0) in
@@ -145,7 +165,7 @@ let encode_tokens tokens =
       encode (i * 5) ct ldelta sdelta;
       go (i - 1) (pt :: ts)
   in
-  go (len - 1) tokens;
+  go (len - 1) (sort_tokens tokens);
   Array.to_list data
 
 let mk span type_ modifiers =
@@ -157,15 +177,15 @@ let mk span type_ modifiers =
     length = span_length span;
   }
 
-let get_tokens ast =
+let get_tokens ast uri =
   let map f l = List.map f l |> List.flatten |> List.rev in
-
+  
   let rec go_type node =
     let this = mk node.span in
     match node.item with
       | TY_Grouping g -> go_type g
       | TY_Any -> [this T.type_parameter []]
-      | TY_Variable _ -> [this T.type_parameter []]
+      | TY_Variable _ -> [this T.type_variable []]
       | TY_Effect t ->
         let end' = {
             node.span.start with
@@ -176,56 +196,59 @@ let get_tokens ast =
         let span' = {node.span with end_=end'} in
         let this' = mk span' T.keyword M.[async; modification] in
         begin match t with
-          | Some t -> go_type t @ [this']
+          | Some t -> this' :: go_type t
           | None -> [this']
         end 
-      | TY_Function (t1, t2) -> go_type t2 @ go_type t1
+      | TY_Function (t1, t2) -> go_type t1 @ go_type t2
       | TY_Tuple ts -> map go_type ts
       | TY_Construct (t1, t2) -> begin
-          let t2' = mk t2.span T.class_ [] in
+          let t2' = mk t2.span T.type_ [] in
           match t1 with
             | Some t -> t2' :: go_type t
             | None -> [t2']
         end
-      | TY_Builtin _ -> [this T.type_ M.[default_library]]
-      | _ -> []
+      | TY_Builtin _ -> [this T.builtin_type []]
+      | TY_Variant _ -> [this T.enum []]
   in
-  let rec go_patt node =
+  let rec go_patt ?(fn=false) node =
+    let self = mk node.span in
     match node.item with
-      | _ -> [mk node.span T.function_ []]
+      | PA_Variable _ ->
+        [self (if fn then T.function_ else T.parameter) []]
+      | PA_Wildcard -> [self T.constant []]
   in
   let rec go_expr node =
     match node.item with
       | EX_Grouping g -> go_expr g
       | EX_Binding (b, e) ->
-        go_expr e @ go_expr b.expr @ go_patt b.patt
-      | EX_Lambda b -> go_expr b.expr @ go_patt b.patt
-      | EX_Sequence (e1, e2) -> go_expr e2 @ go_expr e1
+        go_patt b.patt @ go_expr b.expr @ go_expr e
+      | EX_Lambda b -> go_patt b.patt @ go_expr b.expr
+      | EX_Sequence (e1, e2) -> go_expr e1 @ go_expr e2
       | EX_Constraint (e, t) -> go_type t @ go_expr e
-      | EX_Application (e, es) -> map go_expr es @ go_expr e
+      | EX_Application (e, es) -> go_expr e @ map go_expr es
       | EX_Tuple es -> map go_expr es
       | EX_Construct (p, e) ->
-        Option.fold ~none:[] ~some:go_expr e
-          @ [mk p.span T.enum_member []]
+        mk p.span T.enum_member [] ::
+          Option.fold ~none:[] ~some:go_expr e
       | EX_Literal l ->
           let typ = begin match l with
             | LI_Int _ | LI_Float _ -> T.number
             | LI_Char _ | LI_String _ -> T.string
-            | LI_Nil -> T.nil
+            | LI_Nil -> T.constant
           end in
           [mk node.span typ []]
-      | _ -> [mk node.span T.number []]
+      | EX_Identifier _ -> [mk node.span T.symbol []]
+      | EX_External _ -> [mk node.span T.function_ M.[readonly]]
   in
   let rec go_toplevel node =
     match node.item with
       | TL_Declaration (n, t) ->
         let n' = mk n.span T.function_ M.[declaration] in
-        go_type t @ [n']
-      | TL_Definition {patt; expr} ->
-        go_expr expr @ go_patt patt
-      | _ -> []
-  and go_ast = function
-    | [] -> []
-    | tl :: tls ->
-      go_toplevel tl @ go_ast tls
-  in go_ast ast
+        n' :: go_type t
+      | TL_Definition b -> go_patt ~fn:true b.patt @ go_expr b.expr
+      | _ -> [mk node.span T.comment []]
+  in
+
+  let file = Lsp.Uri.to_path uri in
+  List.filter (fun n -> n.span.file = file) ast
+  |> map go_toplevel
