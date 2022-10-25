@@ -4,10 +4,11 @@ open Report.Error
 
 module Ast = Parse.Ast
 
-let error e span =
-  Report.make_error (Type_error e) span
-  |> Report.raise
-
+let error ?(fatal=false) e span =
+  let r = Report.make_error (Type_error e) span in
+  if fatal then Report.raise r
+  else Report.report r
+  
 let mk s t i = {span=s; item=i; typ=t}
 
 let set_ty t n = {n with typ=t}
@@ -114,7 +115,9 @@ let rec match_fun_ty span = function
     let return_ty = new_var level in
     tvar := Link (TFun (param_ty, return_ty));
     param_ty, return_ty
-  | t -> error (Expected_funtion (show t false)) (Some span)
+  | t ->
+    error (Expected_funtion (show t false)) (Some span);
+    TError, TError
 
 (* inference functions *)
 
@@ -202,7 +205,8 @@ let rec infer_expr ?(level=0) env exp =
 
     | EX_Construct (pnode, _enode) ->
       let name = Parse.Ident.to_string pnode.item in
-      error (Use_of_unbound ("constructor", name)) (Some pnode.span)
+      error ~fatal:true (Use_of_unbound ("constructor", name)) (Some pnode.span);
+      failwith "unreachable"
 
     | EX_Literal l ->
       let name n = TName (Path.Ident n) in
@@ -217,11 +221,12 @@ let rec infer_expr ?(level=0) env exp =
     | EX_Identifier {span; item} ->
       let path = Path.from_ident item in
       begin try
-        let t = instantiate level (Env.get_w_path env path) in
+        let t = instantiate level (Env.get_w_path env path span) in
         mk s t (EX_Identifier (mk span t path)) 
       with Not_found ->
         let name = Path.to_string path in
-        error (Use_of_unbound ("variable", name)) (Some span)
+        error (Use_of_unbound ("variable", name)) (Some span);
+        mk s TError (EX_Identifier (mk span TError path))
       end
 
     | EX_External n ->

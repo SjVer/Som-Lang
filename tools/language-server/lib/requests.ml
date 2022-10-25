@@ -1,4 +1,3 @@
-open Lsp
 open Lsp.Types
 open Util
 open Somc

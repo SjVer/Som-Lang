@@ -26,7 +26,7 @@ let find_tast_node pos tast =
   let open TAst in
   let is_in span = pos_in_span pos span in
 
-  let rec go_patt (node: pattern tnode) =
+  let go_patt (node: pattern tnode) =
     let this = `Pattern node in
     match node.item with
       | PA_Variable _

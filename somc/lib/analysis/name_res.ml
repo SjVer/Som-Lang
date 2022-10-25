@@ -49,6 +49,12 @@ let shadowed_symbol_warning n s =
   Report.make_warning msg (Some s)
   |> Report.report
 
+let check_import_private n s =
+  if n.[0] = '_' then
+    let e = Cannot_private ("import", n) in
+    Report.make_error (Type_error e) (Some s)
+    |> Report.report
+
 let extract_sect from = function
   | TL_Section (_, ast) -> ast
   | _ ->
@@ -85,13 +91,13 @@ let resolve_file dir = function
 (** returns a function that when given
     a string returns a toplevel item
     with that name (section or ...) *)
-let resolve_symbol ast =
+let resolve_symbol span ast =
   let get_name_from_tl = function
     | TL_Definition b -> (match b.patt.item with
       | PA_Variable n -> n
       | _ -> "")
     | TL_Type_Definition d -> d.name.item
-    | TL_Section (n, _) -> n
+    | TL_Section (n, _) -> n.item
     | _ -> ""
   in
   let rec find_in_tls n = function
@@ -103,13 +109,16 @@ let resolve_symbol ast =
   in
 
   let rec go ast = function
-    | [] -> fun n -> TL_Section (n, ast)
+    | [] -> fun n ->
+        let n' = {item = n; span} in
+        TL_Section (n', ast)
     | [n] ->
+        check_import_private n.item n.span;
         let tl = find_in_tls n ast in
         begin fun n' ->
           if n' = n.item then tl.item
           else TL_Link (n', tl)
-        end 
+        end
     | n :: ns ->
       let sect = find_in_tls n ast in
       let sect' = extract_sect n sect.item in
@@ -120,10 +129,10 @@ let resolve_symbol ast =
 
 let resolve_import names ({dir; path; kind} : import) s =
   (* TODO: allow importing directories? *)
-  let file, path' = resolve_file dir path in
+  let file, path' = resolve_file (nmapi dir) path in
 
   let ast = !get_ast_fn file s in
-  let sym = resolve_symbol ast path' in
+  let sym = resolve_symbol s ast path' in
 
   let add_and_check_name n =
     match List.find_opt ((=) n) !names with
@@ -146,7 +155,7 @@ let resolve_import names ({dir; path; kind} : import) s =
       let ast = extract_sect n (symbol_w_name "") in
       let go n =
         let path, kind = n.item.path, n.item.kind.item in
-        let symbol_w_name' = resolve_symbol ast path in
+        let symbol_w_name' = resolve_symbol n.span ast path in
         finish path symbol_w_name' kind
       in
       List.flatten (List.map go is)

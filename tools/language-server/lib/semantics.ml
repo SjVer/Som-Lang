@@ -210,7 +210,7 @@ let get_tokens ast uri =
       | TY_Builtin _ -> [this T.builtin_type []]
       | TY_Variant _ -> [this T.enum []]
   in
-  let rec go_patt ?(fn=false) node =
+  let go_patt ?(fn=false) node =
     let self = mk node.span in
     match node.item with
       | PA_Variable _ ->
@@ -246,6 +246,21 @@ let get_tokens ast uri =
         let n' = mk n.span T.function_ M.[declaration] in
         n' :: go_type t
       | TL_Definition b -> go_patt ~fn:true b.patt @ go_expr b.expr
+      | TL_Type_Definition d ->
+        mk d.name.span T.type_ M.[definition] :: go_type d.typ
+        @ map (fun n -> [mk n.span T.type_variable []]) d.params
+      | TL_Import i ->
+        let rec go (i: import) =
+          map (fun n -> [mk n.span T.namespace []]) (i.dir @ i.path)
+          @ match i.kind.item with
+            | IK_Simple -> []
+            | IK_Glob -> [mk i.kind.span T.keyword []]
+            | IK_Rename _ -> [mk i.kind.span T.symbol []]
+            | IK_Nested is -> map go (nmapi is)
+        in go i
+      | TL_Section (n, ast) ->
+        mk n.span T.namespace M.[definition]
+        :: map go_toplevel ast
       | _ -> [mk node.span T.comment []]
   in
 

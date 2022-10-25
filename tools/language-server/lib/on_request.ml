@@ -1,5 +1,4 @@
 open Lsp
-open Lsp.Types
 open Util
 
 module JsonError = Jsonrpc.Response.Error

@@ -14,7 +14,7 @@ and 'a tnode =
 and toplevel =
   | TL_Declaration of string node * Types.t node
   | TL_Definition of value_binding
-  | TL_Section of string * tast
+  | TL_Section of string node * tast
 
 and value_binding =
   {

@@ -40,6 +40,7 @@ type type_error =
   | Recursive_type
   | Use_of_unbound of string * string (*+symbol*)
   | Failed_to_resolve of string (*+symbol*)
+  | Cannot_private of string * string (*-cannot use private symbol*)
   | Cannot_import_from of string (*+non-module symbol*)
   | Could_not_infer (*+type*)
   
@@ -49,6 +50,7 @@ let get_type_error_msg = function
   | Recursive_type        -> f "recursive type"
   | Use_of_unbound (t, w) -> f "use of unbound %s `%s`" t w
   | Failed_to_resolve w   -> f "failed to resolve `%s`" w
+  | Cannot_private (a, w) -> f "cannot %s private symbol `%s`" a w
   | Cannot_import_from w  -> f "cannot import from non-module symbol `%s`" w
   | Could_not_infer       -> f "could not infer type"
 
@@ -56,7 +58,7 @@ let get_type_error_msg = function
 
 type other_error =
   | Could_not_open of string (*+file*)
-  | Cannot_import_dir of string (*+\bectory*)
+  | Cannot_import_dir of string (*-cannot import directory*)
   | Could_not_compile of string (*+file*)
   | Failed_to_import of string (*+symbol*)
   | Cannot_explain of int (*+error code*)

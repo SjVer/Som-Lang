@@ -21,13 +21,13 @@ let get_code_opt = function
 
 ENUM_REGEX = r"type (\w+)_error =\n(.*?)\nlet"
 VARIANT_REGEX = r"\s*(\w+)(?: (.*?)\n)?"
-PROPERTIES_REGEX = r"^(of [^\(]*)?(?:\(\*\+(.*?)\*\))?.*$"
+PROPERTIES_REGEX = r"^(of [^\(]*)?(?:\(\*(?:\+(.*?)|-(.*?))\*\))?.*$"
 
 class Variant:
     index: int
     name: str
     has_value: bool
-    extra_text: str
+    text: str
 
 class Enum:
     name: str
@@ -49,7 +49,12 @@ def read_enums(source: str):
             
             props = findall(PROPERTIES_REGEX, v[1])[0]
             variant.has_value = len(props[0]) > 0
-            variant.extra_text = props[1]
+
+            if props[2]:
+                variant.text = props[2]
+            else:
+                variant.text = variant.name \
+                    .replace("_", " ").lower()    
 
             eenum.variants.append(variant)
         
@@ -65,7 +70,7 @@ def print_enums(enums: List[Enum]):
 
         for v in e.variants:
             has_value = " _" if v.has_value else ""
-            print(f"    {v.index}: {v.name}{has_value} \"{v.extra_text}\"")
+            print(f"    {v.index}: {v.name}{has_value} \"{v.text}\"")
 
         print()
 
@@ -98,13 +103,10 @@ def generate_file(enums: List[Enum]):
     txt += FROM_INT_DECL_FMT
     for e in enums:
         for v in e.variants:
-            name = " ".join([n.lower() for n in v.name.split('_')])
-            if v.extra_text: name += ' ' + v.extra_text
-
             txt += FROM_INT_BODY_FMT.format(
                 index = v.index,
                 kind = e.name,
-                name = name
+                name = v.text
             )
     txt += FROM_INT_TAIL_FMT
     

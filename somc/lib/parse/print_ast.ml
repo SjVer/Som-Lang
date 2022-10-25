@@ -168,13 +168,14 @@ and print_toplevel_node i node =
     | TL_Import {dir; path; kind} ->
       let dir' = match dir with
         | [] -> ""
-        | l -> String.concat "/" l ^ "/"
+        | l ->
+          String.concat "/" (nmapi l) ^ "/"
       in
       p i ("TL_Import " ^ dir' ^ show_path path) span;
       print_import_kind_node' (i + 1) kind
 
     | TL_Section (n, ast) ->
-      p i ("TL_Section " ^ n) span;
+      p i ("TL_Section " ^ n.item) span;
       print_ast (i + 1) ast
     
     | TL_Link (n, tl) ->

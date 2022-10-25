@@ -169,6 +169,7 @@ toplevel:
   | declaration dot { $1 }
   | definition dot { $1 }
   | type_definition dot { $1 }
+  | section { $1 }
   // | global_directive { mknode $sloc (TL_Directive $1) }
 ;
 
@@ -203,6 +204,14 @@ type_definition_body:
   | typ { $1 }
 ;
 
+section:
+  | LOWERNAME LBRACE toplevel* RBRACE {
+    let nnode = mknode $loc($1) $1 in
+    mknode $loc (TL_Section (nnode, $3))
+  }
+  | LOWERNAME LBRACE toplevel* error { unclosed "{" "}" "section" $loc($4) }
+;
+
 // ======================== import helpers ========================
 
 import_body: import_body_ { let (d, p, k) = $1 in mkimp d p k }
@@ -213,8 +222,8 @@ import_body_:
 ;
 
 %inline import_dir_segment:
-  | LOWERNAME SLASH { $1 }
-  | UPPERNAME SLASH { $1 }
+  | LOWERNAME SLASH { mknode $sloc $1 }
+  | UPPERNAME SLASH { mknode $sloc $1 }
 ;
 
 import_rest:

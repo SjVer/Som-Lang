@@ -94,8 +94,12 @@ let () =
 
 (* entrypoint *)
 let () =
-  Typing.PrintTAst.print_tast (
-    Pipeline.TypecheckFile.call
-      (!Config.Cli.args).file
-  );
+  if !(C.args).verbose then
+    Typing.PrintTAst.print_tast (
+      Pipeline.TypecheckFile.call
+        (!C.args).file)
+  else
+    ignore (
+      Pipeline.TypecheckFile.call
+        (!C.args).file);
   exit 0

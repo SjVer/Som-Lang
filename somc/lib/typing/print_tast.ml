@@ -90,7 +90,7 @@ and print_toplevel_node i node =
       print_expr_node (i + 1) expr
 
     | TL_Section (n, tast) ->
-      p i ("TL_Section " ^ n) span;
+      p i ("TL_Section " ^ n.item) span;
       print_tast (i + 1) tast
 
 and print_tast i nodes =

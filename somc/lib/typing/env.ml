@@ -34,13 +34,25 @@ let get_symbol  e n = SMap.find n e.symbols
 let get_alias   e n = SMap.find n e.aliases
 let get_section e n = SMap.find n e.sections
 
-let get_w_path env path =
-  let rec go env' = function
-    | [n] -> get_symbol env' n
-    | n :: ns -> go (get_section env' n) ns
+let get_w_path env path span =
+  let check n if_ok =
+    if n.[0] = '_' then
+      let e = Report.Error.Cannot_private ("use", n) in
+      Report.make_error (Type_error e) (Some span)
+      |> Report.report;
+      Types.TError
+    else if_ok
+  in
+  let rec go env' first = function
+    | [n] -> if first
+      then get_symbol env' n
+      else check n (get_symbol env' n)
+    | n :: ns -> if first
+      then go (get_section env' n) false ns
+      else check n (go (get_section env' n) false ns)
     | [] -> assert false
   in
-  go env (Path.to_list path)
+  go env true (Path.to_list path)
 
 let externals : Types.t SMap.t ref = ref SMap.empty
 

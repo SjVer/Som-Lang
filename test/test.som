@@ -1,6 +1,9 @@
-@id x : 'a -> 'a = x.
+foo {
+	_priv {
+		@txt = "bar".
+	}
 
-@ignore _ : _ -> Nll = ().
+	@bar = _priv::txt.
+}
 
-@main = ignore (0xFF : $i.u.32), id 'c', exit 0.
-
+@baz = foo::bar, foo::_priv::txt.

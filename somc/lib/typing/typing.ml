@@ -7,7 +7,6 @@ module Path = Path
 open Parse.Ast
 open TAst
 open Infer
-open Report
 
 let mk s i = Some {span=s; item=i}
 
@@ -20,17 +19,17 @@ let check_declaration oldenv newenv s =
   let f n t =
     try
       let dt = find (n ^ "\\decl") in
-      try
+      (* try *)
         let t' = instantiate 0 t in
         unify s dt t';
         newenv' := Env.add_symbol !newenv' n dt
 
-      with Report.Error r ->
+      (* with Report.Error r ->
           let note = Printf.sprintf
             "'%s' is declared with type `%s`"
             n (Types.show dt false)
           in
-          report (Report.add_note note r)
+          report (Report.add_note note r) *)
 
     with Not_found -> ()
   in
@@ -71,17 +70,17 @@ let rec typecheck_tl_node env node =
       (* TODO: params *)
       Env.add_alias env name.item t, None
 
+    | TL_Import _ -> failwith "Import node survived analysis"
+
     | TL_Section (n, tls) ->
       let env', tls' = typecheck env tls in
-      let env'' = Env.add_section env' n env' in
+      let env'' = Env.add_section env' n.item env' in
       env'', mk span (TL_Section (n, tls'))
 
     | TL_Link (_, tl) ->
       let env', tl' = typecheck_tl_node env tl in
       (* TODO: bind to name? *)
       env', tl'
-
-    | _ -> failwith "Typing.typecheck_tl_node"
 
 and typecheck env (ast : ast) =
   let rec go env acc = function

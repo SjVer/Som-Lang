@@ -13,7 +13,7 @@ and toplevel =
   | TL_Definition of value_binding (** `patt = expr.` *)
   | TL_Type_Definition of type_definition (** `string := type.` *)
   | TL_Import of import (** `#import` *)
-  | TL_Section of string * ast (** `string { ... }` *)
+  | TL_Section of string node * ast (** `string { ... }` *)
   | TL_Link of string * toplevel node (** internal use *)
 
 and value_binding =
@@ -33,7 +33,7 @@ and type_definition =
 
 and import =
   {
-    dir: string list;
+    dir: string node list;
     path: string node list;
     kind: import_kind node;
   } 
@@ -110,3 +110,6 @@ and directive_arg =
   | DA_String of string
   | DA_Identifier of string
 *)
+
+let nmapi l = List.map (fun n -> n.item) l
+let nmaps l = List.map (fun n -> n.span) l
