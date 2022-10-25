@@ -116,7 +116,7 @@ let rec match_fun_ty span = function
     tvar := Link (TFun (param_ty, return_ty));
     param_ty, return_ty
   | t ->
-    error (Expected_funtion (show t false)) (Some span);
+    error (Expected_function (show t false)) (Some span);
     TError, TError
 
 (* inference functions *)

@@ -1,5 +1,5 @@
 {
-open Parser
+open Token
 open Report.Error
 open Span
 
@@ -38,7 +38,6 @@ let char_for_backslash = function
   | 'v' -> '\x0B'
   | '0' -> '\x00'
   | c   -> c
-
 }
 
 let prime = '\''
@@ -57,11 +56,11 @@ let float = (digit+ '.' digit+)
 let blank = ' ' | '\t' | '\r'
 let backslash_escapes = ['\\' '\'' '"' 'a' 'b' 'f' 'n' 'r' 't' 'v' '0']
 
-rule main = parse
-  | blank { main lexbuf }
-  | '\n' { Lexing.new_line lexbuf; main lexbuf }
-  | "---" { block_comment lexbuf; main lexbuf }
-  | "--" { simple_comment lexbuf; main lexbuf }
+rule lex = parse
+  | blank { lex lexbuf }
+  | '\n' { Lexing.new_line lexbuf; lex lexbuf }
+  | "---" { block_comment lexbuf; lex lexbuf }
+  | "--" { simple_comment lexbuf; lex lexbuf }
 
   | "/=" { NOTEQUAL }
   | ":=" { COLONEQUAL }
@@ -135,8 +134,6 @@ rule main = parse
   | "'" '\\' (_ as c)
     { raise_error (curr_span lexbuf) (Illegal_escape c) [] }
 
-  | "true" { BOOL true }
-  | "false" { BOOL false }
   | int as n { INTEGER (int_of_string n) }
   | float as n { FLOAT (float_of_string n) }
 
@@ -188,3 +185,19 @@ and string = parse
     store_string_char c;
     string lexbuf
   }
+
+{
+let get_tokens lexbuf =
+  let mk t = {
+      typ = t;
+      span = span_from_lexbuf lexbuf false;
+    }
+  in
+  let rec go acc =
+    let t = mk (lex lexbuf) in
+    match t.typ with
+      | EOF -> t :: acc
+      | _ -> go (t :: acc)
+  in
+  List.rev (go [])
+}

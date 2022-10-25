@@ -1,6 +1,6 @@
 module Name_res = Name_res
 
-let add_implicit_import_prelude ast =
+let add_implicit_prelude ast =
   let open Span in
   let open Parse.Ast in
   let open Config in

@@ -57,6 +57,10 @@ let () =
     ~placeholder:"PASS"
     ~description:"Run pass PASS on the llvm IR"
     () in
+  let no_prelude = flag
+    ~set_long:"no-prelude"
+    ~description:"Don't implicitly include the prelude"
+    false in
   let search_dirs = list_string
     ~long:"include"
     ~short:'i'
@@ -88,6 +92,7 @@ let () =
     mute;
     opt_level=opt_level';
     passes;
+    no_prelude;
     search_dirs;
     file;
   }

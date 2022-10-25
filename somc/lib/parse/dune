@@ -1,11 +1,7 @@
 (library
   (name parse)
   (libraries report span ANSITerminal)
-)
-
-(menhir
-  (modules parser)
-  (flags --explain)
+  (preprocess (pps ppx_deriving.show ppx_deriving.eq))
 )
 
 (ocamllex lexer)

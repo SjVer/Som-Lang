@@ -36,7 +36,7 @@ let get_syntax_error_msg = function
 
 type type_error =
   | Expected of string * string (*+a different type*)
-  | Expected_funtion of string (*+type*)
+  | Expected_function of string (*+type*)
   | Recursive_type
   | Use_of_unbound of string * string (*+symbol*)
   | Failed_to_resolve of string (*+symbol*)
@@ -46,7 +46,7 @@ type type_error =
   
 let get_type_error_msg = function
   | Expected (e, g)       -> f "expected type `%s` but found type `%s`" e g
-  | Expected_funtion g    -> f "expected a function type but found type `%s`" g
+  | Expected_function g   -> f "expected a function type but found type `%s`" g
   | Recursive_type        -> f "recursive type"
   | Use_of_unbound (t, w) -> f "use of unbound %s `%s`" t w
   | Failed_to_resolve w   -> f "failed to resolve `%s`" w

@@ -1,9 +1,9 @@
 foo {
 	_priv {
-		@txt = "bar".
+ 		@txt = "bar".
 	}
 
-	@bar = _priv::txt.
+-- 	@bar = _priv::txt.
 }
-
-@baz = foo::bar, foo::_priv::txt.
+-- 
+-- @baz = foo::bar, foo::_priv::txt,,.

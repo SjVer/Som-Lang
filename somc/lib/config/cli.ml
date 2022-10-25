@@ -14,6 +14,7 @@ type args_t =
     mute: bool;
     opt_level: [`On | `O0 | `O1 | `O2 | `O3 | `Os | `Oz];
     passes: string list;
+    no_prelude: bool;
     search_dirs: string list;
     file: string;
   }
@@ -23,6 +24,7 @@ let args = ref {
     mute=false;
     opt_level=`O3;
     passes=[];
+    no_prelude=false;
     search_dirs=[];
     file="";
   }

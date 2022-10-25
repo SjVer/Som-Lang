@@ -37,7 +37,10 @@ module TypecheckFile = Query.Make(struct
   type r = Typing.TAst.tast
   let c f =
     let ast = AnalyzeFile.call (f, None) in
-    let ast' = Analysis.add_implicit_import_prelude ast in
+    let ast' = if (!Config.Cli.args).no_prelude
+      then ast
+      else Analysis.add_implicit_prelude ast
+    in
     let _, tast = Typing.typecheck Typing.Env.empty ast' in
     tast
 end)
