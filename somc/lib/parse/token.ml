@@ -64,7 +64,7 @@ type token_typ =
   | BUILTINITY of (bool * int)
   | BUILTINFTY of int
   | BUILTINVTY
-  [@@deriving show, eq]
+  [@@deriving show {with_path = false}, eq]
 
 let without_arg = function
   | UPPERNAME _ -> `UPPERNAME

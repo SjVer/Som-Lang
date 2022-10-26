@@ -40,6 +40,7 @@ contexts:
     # Include other contexts from here (or specify them directly).
     - include: comment
     - include: directive
+    - include: section
     - include: import
     - include: typedef
     - include: type
@@ -93,6 +94,17 @@ contexts:
       captures:
         1: punctuation.definition.annotation.som
         2: variable.annotation.som
+
+  section:
+    - match: ({{lname}})\s*(\{)
+      captures:
+        1: entity.name.namespace.som
+        2: punctuation.section.braces.begin.som
+      push:
+        - match: \}
+          scope: punctuation.section.braces.end.som
+          pop: true
+        - include: main
 
   import:
     - match: \#\s*(?={{lname}}|{{uname}})
