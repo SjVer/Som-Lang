@@ -49,10 +49,10 @@ let shadowed_symbol_warning n s =
   Report.make_warning msg (Some s)
   |> Report.report
 
-let check_import_private n s =
-  if n.[0] = '_' then
-    let e = Cannot_private ("import", n) in
-    Report.make_error (Type_error e) (Some s)
+let check_import_private n =
+  if n.item.[0] = '_' then
+    let e = Cannot_private ("import", n.item) in
+    Report.make_error (Type_error e) (Some n.span)
     |> Report.report
 
 let extract_sect from = function
@@ -88,10 +88,32 @@ let resolve_file dir = function
     in
     go search_dirs, ptl
 
+let resolve_section fname ast =
+  let rec find_in_ast name = function
+    | hd :: tl ->
+      begin match hd.item with
+        | TL_Section (n, ast)
+          when n = name -> ast
+        | _ -> find_in_ast name tl
+      end
+    | [] -> symbol_not_found_error name 
+  in
+
+  let rec go ast = function
+    | [] -> TL_Section (fname, ast)
+    | [n] ->
+        check_import_private n;
+        let ast' = find_in_ast n ast in
+        TL_Section (n, ast')
+    | n :: ns ->
+      let sect = find_in_ast n ast in
+      go sect ns
+  in go ast
+
 (** returns a function that when given
     a string returns a toplevel item
     with that name (section or ...) *)
-let resolve_symbol span ast =
+let find_symbol_in_sect span ast =
   let get_name_from_tl = function
     | TL_Definition b -> (match b.patt.item with
       | PA_Variable n -> n
@@ -132,24 +154,23 @@ let resolve_import names ({dir; path; kind} : import) s =
   let file, path' = resolve_file (nmapi dir) path in
 
   let ast = !get_ast_fn file s in
-  let sym = resolve_symbol s ast path' in
+  let sect = resolve_section (List.hd path) ast path' in
 
-  let add_and_check_name n =
+  let check_shadowing n =
     match List.find_opt ((=) n) !names with
       | Some n -> shadowed_symbol_warning n s
       | None -> names := (n :: !names)
   in
 
   let rec finish path symbol_w_name = function
-    | IK_Simple ->
-      let name = List.hd (List.rev path) in
-      add_and_check_name name.item;
-      [symbol_w_name name.item]
-
-    | IK_Rename n ->
-      add_and_check_name n;
-      [symbol_w_name n]
-
+    | IK_Simple n ->
+      let s = find_symbol_in_sect sect n in
+      check_shadowing n.item;
+      [symbol_w_name s n.item]
+    | IK_Rename (on, nn) ->
+      let s = find_symbol_in_sect sect on in
+      check_shadowing nn.item;
+      [symbol_w_name s nn.item]
     | IK_Nested is ->
       let n = List.hd (List.rev path) in
       let ast = extract_sect n (symbol_w_name "") in
@@ -159,12 +180,12 @@ let resolve_import names ({dir; path; kind} : import) s =
         finish path symbol_w_name' kind
       in
       List.flatten (List.map go is)
-      
     | IK_Glob ->
       let n = List.hd (List.rev path) in
       let ast = extract_sect n (symbol_w_name "") in
       List.map (fun n -> n.item) ast
-  in finish path sym kind.item
+    | IK_Error -> []
+  in finish path sect kind.item
 
 let resolve =
   let names = ref [] in

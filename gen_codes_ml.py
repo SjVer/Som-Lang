@@ -52,9 +52,13 @@ def read_enums(source: str):
 
             if props[2]:
                 variant.text = props[2]
+            elif props[1]:
+                variant.text = variant.name \
+                    .replace("_", " ").lower() \
+                    + " "  + props[1]
             else:
                 variant.text = variant.name \
-                    .replace("_", " ").lower()    
+                    .replace("_", " ").lower()
 
             eenum.variants.append(variant)
         

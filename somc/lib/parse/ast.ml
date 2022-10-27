@@ -39,10 +39,11 @@ and import =
   } 
     
 and import_kind =
-  | IK_Simple (** `path` *)
+  | IK_Simple of string node (** `string` *)
   | IK_Glob (** `path::*` *)  
-  | IK_Rename of string (** `path => string` *)
+  | IK_Rename of string node * string node (** `string => string` *)
   | IK_Nested of import node list (** `path::{import, list}` *)
+  | IK_Error
   
 (* ====================== Pattern ====================== *)
 

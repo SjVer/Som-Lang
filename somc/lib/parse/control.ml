@@ -19,8 +19,8 @@ let fail r = Stdlib.raise (Failed r)
 
 let error_at t e n =
   make (`Error (Syntax_error e)) (Some t.span) n []
-  |> report;
-  if tokens_eq t.typ EOF then error ()
+  |> report
+  (* if tokens_eq t.typ EOF then error () *)
 
 let error_at_current f e n =
   error_at (List.hd f.tokens) e n
@@ -69,6 +69,10 @@ let backup f =
     previous = f.previous;
   }
 
+let update srcf destf =
+  destf.tokens <- srcf.tokens;
+  destf.previous <- srcf.previous
+
 (* flow *)
 
 let skip f ts =
@@ -85,9 +89,9 @@ let skip f ts =
     | _ -> ()
   ) ts
 
-let mk t i =
+let mk i s =
   Ast.{
-    span = t.Token.span;
+    span = s;
     item = i;
   }
 
@@ -108,11 +112,21 @@ let enclose f l lstr e estr r rstr =
 (* [r1 +> r2] parsers [r1] followed by [r2] *)
 let (+>) r1 r2 f = r1 f & r2 f
 
+(* [r1 +< r2] parsers [r1] followed by [r2]
+   but returning the value from [r1] *)
+let (+<) r1 r2 f = let r = r1 f in r2 f & r
+
+(* [(r += v) f] returns [v (r f) f] *)
+let (+=) r v f = let r' = r f in v r' f
+
 (* [r1 |= r2] attempts to parse [r1] and
    resorts to [r2] if [r1] failed. *)
 let (|=) r1 r2 f =
-  try r1 (backup f)
-  with Failed _ -> r2 f
+  let f' = backup f in
+  try r1 f
+  with Failed _ ->
+    update f f';
+    r2 f
 
 (* [r1 |> r2] attempts to parse [r1] and
    resorts to [r2] if [r1] failed, keeping
@@ -120,6 +134,10 @@ let (|=) r1 r2 f =
 let (|>) r1 r2 f =
   try r1 f
   with Failed _ -> r2 f
+
+(* [r |: v] attempts to parse [r] and
+   returns [v] if [r] fails *)
+let (|:) r v = r |= (fun _  -> v)
 
 (* [r |. (ts, v)] attempts to parse [r] and
    if it fails returns [v] if the next
@@ -140,9 +158,6 @@ let (|!) r (str, ts) f =
     if not r then error_at_current f' (Expected str) [];
     skip f ts;
     fail true
-
-(* [(>= r) f] is [f := r] *)
-let (!:) r = r
 
 (* parses [r] with frame [f] *)
 let (:=) f r = r f

@@ -17,7 +17,7 @@ let explain_ecode code =
   let open Report in
   match Codes.error_name_from_int code with
   | Some (kind, name) ->
-    Printf.printf "%s error E%03d:%s\n" kind code name;
+    Printf.printf "%s error E%03d: %s\n" kind code name;
     exit 0
   | None ->
     let open Error in
@@ -30,7 +30,7 @@ let explain_ecode code =
 let () =
   description C.description;
 
-  (* named args *)
+  (* cli stuff *)
   let verbose = flag
     ~set_long:"verbose"
     ~set_short:'v'
@@ -41,22 +41,23 @@ let () =
     ~set_short:'m'
     ~description:"Mute all warnings"
     false in
-  let opt_level = optional opt_typ
-    ~short:'O'
-    ~placeholder:"O3"
-    ~description:"Set optimization level"
-    () in
+  
+  (* output stuff *)
   let explain = optional_int
     ~long:"explain"
     ~placeholder:"CODE"
     ~description:"Explain the given error code"
     () in
-  let passes = list_string
-    ~long:"pass"
-    ~short:'p'
-    ~placeholder:"PASS"
-    ~description:"Run pass PASS on the llvm IR"
-    () in
+  let print_ast = flag
+    ~set_long:"print-ast"
+    ~description:"Print the parsetree"
+    false in
+  let print_tast = flag
+    ~set_long:"print-tast"
+    ~description:"Print the typed parsetree"
+    false in
+
+  (* parse stuff *)
   let no_prelude = flag
     ~set_long:"no-prelude"
     ~description:"Don't implicitly include the prelude"
@@ -68,6 +69,19 @@ let () =
     ~description:"add DIR to the search directories"
     () in
   
+  (* codegen stuff *)
+  let passes = list_string
+    ~long:"pass"
+    ~short:'p'
+    ~placeholder:"PASS"
+    ~description:"Run pass PASS on the llvm IR"
+    () in
+  let opt_level = optional opt_typ
+    ~short:'O'
+    ~placeholder:"O3"
+    ~description:"Set optimization level"
+    () in
+
   (* unnamed args *)
   let file = mandatory_string
     ~placeholder:"FILE"
@@ -90,16 +104,27 @@ let () =
   C.args := C.{
     verbose;
     mute;
-    opt_level=opt_level';
-    passes;
+
+    file;
+    print_ast;
+    print_tast;
+
     no_prelude;
     search_dirs;
-    file;
+
+    opt_level=opt_level';
+    passes;
   }
 
 (* entrypoint *)
 let () =
-  if !(C.args).verbose then
+  let args = !(C.args) in
+
+  if args.print_ast then
+    Parse.PrintAst.print_ast (
+      Pipeline.ParseFile.call
+        ((!C.args).file, None))
+  else if args.print_tast then
     Typing.PrintTAst.print_tast (
       Pipeline.TypecheckFile.call
         (!C.args).file)
@@ -107,4 +132,5 @@ let () =
     ignore (
       Pipeline.TypecheckFile.call
         (!C.args).file);
+
   exit 0

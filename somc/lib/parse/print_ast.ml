@@ -135,15 +135,18 @@ and print_expr_node i node =
 and print_import_kind_node' i node =
   let {span; item} = node in
   match item with
-    | IK_Simple -> p i "IK_Simple" span
+    | IK_Simple n -> p i ("IK_Simple " ^ n.item) span;
     | IK_Glob -> p i "IK_Glob" span
-    | IK_Rename n -> p i ("IK_Rename " ^ n) span
-    | IK_Nested is -> p i "IK_Nested" span;
+    | IK_Rename (s, d) ->
+      p i ("IK_Rename " ^ s.item ^ " => " ^ d.item) span
+    | IK_Nested is ->
+      p i "IK_Nested" span;
       List.iter (
         fun {span; item = {dir=_; path; kind}} ->
           p (i + 1) (show_path path) span;
           print_import_kind_node' (i + 2) kind
         ) is
+    | IK_Error -> p i "IK_error" span
 
 and print_toplevel_node i node =
   let { span; item } = node in
