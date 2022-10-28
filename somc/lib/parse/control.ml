@@ -17,13 +17,13 @@ let error () = Stdlib.raise Error
 
 let fail r = Stdlib.raise (Failed r)
 
-let error_at t e n =
-  make (`Error (Syntax_error e)) (Some t.span) n []
+let error_at s e n =
+  make (`Error (Syntax_error e)) (Some s) n []
   |> report
   (* if tokens_eq t.typ EOF then error () *)
 
 let error_at_current f e n =
-  error_at (List.hd f.tokens) e n
+  error_at (List.hd f.tokens).span e n
 
 (* tokens *)
 
@@ -69,7 +69,7 @@ let backup f =
     previous = f.previous;
   }
 
-let update srcf destf =
+let restore srcf destf =
   destf.tokens <- srcf.tokens;
   destf.previous <- srcf.previous
 
@@ -95,11 +95,11 @@ let mk i s =
     item = i;
   }
 
-let enclose f l lstr e estr r rstr =
+let enclose l lstr e estr r rstr f =
   let l' = expect l f in
   let e' = e f in
   if not (matsch f [r]) then
-    (error_at l' (Unclosed lstr)
+    (error_at l'.span (Unclosed lstr)
       [Printf.sprintf
         "try adding '%s' after the enclosed %s."
         rstr estr];
@@ -116,6 +116,9 @@ let (+>) r1 r2 f = r1 f & r2 f
    but returning the value from [r1] *)
 let (+<) r1 r2 f = let r = r1 f in r2 f & r
 
+(* [(r +: v) f] returns [v (r f)] *)
+let (+:) r v f = v (r f)
+
 (* [(r += v) f] returns [v (r f) f] *)
 let (+=) r v f = let r' = r f in v r' f
 
@@ -125,7 +128,7 @@ let (|=) r1 r2 f =
   let f' = backup f in
   try r1 f
   with Failed _ ->
-    update f f';
+    restore f' f;
     r2 f
 
 (* [r1 |> r2] attempts to parse [r1] and
@@ -137,7 +140,12 @@ let (|>) r1 r2 f =
 
 (* [r |: v] attempts to parse [r] and
    returns [v] if [r] fails *)
-let (|:) r v = r |= (fun _  -> v)
+let (|:) r v f =
+  let f' = backup f in
+  try r f
+  with Failed _ ->
+    restore f' f;
+    v
 
 (* [r |. (ts, v)] attempts to parse [r] and
    if it fails returns [v] if the next
@@ -155,7 +163,14 @@ let (|!) r (str, ts) f =
   let f' = backup f in
   try r f
   with Failed r ->
-    if not r then error_at_current f' (Expected str) [];
+    if not r then begin 
+      (* error_at_current f' (Expected str) []; *)
+      let s = Span.concat_spans
+        (current f').span
+        (current f).span
+      in
+      error_at s (Expected str) [];
+    end;
     skip f ts;
     fail true
 

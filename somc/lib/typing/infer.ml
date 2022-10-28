@@ -239,6 +239,8 @@ let rec infer_expr ?(level=0) env exp =
       end in
       mk s t (EX_External n)
 
+    | EX_Error -> mk s TError EX_Error
+
 (* helper functions *)
 
 let infer_expr env e =

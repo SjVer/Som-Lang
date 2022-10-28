@@ -122,7 +122,7 @@ let () =
 
   if args.print_ast then
     Parse.PrintAst.print_ast (
-      Pipeline.ParseFile.call
+      Pipeline.AnalyzeFile.call
         ((!C.args).file, None))
   else if args.print_tast then
     Typing.PrintTAst.print_tast (

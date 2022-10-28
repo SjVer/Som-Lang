@@ -1,4 +1,4 @@
-module Name_res = Name_res
+module Import = Import
 
 let add_implicit_prelude ast =
   let open Span in
@@ -16,11 +16,11 @@ let add_implicit_prelude ast =
       kind=node IK_Glob;
     }
   in
-  let tls = Name_res.resolve_import (ref []) import span in
+  let tls = Import.resolve_import (ref []) import span in
   List.map node tls @ ast
 
 let check ast =
-  let ast' = Name_res.resolve ast in
+  let ast' = Import.resolve ast in
   ast'
 
 (* TODO: don't desugar ops in parse but here for opts *)

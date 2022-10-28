@@ -1,5 +1,1 @@
-@int = 1.
-@char = 'c'.
-
-@id x = x.
-@ignore _ = ().
+ignore _ = ().

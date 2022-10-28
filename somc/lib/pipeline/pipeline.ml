@@ -49,7 +49,7 @@ end)
    have to solve dependency cycles *)
 let init () =
   Report.Util.read_file_fn := ReadFile.call;
-  Analysis.Name_res.get_ast_fn := fun f s ->
+  Analysis.Import.get_ast_fn := fun f s ->
     AnalyzeFile.call (f, (Some s))
 
 let () = init ()

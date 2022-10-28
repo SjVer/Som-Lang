@@ -67,6 +67,7 @@ and expr =
   | EX_Literal of literal (** `literal` *)
   | EX_Identifier of Ident.t node (** `variable` *)
   | EX_External of string (** `#string` *)
+  | EX_Error
 
 and literal =
   | LI_Int of int

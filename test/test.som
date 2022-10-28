@@ -1,1 +1,3 @@
-#std/io::foo
+#section::ignore => ig
+
+main = 123.

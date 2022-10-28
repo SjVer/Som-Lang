@@ -89,31 +89,30 @@ let resolve_file dir = function
     go search_dirs, ptl
 
 let resolve_section fname ast =
-  let rec find_in_ast name = function
+  let rec find_sect_in_ast name = function
     | hd :: tl ->
       begin match hd.item with
         | TL_Section (n, ast)
           when n = name -> ast
-        | _ -> find_in_ast name tl
+        | _ -> find_sect_in_ast name tl
       end
     | [] -> symbol_not_found_error name 
   in
 
   let rec go ast = function
-    | [] -> TL_Section (fname, ast)
+    | [] -> fname, ast
     | [n] ->
         check_import_private n;
-        let ast' = find_in_ast n ast in
-        TL_Section (n, ast')
+        n, find_sect_in_ast n ast
     | n :: ns ->
-      let sect = find_in_ast n ast in
+      let sect = find_sect_in_ast n ast in
       go sect ns
   in go ast
 
 (** returns a function that when given
     a string returns a toplevel item
     with that name (section or ...) *)
-let find_symbol_in_sect span ast =
+let find_symbol_in_sect ast name =
   let get_name_from_tl = function
     | TL_Definition b -> (match b.patt.item with
       | PA_Variable n -> n
@@ -122,39 +121,27 @@ let find_symbol_in_sect span ast =
     | TL_Section (n, _) -> n.item
     | _ -> ""
   in
-  let rec find_in_tls n = function
-    | hd :: tls ->
-      let name = get_name_from_tl hd.item in
-      if n.item = name then hd
-      else find_in_tls n tls
+  let rec find_in_ast n = function
+    | tl :: tls ->
+      let name = get_name_from_tl tl.item in
+      if n.item = name then tl
+      else find_in_ast n tls
     | [] -> symbol_not_found_error n 
   in
 
-  let rec go ast = function
-    | [] -> fun n ->
-        let n' = {item = n; span} in
-        TL_Section (n', ast)
-    | [n] ->
-        check_import_private n.item n.span;
-        let tl = find_in_tls n ast in
-        begin fun n' ->
-          if n' = n.item then tl.item
-          else TL_Link (n', tl)
-        end
-    | n :: ns ->
-      let sect = find_in_tls n ast in
-      let sect' = extract_sect n sect.item in
-      go sect' ns
-  in go ast
+  let tl = find_in_ast name ast in
+  check_import_private name;
+  tl
 
 (* main stuff *)
 
 let resolve_import names ({dir; path; kind} : import) s =
   (* TODO: allow importing directories? *)
   let file, path' = resolve_file (nmapi dir) path in
+  let fname = List.hd path in
 
   let ast = !get_ast_fn file s in
-  let sect = resolve_section (List.hd path) ast path' in
+  let sect_name, sect = resolve_section fname ast path' in
 
   let check_shadowing n =
     match List.find_opt ((=) n) !names with
@@ -162,30 +149,32 @@ let resolve_import names ({dir; path; kind} : import) s =
       | None -> names := (n :: !names)
   in
 
-  let rec finish path symbol_w_name = function
+  let rec finish sect = function
     | IK_Simple n ->
       let s = find_symbol_in_sect sect n in
       check_shadowing n.item;
-      [symbol_w_name s n.item]
+      [s.item]
     | IK_Rename (on, nn) ->
       let s = find_symbol_in_sect sect on in
+      let s' = match s.item with
+        | TL_Declaration (_, t) -> TL_Declaration (nn, t)
+        | TL_Type_Definition d -> TL_Type_Definition {d with name=nn}
+        | TL_Section (_, ast) -> TL_Section (nn, ast)
+        | _ -> TL_Link (nn.item, s)
+      in
       check_shadowing nn.item;
-      [symbol_w_name s nn.item]
+      [s']
     | IK_Nested is ->
-      let n = List.hd (List.rev path) in
-      let ast = extract_sect n (symbol_w_name "") in
-      let go n =
-        let path, kind = n.item.path, n.item.kind.item in
-        let symbol_w_name' = resolve_symbol n.span ast path in
-        finish path symbol_w_name' kind
+      let go inode =
+        let path, kind = inode.item.path, inode.item.kind.item in
+        let _, subsect = resolve_section sect_name sect path in
+        finish subsect kind
       in
       List.flatten (List.map go is)
     | IK_Glob ->
-      let n = List.hd (List.rev path) in
-      let ast = extract_sect n (symbol_w_name "") in
-      List.map (fun n -> n.item) ast
+      List.map (fun n -> n.item) sect
     | IK_Error -> []
-  in finish path sect kind.item
+  in finish sect kind.item
 
 let resolve =
   let names = ref [] in
@@ -204,7 +193,7 @@ let resolve =
       | _ -> [node]
     with Report.Error e ->
       Report.report e;
-      [node]
+      []
   in
   let rec go' ast = function
     | [] -> ast

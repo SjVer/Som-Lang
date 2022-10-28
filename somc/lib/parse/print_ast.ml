@@ -132,6 +132,9 @@ and print_expr_node i node =
     | EX_External n ->
       p i ("EX_External " ^ n) span
 
+    | EX_Error ->
+      p i "EX_Error" span
+
 and print_import_kind_node' i node =
   let {span; item} = node in
   match item with
