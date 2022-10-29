@@ -1,3 +1,5 @@
--- #section::ignore => ig
+-- don't worry abt the unbound
+-- constructor, the --print-ast
+-- flag makes it parse only.
 
-sub a b = a + -b.
+both a b = Both a b.

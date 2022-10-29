@@ -203,9 +203,28 @@ and simple_pattern f s =
 (* =========================== expression ========================== *)
 
 and expr f =
-  f := withspan (infix_expr 7)
+  let bind b f s =
+    ignore (expect THICKARROW f);
+    let e = expr f in
+    mk (EX_Binding (b, e)) s 
+  in
+  f := withspan (binding (withspan lambda_expr) += bind)
+    |= withspan lambda_expr
     |! ("an expression", [])
     |: mk EX_Error f.previous.span
+
+and lambda_expr f _ =
+  f := withspan seq_expr
+
+and seq_expr f _ =
+  (* f := seq_expr +< expect COMMA +< tuple_expr *)
+  f := withspan tuple_expr
+
+and tuple_expr f _ = 
+  f := withspan constr_expr
+
+and constr_expr f _ =
+  f := withspan (infix_expr 7)
 
 and infix_expr prec f s =
   if prec >= 0 then 
