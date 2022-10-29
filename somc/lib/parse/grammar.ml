@@ -34,7 +34,11 @@ let withspan r f =
   r' s'
 
 let dot f =
-  ignore (consume f DOT "a terminating '.'")
+  (* ignore (consume f DOT "a terminating '.'") *)
+  ignore (
+    f := expect DOT
+      |! ("a terminating '.'", [`S DOT])
+  )
 
 (* =========================== toplevel =========================== *)
 
@@ -199,13 +203,58 @@ and simple_pattern f s =
 (* =========================== expression ========================== *)
 
 and expr f =
-  f := withspan single_expr
+  f := withspan (infix_expr 7)
     |! ("an expression", [])
     |: mk EX_Error f.previous.span
 
+and infix_expr prec f s =
+  if prec >= 0 then 
+    let lhs = withspan (infix_expr (prec - 1)) f in
+    (* TODO: associativity? *)
+    try
+      let op = infix_op prec f in
+      let rhs =
+        f := withspan (infix_expr prec)
+        (* TODO: an error is reported as expression
+           error and missing '.' error (so twice). *)
+          (* |! ("an expression (rhs)", [])
+          |: mk EX_Error f.previous.span *)
+      in
+      mk (EX_Application (op, [lhs; rhs])) s
+    with Failed _ -> lhs
+  else base_expr f s
+
+and base_expr f s =
+  let app s e f =
+    let es = many (withspan single_expr) f in
+    mk (EX_Application (e, es)) s
+  in
+  let constr s c f =
+    let es = many (withspan single_expr) f in
+    mk (EX_Construct (c, es)) s
+  in
+  let unary s o f =
+    let e = withspan base_expr f in
+    mk (EX_Application (o, [e])) s
+  in
+  f := upper_longident += constr s
+    |= withspan single_expr += app s
+    |= withspan single_expr
+    |= unary_op += unary s
+    |! ("an expression", [])
+    |: mk EX_Error s
+  
 and single_expr f s : expr node =
   let mklit (n : token) =
     mk (EX_Literal (unpack_lit n.typ)) n.span
+  in
+  let finish_external f s =
+    try
+      let i = expect (dummy `LOWERNAME) f in
+      mk (EX_External (unpack_name i.typ)) s
+    with Failed _ ->
+      error_at_current f (Expected "an identifier") [];
+      mk EX_Error s
   in
   f := expect (dummy `INTEGER) +: mklit
     |= expect (dummy `FLOAT) +: mklit
@@ -213,25 +262,84 @@ and single_expr f s : expr node =
     |= expect (dummy `STRING) +: mklit
     |= expect EMPTYPARENS +: mklit
 
-    |= (enclose LPAREN "(" expr "expression" RPAREN ")")
-        +: (fun e -> mk (EX_Grouping e) s)
-    |= (enclose LPAREN "(" expr "operator" RPAREN ")")
+    |= lower_longident +: (fun i -> mk (EX_Identifier i) s)
+    |= withspan (expect HASH +> finish_external)
+    
+    |= enclose LPAREN "(" any_op "operator" RPAREN ")"
+    |= enclose LPAREN "(" expr "expression" RPAREN ")"
         +: (fun e -> mk (EX_Grouping e) s)
 
-and infix_op f =
-  let op t n = expect t +: (fun t -> mk n t.span) in
-  f := op PLUS          "add"
-    |= op MINUS         "sub"
-    |= op STAR          "mul"
-    |= op SLASH         "div"
-    |= op CARET         "pow"
-    |= op MODULO        "mod"
-    |= op DBL_AMPERSAND "and"
-    |= op DBL_CARET     "xor"
-    |= op DBL_PIPE      "or" 
-    |= op EQUAL         "eq" 
-    |= op NOTEQUAL      "neq"
-    |= op GREATER       "gr" 
-    |= op GREATEREQUAL  "gre"
-    |= op LESSER        "ls" 
-    |= op LESSEREQUAL   "lse"
+(* ======================= expression helpers ====================== *)
+
+and infix_ops =
+  [
+    [CARET, "^"];
+    [STAR, "*"; SLASH, "/"; MODULO, "%"];
+    [PLUS, "+"; MINUS, "-"];
+    [GREATER, ">"; GREATEREQUAL, ">="; LESSER, "<"; LESSEREQUAL, "<="];
+    [EQUAL, "="; NOTEQUAL, "/="];
+    [DBL_AMPERSAND, "&&"];
+    [DBL_CARET, "^^"];
+    [DBL_PIPE, "||"]; 
+  ]
+
+and unary_ops =
+  [
+    PLUS, "~+";
+    MINUS, "~-";
+    BANG, "~!";
+  ]
+
+and operator f = function
+  | [] -> fail false
+  | (tt, on) :: tl ->
+    let f' = backup f in
+    try
+      let t = expect tt f in
+      let i = Ident.Ident on in
+      mk (EX_Identifier (mk i t.span)) t.span
+    with Failed _ ->
+      restore f' f;
+      operator f tl
+
+and infix_op prec f = operator f (List.nth infix_ops prec)
+
+and unary_op f = operator f unary_ops
+
+and any_op f =
+  let infix_op' f =
+    operator f (List.flatten infix_ops)
+  in
+  let unary_op' f =
+    ignore (expect TILDE f);
+    operator f unary_ops
+  in
+  f := infix_op'
+    |= unary_op'
+
+(* =========================== identifiers ========================== *)
+
+and longident_path f =
+  let ident f =
+    let i = expect (dummy `LOWERNAME) f in
+    unpack_name i.typ
+  in
+  f := many (ident +< expect DBL_COLON)
+    |: []
+
+and lower_longident f =
+  let go f s =
+    let p = longident_path f in
+    let i = expect (dummy `LOWERNAME) f in
+    mk (Ident.from_list (p @ [unpack_name i.typ])) s
+  in
+  withspan go f
+
+and upper_longident f =
+  let go f s =
+    let p = longident_path f in
+    let i = expect (dummy `UPPERNAME) f in
+    mk (Ident.from_list (p @ [unpack_name i.typ])) s
+  in
+  withspan go f
+

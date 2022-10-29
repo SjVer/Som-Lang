@@ -111,6 +111,7 @@ rule lex = parse
   | '-' { MINUS }
   | '/' { SLASH }
   | '%' { MODULO }
+  | '~' { TILDE }
 
   | "$i." ('s'|'u' as s) '.' (digit+ as w) { BUILTINITY (s = 's', int_of_string w) }
   | "$f." ("64"|"32"|"16" as w) { BUILTINFTY (int_of_string w) }

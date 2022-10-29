@@ -76,18 +76,20 @@ let restore srcf destf =
 (* flow *)
 
 let skip f ts =
-  let ts' = List.map
-    (function `S t | `K t -> t)
-    ts
-  in
-  while not (check f ts' || at_end f) do
-    ignore (advance f)
-  done;
-  List.iter (function
-    | `S t when check f [t] ->
+  if ts <> [] then begin
+    let ts' = List.map
+      (function `S t | `K t -> t)
+      ts
+    in
+    while not (check f ts' || at_end f) do
       ignore (advance f)
-    | _ -> ()
-  ) ts
+    done;
+    List.iter (function
+      | `S t when check f [t] ->
+        ignore (advance f)
+      | _ -> ()
+    ) ts
+  end
 
 let mk i s =
   Ast.{
@@ -96,16 +98,23 @@ let mk i s =
   }
 
 let enclose l lstr e estr r rstr f =
+  let f' = backup f in
+
   let l' = expect l f in
-  let e' = e f in
-  if not (matsch f [r]) then
-    (error_at l'.span (Unclosed lstr)
-      [Printf.sprintf
+  try
+    let e' = e f in
+    if not (matsch f [r]) then begin
+      let note = Printf.sprintf
         "try adding '%s' after the enclosed %s."
-        rstr estr];
-      make_warning "here" (Some (current f).span) |> report)
-  ;
-  e'
+        rstr estr
+      in
+      error_at l'.span (Unclosed lstr) [note];
+      (* make_warning "here" (Some (current f).span) |> report; *)
+    end;
+    e'
+  with Failed _ ->
+    restore f' f;
+    fail false
 
 (* rules *)
 
@@ -164,7 +173,6 @@ let (|!) r (str, ts) f =
   try r f
   with Failed r ->
     if not r then begin 
-      (* error_at_current f' (Expected str) []; *)
       let s = Span.concat_spans
         (current f').span
         (current f).span

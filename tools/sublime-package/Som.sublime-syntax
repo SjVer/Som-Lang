@@ -57,10 +57,6 @@ contexts:
         - match: (?=\S)
           pop: true
 
-    # effect
-    - match: (?<!!)!(?!!)
-      scope: storage.modifier.effect.som
-
     # basic types
     - match: '_|{{basictype}}|{{uname}}|{{pname}}|\.\.\.'
       scope: storage.type.som
@@ -329,6 +325,8 @@ contexts:
       scope: keyword.operator.bitwise.som
     - match: \*|/|-|\+|\%
       scope: keyword.operator.arithmetic.som
+    - match: (?<!!)!(?!!)
+      scope: keyword.operator.logical.som
 
     - match: \.\.
       scope: punctuation.definition.range.som
@@ -336,6 +334,9 @@ contexts:
       scope: punctuation.accessor.arrow.som
     - match: \,|;|\.
       scope: punctuation.separator.sequence.som
+
+    - match: \~
+      scope: keyword.operator.unary.som
 
   lambda:
     - match: \\
@@ -439,6 +440,9 @@ contexts:
 
     - match: '{{lname}}''*'
       scope: variable.som
+
+    - match: \`
+      scope: keyword.operator.som
 
   # MISC
 

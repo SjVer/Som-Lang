@@ -63,7 +63,7 @@ and expr =
   | EX_Constraint of expr node * typ node (** `expr : typ` *)
   | EX_Application of expr node * expr node list (** `appl expr ...` *)
   | EX_Tuple of expr node list (** `expr; expr; ...` *)
-  | EX_Construct of Ident.t node * expr node option (** `String expr` *)
+  | EX_Construct of Ident.t node * expr node list (** `String expr` *)
   | EX_Literal of literal (** `literal` *)
   | EX_Identifier of Ident.t node (** `variable` *)
   | EX_External of string (** `#string` *)
@@ -80,7 +80,7 @@ and literal =
 
 and typ =
   (* typedef-only *)
-  | TY_Variant of (string node * typ node option) list
+  | TY_Variant of (string node * typ node list) list
   (* generic *)
   | TY_Grouping of typ node (** `(typ)` *)
   | TY_Any (** `_` *)

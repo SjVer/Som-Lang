@@ -13,6 +13,7 @@ type token_typ =
   | COLON
   | BANG
   | BACKSLASH
+  | TILDE
 
   (* enclosing *)
   | RPAREN

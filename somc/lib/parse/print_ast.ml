@@ -43,10 +43,9 @@ and print_type_node i node =
   match item with
     | TY_Variant cs ->
       p i "TY_Variant" span;
-      let f (s, t) = begin
+      let f (s, ts) = begin
         p (i + 1) s.item s.span;
-        if Option.is_some t
-        then print_type_node (i + 2) (Option.get t)
+        List.iter (print_type_node (i + 2)) ts
       end in List.iter f cs
 
     | TY_Grouping t ->
@@ -118,10 +117,9 @@ and print_expr_node i node =
       p i "EX_Tuple" span;
       List.iter (print_expr_node (i + 1)) es
 
-    | EX_Construct (n, e) ->
+    | EX_Construct (n, es) ->
       p i ("EX_Construct " ^ Ident.to_string n.item) span;
-      if Option.is_some e
-      then print_expr_node (i + 1) (Option.get e)
+      List.iter (print_expr_node (i + 1)) es 
 
     | EX_Literal l ->
       p i ("EX_Literal " ^ show_literal l) span
