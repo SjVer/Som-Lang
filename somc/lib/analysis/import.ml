@@ -30,13 +30,12 @@ let get_ast_fn:
 
 (* helper functions *)
 
-let file_not_found_error node =
-  let e = Failed_to_import (node.item ^ Config.extension) in
+let file_not_found_error dir node =
+  let f = Filename.concat dir node.item ^ Config.extension in
+  let e = Failed_to_import f in
   Report.make_error (Other_error e) (Some node.span)
   |> Report.add_note (Printf.sprintf
-      "try adding directory '%s/' or\n\
-      file '%s.som' to the search paths."
-      node.item node.item)
+      "try adding file '%s' to the search paths." f)
   |> Report.raise
 
 let symbol_not_found_error node =
@@ -77,7 +76,7 @@ let resolve_file dir = function
 
     (* executed per include path *)
     let rec go = function
-      | [] -> file_not_found_error phd
+      | [] -> file_not_found_error dir' phd
       | d :: ds ->
         let file = Filename.concat
           (Filename.concat d dir')

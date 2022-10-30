@@ -29,19 +29,29 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
--- private imports
+--- private imports ---
+
 -- #std/io::{
 -- 	stderr => _stderr,
 -- 	putsf => _putsf
 -- }
 
--- public imports
+--- public imports ---
+
+#std/ops => _std_ops
+
 #std/types::*
+#std/ops::*
+
 -- #std/str => _std_str
 -- #std/list => _std_list
-#std/ops => _std_ops
+
+--- functions ---
+
+-- wraps a value in an effect
+return v : 'a -> !'a = v.
 
 -- terminates the calling process immediately with the given status
 -- !!no_return
-@exit status : Int -> ! =
-  #_som_std_prelude_exit status.
+exit status : Int -> ! =
+	#_som_std_prelude_exit status.

@@ -228,15 +228,15 @@ contexts:
               pop: true
 
   # typedef_variant_aux:
-  #   - match: ({{lname}})(?!\s*::)
-  #     scope: entity.name.type.variant
-  #     set:
-  #       - include: typedef_variant
-  #       - include: type
-  #       - match: (?=\S)
-  #         pop: true
+    # - match: ({{lname}})(?!\s*::)
+    #   scope: entity.name.type.variant
+    #   set:
+    #     - include: typedef_variant
+    #     - include: type
+    #     - match: (?=\S)
+    #       pop: true
 
-  declaration:
+  # declaration:
     # - match: ({{lname}})\s*(\[)(?=.*\]\s*:(?!:))
     #   captures:
     #     1: entity.name.function.som
@@ -248,22 +248,22 @@ contexts:
     #     1: punctuation.section.brackets.end.som
     #     2: punctuation.separator.som
 
-    - match: ({{lname}})\s*(:(?!:))
-      captures:
-        1: entity.name.function.som
-        2: punctuation.separator.som
+    # - match: ({{lname}})\s*(:(?!:))
+      # captures:
+      #   1: entity.name.function.som
+      #   2: punctuation.separator.som
 
-  definition:
-    - match: (@)
-      scope: keyword.definition.som
-      push:
-        - include: pattern
-        - include: type
-        - match: (=)(\s*\.\.\.)?
-          captures:
-            1: keyword.operator.definition.som
-            2: keyword.operator.extern.som
-          pop: true
+  # definition:
+    # - match: (@)
+    #   scope: keyword.definition.som
+    #   push:
+    #     - include: pattern
+    #     - include: type
+    #     - match: (=)(\s*\.\.\.)?
+    #       captures:
+    #         1: keyword.operator.definition.som
+    #         2: keyword.operator.extern.som
+    #       pop: true
 
   generic_embedded:
     - include: type

@@ -91,39 +91,23 @@ let skip f ts =
     ) ts
   end
 
-let mk i s =
+let mk ?(g=false) i s =
   Ast.{
-    span = s;
+    span = {s with ghost = g};
     item = i;
   }
-
-let enclose l lstr e estr r rstr f =
-  let f' = backup f in
-
-  let l' = expect l f in
-  try
-    let e' = e f in
-    if not (matsch f [r]) then begin
-      let note = Printf.sprintf
-        "try adding '%s' after the enclosed %s."
-        rstr estr
-      in
-      error_at l'.span (Unclosed lstr) [note];
-      (* make_warning "here" (Some (current f).span) |> report; *)
-    end;
-    e'
-  with Failed _ ->
-    restore f' f;
-    fail false
 
 (* rules *)
 
 (* [r1 +> r2] parsers [r1] followed by [r2] *)
-let (+>) r1 r2 f = r1 f & r2 f
+let (+>) r1 r2 f = ignore (r1 f); r2 f
 
 (* [r1 +< r2] parsers [r1] followed by [r2]
    but returning the value from [r1] *)
-let (+<) r1 r2 f = let r = r1 f in r2 f & r
+let (+<) r1 r2 f =
+  let r = r1 f in
+  ignore (r2 f);
+  r
 
 (* [(r +: v) f] returns [v (r f)] *)
 let (+:) r v f = v (r f)
@@ -184,3 +168,47 @@ let (|!) r (str, ts) f =
 
 (* parses [r] with frame [f] *)
 let (:=) f r = r f
+
+(* helpers *)
+
+let enclose l lstr e estr r rstr f =
+  let f' = backup f in
+
+  let l' = expect l f in
+  try
+    let e' = e f in
+    if not (matsch f [r]) then begin
+      let note = Printf.sprintf
+        "try adding '%s' after the enclosed %s."
+        rstr estr
+      in
+      error_at l'.span (Unclosed lstr) [note];
+      report (make_warning "here" (Some (current f).span));
+    end;
+    e'
+  with Failed _ ->
+    restore f' f;
+    fail false
+
+let cons r rs f =
+  let r' = r f in
+  r' :: rs f
+
+let rec sl sep r f =
+  f := cons r (sl sep (expect sep +> r))
+    |: []
+
+let snel sep r =
+  cons r (sl sep r)
+
+let ssntl sep r =
+  cons (r +< expect sep) (snel sep r)
+
+let rec many r =
+  cons r (fun f ->
+    let f' = backup f in
+    try (many r) f
+    with Failed _ ->
+      restore f' f;
+      []
+  )

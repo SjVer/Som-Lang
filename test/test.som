@@ -2,4 +2,6 @@
 -- constructor, the --print-ast
 -- flag makes it parse only.
 
-both a b = Both a b.
+empty = [].
+singleton x = [x].
+add1 = list::rev [3, 2, 1].

@@ -28,51 +28,52 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
--- arithmetic ops
+--- arithmetic ops ---
 
 @add a b : Int -> Int -> Int =
-   #_som_std_ops_add a b.
+  #_som_std_ops_add a b.
 
 @sub a b : Int -> Int -> Int =
-   #_som_std_ops_sub a b.
+  #_som_std_ops_sub a b.
 
 @mul a b : Int -> Int -> Int =
-   #_som_std_ops_mul a b.
+  #_som_std_ops_mul a b.
 
 @div a b : Int -> Int -> Int =
-   #_som_std_ops_div a b.
+  #_som_std_ops_div a b.
 
 @pow a b : Int -> Int -> Int =
-   #_som_std_ops_pow a b.
+  #_som_std_ops_pow a b.
 
 @mod a b : Int -> Int -> Int =
-   #_som_std_ops_mod a b.
+  #_som_std_ops_mod a b.
 
--- logical ops
+--- logical ops ---
+
 
 @and a b : Bln -> Bln -> Bln =
-   #_som_std_ops_and a b.
+  #_som_std_ops_and a b.
 
 @xor a b : Bln -> Bln -> Bln =
-   #_som_std_ops_xor a b.
+  #_som_std_ops_xor a b.
 
 @or a b : Bln -> Bln -> Bln =
-   #_som_std_ops_or a b.
+  #_som_std_ops_or a b.
 
--- comparison ops
+--- comparison ops ---
 
 @eq a b : Int -> Int -> Bln =
-   #_som_std_ops_eq a b.
+  #_som_std_ops_eq a b.
 
 @gr a b : Int -> Int -> Bln =
-   #_som_std_ops_gr a b.
+  #_som_std_ops_gr a b.
 
 @gre a b : Int -> Int -> Bln =
-   or (gr a b) (eq a b).
+  or (gr a b) (eq a b).
 -- @gre a b = (gr a b) ? 1 : (eq a b).
 
 @ls a b : Int -> Int -> Bln =
-   #_som_std_ops_ls a b.
+  #_som_std_ops_ls a b.
 
 @lse a b : Int -> Int -> Bln =
-   or (ls a b) (eq a b).
+  or (ls a b) (eq a b).

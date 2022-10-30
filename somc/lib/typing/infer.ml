@@ -115,6 +115,7 @@ let rec match_fun_ty span = function
     let return_ty = new_var level in
     tvar := Link (TFun (param_ty, return_ty));
     param_ty, return_ty
+  | TError -> TError, TError
   | t ->
     error (Expected_function (show t false)) (Some span);
     TError, TError
