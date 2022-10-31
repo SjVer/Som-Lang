@@ -1,28 +1,27 @@
 ---
-	Module std/ops
-	Standard module containing functions for basic operators.
-
+	Module std/ops Standard module containing functions for basic operators.
+	
 	This file is part of the Som standard library.
 
-	Copyright (c) 2022 Sjoerd Vermeulen
+  Copyright (c) 2022 Sjoerd Vermeulen
 
-	Permission is hereby granted, free of charge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software"), to deal
-	in the Software without restriction, including without limitation the rights
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	copies of the Software, and to permit persons to whom the Software is
-	furnished to do so, subject to the following conditions:
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
 
-	The above copyright notice and this permission notice shall be included in all
-	copies or substantial portions of the Software.
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
 
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-	SOFTWARE.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
 ---
 
 -- !!.stdlib
@@ -30,50 +29,25 @@
 
 --- arithmetic ops ---
 
-@add a b : Int -> Int -> Int =
-  #_som_std_ops_add a b.
-
-@sub a b : Int -> Int -> Int =
-  #_som_std_ops_sub a b.
-
-@mul a b : Int -> Int -> Int =
-  #_som_std_ops_mul a b.
-
-@div a b : Int -> Int -> Int =
-  #_som_std_ops_div a b.
-
-@pow a b : Int -> Int -> Int =
-  #_som_std_ops_pow a b.
-
-@mod a b : Int -> Int -> Int =
-  #_som_std_ops_mod a b.
+add a b : Int -> Int -> Int = #_som_std_ops_add a b.
+sub a b : Int -> Int -> Int = #_som_std_ops_sub a b.
+mul a b : Int -> Int -> Int = #_som_std_ops_mul a b.
+div a b : Int -> Int -> Int = #_som_std_ops_div a b.
+pow a b : Int -> Int -> Int = #_som_std_ops_pow a b.
+mod a b : Int -> Int -> Int = #_som_std_ops_mod a b.
 
 --- logical ops ---
 
-
-@and a b : Bln -> Bln -> Bln =
-  #_som_std_ops_and a b.
-
-@xor a b : Bln -> Bln -> Bln =
-  #_som_std_ops_xor a b.
-
-@or a b : Bln -> Bln -> Bln =
-  #_som_std_ops_or a b.
+and a b : Bln -> Bln -> Bln = #_som_std_ops_and a b.
+xor a b : Bln -> Bln -> Bln = #_som_std_ops_xor a b.
+or a b  : Bln -> Bln -> Bln = #_som_std_ops_or a b.
+not a   : Bln -> Bln        = #_som_std_ops_not a
 
 --- comparison ops ---
 
-@eq a b : Int -> Int -> Bln =
-  #_som_std_ops_eq a b.
-
-@gr a b : Int -> Int -> Bln =
-  #_som_std_ops_gr a b.
-
-@gre a b : Int -> Int -> Bln =
-  or (gr a b) (eq a b).
--- @gre a b = (gr a b) ? 1 : (eq a b).
-
-@ls a b : Int -> Int -> Bln =
-  #_som_std_ops_ls a b.
-
-@lse a b : Int -> Int -> Bln =
-  or (ls a b) (eq a b).
+eq a b   : Int -> Int -> Bln = #_som_std_ops_eq a b.
+neq a b  : Int -> Int -> Bln = not (eq a b).
+gr a b   : Int -> Int -> Bln = #_som_std_ops_gr a b.
+greq a b : Int -> Int -> Bln = or (gr a b) (eq a b).
+ls a b   : Int -> Int -> Bln = #_som_std_ops_ls a b.
+lseq a b : Int -> Int -> Bln = or (ls a b) (eq a b).

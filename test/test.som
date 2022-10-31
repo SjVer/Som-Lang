@@ -1,4 +1,2 @@
-six = (5 - 2) * 2.
-nine = 3 ^ 2.
-three = 15 % 6.
-one = +(-1).
+add a b = a + b.
+singleton v = [v].

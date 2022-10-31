@@ -40,11 +40,11 @@ let fold_app f es =
     | _ -> raise Cant_fold
   with Cant_fold -> false, EX_Application (f, es)
 
-let rec fold_constants e =
+let rec fold_expr e =
   let folded, item = match e.item with
     | EX_Application (f, es) ->
-      let f' = fold_constants f in
-      let es' = List.map fold_constants es in
+      let f' = fold_expr f in
+      let es' = List.map fold_expr es in
       fold_app f' es'
     | _ as e -> false, e
   in
@@ -54,11 +54,15 @@ let rec fold_constants e =
     item;
   }
 
-let fold_constants ast =
+let rec fold_constants ast =
   let go tl =
     let item = match tl.item with
       | TL_Definition b ->
-        TL_Definition {b with expr = fold_constants b.expr}
+        TL_Definition {b with expr = fold_expr b.expr}
+      | TL_Section (n, ast) ->
+        TL_Section (n, fold_constants ast)
+      | TL_Link (n, tl) ->
+        TL_Link (n, List.hd (fold_constants [tl]))
       | _ as tl -> tl
     in
     {tl with item}

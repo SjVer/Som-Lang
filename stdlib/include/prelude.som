@@ -53,5 +53,4 @@ return v : 'a -> !'a = v.
 
 -- terminates the calling process immediately with the given status
 -- !!no_return
-exit status : Int -> ! =
-	#_som_std_prelude_exit status.
+exit status : Int -> ! = #_som_std_prelude_exit status.

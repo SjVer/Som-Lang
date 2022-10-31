@@ -21,6 +21,7 @@ let add_implicit_prelude ast =
 
 let check ast =
   Import.resolve ast |>
-  Constant_fold.fold_constants
+  Constant_fold.fold_constants |>
+  Builtins.rename_builtings
 
 (* TODO: don't desugar ops in parse but here for opts *)
