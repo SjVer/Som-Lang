@@ -45,4 +45,4 @@ let report_marking digits line color span print_tail =
   prerr_string style "^";
   if span_length span >= 2
   then prerr_string style (String.make (span_length span - 1) '~');
-  prerr_newline ()
+  prerr_string [] " "

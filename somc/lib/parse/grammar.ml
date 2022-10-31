@@ -20,7 +20,6 @@ let ws r f =
   mk item s'
 
 let dot f =
-  (* ignore (consume f DOT "a terminating '.'") *)
   ignore (
     f := expect DOT
       |! ("a terminating '.'", [`S DOT])
@@ -138,9 +137,8 @@ and import f : toplevel =
 
 and definition f : toplevel =
   let b = binding true EQUAL "=" (ws expr) f in
-  let e = TL_Definition b in
   dot f;
-  e
+  TL_Definition b
 
 (* =========================== binding =========================== *)
 
@@ -174,7 +172,11 @@ and strict_binding must sep sepstr efn f =
       else None
     in *)
     ignore (expect sep f);
-    None, efn f
+    let e =
+      f := efn
+        |: mk ~g:true EX_Error (current f).span
+    in
+    None, e
   in
   if must then
     f := body
@@ -192,7 +194,7 @@ and simple_pattern f : pattern =
   f := expect (dummy `LOWERNAME) +: (fun p -> PA_Variable (unpack_name p.typ))
     |= expect UNDERSCORE +: (fun _ -> PA_Wildcard)
 
-(* =========================== expression ========================== *)
+(* =========================== expression ========================= *)
 
 and expr f : expr =
   let bind b f =
@@ -211,11 +213,11 @@ and lambda_expr f : expr =
       let b = binding true ARROW "->" (ws lambda_expr) f in
       EX_Lambda b
     with Failed _ ->
-      (* TODO: we're skipping the token that was supposed
+      (* (* TODO: we're skipping the token that was supposed
          to be '->' and ignoring an expression so that no
          duplicate errors are reported. might be shit. *)
       ignore (advance f);
-      seq_expr f &
+      seq_expr f & *)
       EX_Error
   in
   f := expect BACKSLASH +> lambda
@@ -272,7 +274,6 @@ and single_expr f : expr =
     EX_Literal (unpack_lit n.typ)
   in
   let finish_external f =
-    print_endline ("external. had: " ^ show_token_typ f.previous.typ);
     try
       let i = expect (dummy `LOWERNAME) f in
       EX_External (unpack_name i.typ)
@@ -296,7 +297,7 @@ and single_expr f : expr =
     |= enclose LPAREN "(" (ws expr) "expression" RPAREN ")"
         +: (fun e -> if groups then EX_Grouping e else e.item)
 
-(* ======================= expression helpers ====================== *)
+(* ====================== expression helpers ===================== *)
 
 and infix_ops =
   [
@@ -347,9 +348,12 @@ and any_op f : expr =
     |= unary_op'
 
 and list f =
-  if matsch f [RBRACE] then []
+  if check f [RBRACKET] then []
   else begin
-    
+    let e = ws tuple_expr f in
+    if matsch f [COMMA] then
+      e :: list f
+    else [e]
   end
 
 and ghost_list es f =
@@ -366,10 +370,10 @@ and ghost_list es f =
       let cons = mk ~g:true cons_ident e.span in
       let tail = go es in
       let s = span (e :: es) in
-      mk ~g:true (EX_Construct (cons, [tail])) s
+      mk ~g:true (EX_Construct (cons, [e; tail])) s
   in (go es).item
-      
-(* =========================== identifiers ========================== *)
+ 
+(* ========================== identifiers ========================= *)
 
 and longident_path f =
   let ident f =

@@ -13,14 +13,25 @@ exception Error
 
 (* error *)
 
+let reported_spans : Span.t list ref = ref []
+
+let can_report span =
+  let exists = List.exists
+    (fun s -> s = span)
+    !reported_spans
+  in
+  if not exists then
+    reported_spans := span :: !reported_spans;
+  not exists
+
 let error () = Stdlib.raise Error
 
 let fail r = Stdlib.raise (Failed r)
 
 let error_at s e n =
-  make (`Error (Syntax_error e)) (Some s) n []
-  |> report
-  (* if tokens_eq t.typ EOF then error () *)
+  if can_report s then
+    make (`Error (Syntax_error e)) (Some s) n []
+    |> report
 
 let error_at_current f e n =
   error_at (List.hd f.tokens).span e n
@@ -157,11 +168,11 @@ let (|!) r (str, ts) f =
   try r f
   with Failed r ->
     if not r then begin 
-      let s = Span.concat_spans
-        (current f').span
-        (current f).span
-      in
-      error_at s (Expected str) [];
+      let ps = (current f').span in
+      let cs = (current f).span in
+      let s = Span.concat_spans ps cs in
+      if can_report s || can_report cs || can_report ps then
+        error_at s (Expected str) [];
     end;
     skip f ts;
     fail true
@@ -171,19 +182,23 @@ let (:=) f r = r f
 
 (* helpers *)
 
-let enclose l lstr e estr r rstr f =
+let enclose l lstr e _ r rstr f =
   let f' = backup f in
-
   let l' = expect l f in
   try
     let e' = e f in
     if not (matsch f [r]) then begin
-      let note = Printf.sprintf
-        "try adding '%s' after the enclosed %s."
-        rstr estr
-      in
-      error_at l'.span (Unclosed lstr) [note];
-      report (make_warning "here" (Some (current f).span));
+      let s = (current f).span in
+      if can_report s then
+        (* let note = Printf.sprintf
+          "try adding '%s' after the enclosed %s."
+          rstr estr
+        in *)
+        (* error_at l'.span (Unclosed lstr) [note]; *)
+        let e = Syntax_error (Expected (Util.f "'%s'" rstr)) in
+        let r = make_error e (Some s) in
+        let info = `Note (Util.f "unclosed '%s' here" lstr) in
+        report (add_related info l'.span r);
     end;
     e'
   with Failed _ ->
