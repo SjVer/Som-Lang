@@ -1,7 +1,8 @@
 CC = clang
 
+DEFS = STDIN_PATH='"/dev/stdin"' STDOUT_PATH='"/dev/stdout"' STDERR_PATH='"/dev/stderr"'
 LDFLAGS = -shared
-CXXFLAGS = -D COMPILER=\"$(CC)\"
+CXXFLAGS = -fPIC $(addprefix -D,$(DEFS))
 EXT = .c
 
 SRCDIR = src
@@ -24,10 +25,17 @@ stdlib: $(OBJ) | makedirs
 $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 	@mkdir -p $(dir $@)
 	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
-	@$(CC) $(CXXFLAGS) -I$(SRCDIR) -o $@ -c $< -fmodule-name=$(<:$(EXT)=.som)
+	@$(CC) $(CXXFLAGS) -I$(SRCDIR) -o $@ -c $< -fmodule-name=std/$(notdir $(<:$(EXT)=.som))
 	@printf "\b\b done!\n"
+
+	@for s in $$(nm $@ | grep -oP 'som_\w+'); \
+	do \
+		dest=$${s/som_/_som_std_$(notdir $(basename $<))_}; \
+		# printf "       - renaming $$s to $$dest\n"; \
+		objcopy --redefine-sym $$s="$$dest" $@; \
+	done \
+
 	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
-# @([ "$(word $(words $(OBJ)), $(OBJ))" == "$@" ] && echo "[stdlib] standard library compiled!") || true
 
 .PHONY: clean
 clean:

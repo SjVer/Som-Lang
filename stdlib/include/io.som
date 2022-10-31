@@ -28,43 +28,33 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
--- imports
 -- #std/str::Str => _Str
+#std/types::Byt
 
--- types
+--- types ---
 
--- File = { filepath: Str }.
+-- IOMode := [ read write append read_write ].
 
--- IOMode = [ read write append read_write ].
+-- File := { path: Str }.
 
--- files
+--- files ---
 
--- standard output
-stdout: File.
-@stdout = #_som_std_io_stdout.
+stdin : File = #_som_std_io_stdin.
+stdout : File = #_som_std_io_stdout.
+stderr : File = #_som_std_io_stderr.
 
--- standard error
-stderr: File.
-@stderr = #_som_std_io_stderr.
-
--- standard input
-stdin: File.
-@stdin = #_som_std_io_stdin.
-
--- functions
+--- functions ---
 
 -- opens the file with the given path and mode
-openf: _Str -> IOMode -> File.
-@openf path mode = #_som_std_io_openf path mode.
+openf path mode : _Str -> IOMode -> !File =
+  #_som_std_io_openf path mode.
 
 -- closes the given file
-closef: File -> !.
-@closef file = #_som_std_io_closef file.
+closef file : File -> ! = #_som_std_io_closef file.
 
 -- writes the given string to the given file
-putsf: File -> _Str -> !.
-@putsf file string = #_som_std_io_putsf file string.
+putsf file string : File -> _Str -> ! =
+  #_som_std_io_putsf file string.
 
 -- prints the given string to stdout
-puts: _Str -> !.
-@puts string = putsf stdout string.
+puts string : _Str -> ! = putsf stdout string.

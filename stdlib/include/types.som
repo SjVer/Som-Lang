@@ -36,6 +36,7 @@ Byt := $i.u.8.  -- byte
 Chr := $i.u.8.  -- character
 Int := $i.s.32. -- integer
 Lng := $i.s.64. -- long
+Hlf := $f.16.   -- half
 Flt := $f.32.   -- float
 Dbl := $f.64.   -- double
 Nll := $v.      -- null

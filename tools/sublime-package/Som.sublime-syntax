@@ -57,8 +57,11 @@ contexts:
         - match: (?=\S)
           pop: true
 
+    - match: (?<!!)!(?!!)
+      scope: keyword.operator.som
+
     # basic types
-    - match: '_|{{basictype}}|{{uname}}|{{pname}}|\.\.\.'
+    - match: '{{basictype}}|{{uname}}|{{pname}}|_|\.\.\.'
       scope: storage.type.som
       push:
         - match: ->

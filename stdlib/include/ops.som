@@ -5,7 +5,7 @@
 
   Copyright (c) 2022 Sjoerd Vermeulen
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy
+  Permission is hereby granted, free of charge, to any person obtaining x copy
   of this software and associated documentation files (the "Software"), to deal
   in the Software without restriction, including without limitation the rights
   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -29,25 +29,27 @@
 
 --- arithmetic ops ---
 
-add a b : Int -> Int -> Int = #_som_std_ops_add a b.
-sub a b : Int -> Int -> Int = #_som_std_ops_sub a b.
-mul a b : Int -> Int -> Int = #_som_std_ops_mul a b.
-div a b : Int -> Int -> Int = #_som_std_ops_div a b.
-pow a b : Int -> Int -> Int = #_som_std_ops_pow a b.
-mod a b : Int -> Int -> Int = #_som_std_ops_mod a b.
+add x y : Int -> Int -> Int = #_som_std_ops_add x y.
+sub x y : Int -> Int -> Int = #_som_std_ops_sub x y.
+mul x y : Int -> Int -> Int = #_som_std_ops_mul x y.
+div x y : Int -> Int -> Int = #_som_std_ops_div x y.
+pow x y : Int -> Int -> Int = #_som_std_ops_pow x y.
+mod x y : Int -> Int -> Int = #_som_std_ops_mod x y.
+abs x   : Int -> Int        = #_som_std_ops_abs x.
+neg x   : Int -> Int        = #_som_std_ops_neg x.
 
 --- logical ops ---
 
-and a b : Bln -> Bln -> Bln = #_som_std_ops_and a b.
-xor a b : Bln -> Bln -> Bln = #_som_std_ops_xor a b.
-or a b  : Bln -> Bln -> Bln = #_som_std_ops_or a b.
-not a   : Bln -> Bln        = #_som_std_ops_not a
+and x y : Bln -> Bln -> Bln = #_som_std_ops_and x y.
+xor x y : Bln -> Bln -> Bln = #_som_std_ops_xor x y.
+or x y  : Bln -> Bln -> Bln = #_som_std_ops_or x y.
+not x   : Bln -> Bln        = #_som_std_ops_not x
 
 --- comparison ops ---
 
-eq a b   : Int -> Int -> Bln = #_som_std_ops_eq a b.
-neq a b  : Int -> Int -> Bln = not (eq a b).
-gr a b   : Int -> Int -> Bln = #_som_std_ops_gr a b.
-greq a b : Int -> Int -> Bln = or (gr a b) (eq a b).
-ls a b   : Int -> Int -> Bln = #_som_std_ops_ls a b.
-lseq a b : Int -> Int -> Bln = or (ls a b) (eq a b).
+eq x y   : Int -> Int -> Bln = #_som_std_ops_eq x y.
+neq x y  : Int -> Int -> Bln = not (eq x y).
+gr x y   : Int -> Int -> Bln = #_som_std_ops_gr x y.
+greq x y : Int -> Int -> Bln = or (gr x y) (eq x y).
+ls x y   : Int -> Int -> Bln = #_som_std_ops_ls x y.
+lseq x y : Int -> Int -> Bln = or (ls x y) (eq x y).
