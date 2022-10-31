@@ -227,9 +227,13 @@ let get_tokens ast uri =
       | EX_Constraint (e, t) -> go_type t @ go_expr e
       | EX_Application (e, es) -> go_expr e @ map go_expr es
       | EX_Tuple es -> map go_expr es
-      | EX_Construct (p, e) ->
-        mk p.span T.enum_member [] ::
-          Option.fold ~none:[] ~some:go_expr e
+      | EX_Construct (p, es) ->
+        let open Somc.Parse.Ident in
+        let p' =
+          if p.item = Ident "::" || p.item = Ident "[]" then []
+          else [mk p.span T.enum_member []]
+        in
+        p' @ map go_expr es
       | EX_Literal l ->
           let typ = begin match l with
             | LI_Int _ | LI_Float _ -> T.number
@@ -239,6 +243,7 @@ let get_tokens ast uri =
           [mk node.span typ []]
       | EX_Identifier _ -> [mk node.span T.symbol []]
       | EX_External _ -> [mk node.span T.function_ M.[readonly]]
+      | EX_Error -> [mk node.span 0 M.[deprecated]]
   in
   let rec go_toplevel node =
     match node.item with
@@ -253,10 +258,11 @@ let get_tokens ast uri =
         let rec go (i: import) =
           map (fun n -> [mk n.span T.namespace []]) (i.dir @ i.path)
           @ match i.kind.item with
-            | IK_Simple -> []
+            | IK_Simple n -> [mk n.span T.symbol []]
             | IK_Glob -> [mk i.kind.span T.keyword []]
             | IK_Rename _ -> [mk i.kind.span T.symbol []]
             | IK_Nested is -> map go (nmapi is)
+            | IK_Error -> [mk node.span 0 M.[deprecated]]
         in go i
       | TL_Section (n, ast) ->
         mk n.span T.namespace M.[definition]

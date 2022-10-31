@@ -1,7 +1,4 @@
--- don't worry abt the unbound
--- constructor, the --print-ast
--- flag makes it parse only.
-
-empty = [].
-singleton x = [x].
-add1 = list::rev [3, 2, 1].
+six = (5 - 2) * 2.
+nine = 3 ^ 2.
+three = 15 % 6.
+one = +(-1).

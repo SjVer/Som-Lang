@@ -6,7 +6,7 @@ open Util
 let publish_diagnostics server uri =
   Report.reports := [];
   let _ = Store.check server.T.store uri in
-  
+ 
   let go (r: Report.t) =
     let sev, msg, code = match r.kind with
       | `Error e ->

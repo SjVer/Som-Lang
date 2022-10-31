@@ -13,7 +13,8 @@ module ReadFile = Query.Make(struct
       let open Report in
       let open Error in
       make_error (Other_error (Could_not_open file)) None
-      |> raise
+      |> report;
+      Report.exit 0
 end)
 
 module ParseFile = Query.Make(struct

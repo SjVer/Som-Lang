@@ -81,7 +81,7 @@ let check s uri =
     | _ ->
       let ast = parse s uri in
       try
-        let ast' = Analysis.add_implicit_import_prelude ast in
+        let ast' = Analysis.add_implicit_prelude ast in
         let _, tast = Typing.typecheck Typing.Env.empty ast' in
         set_status s uri (Typechecked (ast', tast));
         tast

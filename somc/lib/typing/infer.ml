@@ -6,8 +6,8 @@ module Ast = Parse.Ast
 
 let error ?(fatal=false) e span =
   let r = Report.make_error (Type_error e) span in
-  if fatal then Report.raise r
-  else Report.report r
+  Report.report r;
+  if fatal then Report.exit 1
   
 let mk s t i = {span=s; item=i; typ=t}
 

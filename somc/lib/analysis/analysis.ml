@@ -20,7 +20,7 @@ let add_implicit_prelude ast =
   List.map node tls @ ast
 
 let check ast =
-  let ast' = Import.resolve ast in
-  ast'
+  Import.resolve ast |>
+  Constant_fold.fold_constants
 
 (* TODO: don't desugar ops in parse but here for opts *)

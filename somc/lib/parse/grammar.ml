@@ -8,9 +8,6 @@ open Ast
 (* if true produce stuff like EX_Grouping *)
 let groups = false
 
-let nil_ident = Ident.from_list ["_std_list"; "Nil"]
-let cons_ident = Ident.from_list ["_std_list"; "Cons"]
-
 let ws r f =
   let s = (current f).span in
   let item = r f in
@@ -293,7 +290,7 @@ and single_expr f : expr =
     |= enclose LBRACKET "[" list "list" RBRACKET "]"
         += ghost_list
     
-    |= enclose LPAREN "(" any_op "operator" RPAREN ")"
+    (* |= enclose LPAREN "(" any_op "operator" RPAREN ")" *)
     |= enclose LPAREN "(" (ws expr) "expression" RPAREN ")"
         +: (fun e -> if groups then EX_Grouping e else e.item)
 
@@ -336,17 +333,6 @@ and infix_op prec f : expr =
 and unary_op f : expr =
   operator f unary_ops
 
-and any_op f : expr =
-  let infix_op' f =
-    operator f (List.flatten infix_ops)
-  in
-  let unary_op' f =
-    ignore (expect TILDE f);
-    operator f unary_ops
-  in
-  f := infix_op'
-    |= unary_op'
-
 and list f =
   if check f [RBRACKET] then []
   else begin
@@ -364,10 +350,10 @@ and ghost_list es f =
   in
   let rec go = function
     | [] ->
-      let nil = mk ~g:true nil_ident f.previous.span in
+      let nil = mk ~g:true (Ident.Ident "[]") f.previous.span in
       mk ~g:true (EX_Construct (nil, [])) nil.span
     | e :: es ->
-      let cons = mk ~g:true cons_ident e.span in
+      let cons = mk ~g:true (Ident.Ident "::") e.span in
       let tail = go es in
       let s = span (e :: es) in
       mk ~g:true (EX_Construct (cons, [e; tail])) s

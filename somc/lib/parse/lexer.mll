@@ -3,9 +3,9 @@ open Token
 open Report.Error
 open Span
 
-let raise_error span e notes =
+let error span e notes =
   Report.make (`Error (Lexing_error e)) (Some span) notes []
-  |> Report.raise
+  |> Report.report
 
 let curr_span lexbuf = 
   let s = Lexing.lexeme_start_p lexbuf in
@@ -117,8 +117,11 @@ rule lex = parse
   | "$f." ("64"|"32"|"16" as w) { BUILTINFTY (int_of_string w) }
   | "$v" { BUILTINVTY }
   | "$" (alpha | '.')* alpha {
-    raise_error (curr_span lexbuf) (Invalid_builtin_type (Lexing.lexeme lexbuf))
-    ["a valid builtin type is one of the following:\n$i.(s|u).<int>, $f.(64|32|16), $v"]
+    error (curr_span lexbuf)
+      (Invalid_builtin_type (Lexing.lexeme lexbuf))
+      ["a valid builtin type is one of the following:\n\
+       $i.(s|u).<int>, $f.(64|32|16), $v"];
+    BUILTINVTY
   }
 
   | '"' {
@@ -132,8 +135,10 @@ rule lex = parse
     { CHARACTER c }
   | "'" '\\' backslash_escapes "'"
     { CHARACTER (char_for_backslash (Lexing.lexeme_char lexbuf 2)) }
-  | "'" '\\' (_ as c)
-    { raise_error (curr_span lexbuf) (Illegal_escape c) [] }
+  | "'" '\\' (_ as c) {
+    error (curr_span lexbuf) (Illegal_escape c) [];
+    CHARACTER c
+  }
 
   | int as n { INTEGER (int_of_string n) }
   | float as n { FLOAT (float_of_string n) }
@@ -145,7 +150,12 @@ rule lex = parse
   | '_' { UNDERSCORE }
 
   | eof { EOF }
-  | _ { raise_error (curr_span lexbuf) (Unexpected_character (Lexing.lexeme lexbuf)) [] }
+  | _ {
+    error
+      (curr_span lexbuf)
+      (Unexpected_character (Lexing.lexeme lexbuf)) [];
+    EOF
+  }
 
 and simple_comment = parse
   | '\n' { Lexing.new_line lexbuf }
@@ -170,13 +180,12 @@ and string = parse
     string lexbuf
   }
   | '\\' (_ as c) {
-    raise_error (curr_span lexbuf) (Illegal_escape c) []
-    (* warning lexbuf (Printf.sprintf "illegal backslash escape in string: `\\%c'" c); *)
-    (* store_string_char '\\'; *)
-    (* store_string_char c; *)
-    (* string lexbuf *)
+    error (curr_span lexbuf) (Illegal_escape c) [];
+    store_string_char '\\';
+    store_string_char c;
+    string lexbuf
   }
-  | eof { raise_error (curr_span lexbuf) Unterminated_string [] }
+  | eof { error (curr_span lexbuf) Unterminated_string [] }
   | '\n' {
     store_string_char '\n';
     incr_loc lexbuf 0;
