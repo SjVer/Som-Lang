@@ -2,7 +2,7 @@
 
 ## Symbols
 
-All symbols provided for the stdlib must be prefixed with the `_som` followed by the full section path of that symbol separated by underscores.
+All symbols provided for the stdlib must be prefixed with `_som` followed by the full section path of that symbol separated by underscores.
 
 For example:
 

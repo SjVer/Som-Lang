@@ -118,7 +118,6 @@ let () =
 
 (* entrypoint *)
 let () =
-stdout;
   let args = !(C.args) in
 
   if args.print_ast then
