@@ -1,7 +1,8 @@
+module Path = Typing.Path
 open Typing.Types
 
 (*
-  Symbol mangling:
+  Identifier mangling:
     foo      -> "foo"
     foo'     -> "foo."
     foo::bar -> "foo..bar"
@@ -10,8 +11,8 @@ open Typing.Types
 let mangle_ident = String.map (fun c -> if c = '\'' then '.' else c)
 
 let rec mangle_path = function
-  | Typing.Path.Ident i -> mangle_ident i
-  | Typing.Path.Cons (p, i) ->
+  | Path.Ident i -> mangle_ident i
+  | Path.Cons (p, i) ->
     mangle_path p ^ ".." ^ mangle_ident i
 
 (*
@@ -40,3 +41,10 @@ let rec mangle_type = function
   | TNever -> "N$"
   | _ -> failwith "Mangle.mangle_type"
 
+(* 
+  Symbol mangling:
+    foo: Int -> Float   -> "_Sfoo$$F$Int$Flt$."
+*)
+
+let mangle_symbol path typ =
+  "_S$" ^ mangle_path path ^ "$$" ^ mangle_type typ

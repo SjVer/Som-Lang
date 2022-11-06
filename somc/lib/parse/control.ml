@@ -171,8 +171,7 @@ let (|!) r (str, ts) f =
       let ps = (current f').span in
       let cs = (current f).span in
       let s = Span.concat_spans ps cs in
-      if can_report s || can_report cs || can_report ps then
-        error_at s (Expected str) [];
+      error_at s (Expected str) [];
     end;
     skip f ts;
     fail true
@@ -182,7 +181,7 @@ let (:=) f r = r f
 
 (* helpers *)
 
-let enclose l lstr e _ r rstr f =
+let enclose l lstr e r rstr f =
   let f' = backup f in
   let l' = expect l f in
   try
@@ -190,11 +189,6 @@ let enclose l lstr e _ r rstr f =
     if not (matsch f [r]) then begin
       let s = (current f).span in
       if can_report s then
-        (* let note = Printf.sprintf
-          "try adding '%s' after the enclosed %s."
-          rstr estr
-        in *)
-        (* error_at l'.span (Unclosed lstr) [note]; *)
         let e = Syntax_error (Expected (Util.f "'%s'" rstr)) in
         let r = make_error e (Some s) in
         let info = `Note (Util.f "unclosed '%s' here" lstr) in
@@ -209,15 +203,18 @@ let cons r rs f =
   let r' = r f in
   r' :: rs f
 
+(* separated list *)
 let rec sl sep r f =
   f := cons r (sl sep (expect sep +> r))
     |: []
 
+(* parses 'r' or 'r sep r ...' *)
 let snel sep r =
   cons r (sl sep r)
 
+(* parses 'r sep' or 'r sep r ...' *)
 let ssntl sep r =
-  cons (r +< expect sep) (snel sep r)
+  cons (r +< expect sep) (sl sep r)
 
 let rec many r =
   cons r (fun f ->

@@ -58,13 +58,14 @@ let instantiate level ty =
 (** asserts that the type isn't recursive
   and solves constraints like {'a = 'b}
   if 'b comes from a higher level than 'a *)
-let occurs_check_adjust_levels id level =
+let occurs_check_adjust_levels span id level =
   let rec go = function
     | TName _ | TPrim _ | TError | TNever -> ()
     | TVar {contents = Link ty} -> go ty
     | TVar {contents = Generic _} -> ()
     | TVar ({contents = Unbound (other_id, other_level)} as other) ->
-      if other_id = id then error Recursive_type None;
+      if other_id = id then
+        error ~fatal:true Recursive_type (Some span);
       if other_level > level
         then other := Unbound (other_id, other_level)
         else ()
@@ -74,32 +75,47 @@ let occurs_check_adjust_levels id level =
     | TTup ts -> List.iter go ts
   in go
 
-let rec unify span ty1 ty2 =
+let rec unify env span ty1 ty2 =
+  let unify_names n1 n2 =
+    n1 = n2 || begin
+      try
+        let t1 = Env.get_alias env (Path.to_string n1) in
+        let t2 = Env.get_alias env (Path.to_string n2) in
+        unify env span t1 t2;
+        true
+      with Not_found -> false
+    end
+  in
+
   if ty1 == ty2 then ()
   else match (ty1, ty2) with
-    | TName n1, TName n2 when n1 = n2 -> ()
+    | TName n1, TName n2 when unify_names n1 n2 -> ()
+    | TName n, ty | ty, TName n ->
+      let ty2 = Env.get_alias env n in
+      unify env span ty ty2
+
     | TPrim p1, TPrim p2 when p1 = p2 -> ()
     | TError, _ | _, TError
     | TNever, _ | _, TNever -> ()
 
     | TFun (p1, r1), TFun (p2, r2) ->
-      unify span p1 p2;
-      unify span r1 r2
+      unify env span p1 p2;
+      unify env span r1 r2
 
     | TApp (a1, t1), TApp (a2, t2) ->
-      unify span a1 a2;
-      unify span t1 t2
+      unify env span a1 a2;
+      unify env span t1 t2
 
     | TVar {contents = Link ty1}, ty2
     | ty1, TVar {contents = Link ty2} ->
-      unify span ty1 ty2
+      unify env span ty1 ty2
 
     | TVar ({contents = Unbound (id, level)} as tvar), ty
     | ty, TVar ({contents = Unbound (id, level)} as tvar) ->
-      occurs_check_adjust_levels id level ty;
+      occurs_check_adjust_levels span id level ty;
       tvar := Link ty
 
-    | TTup ts1, TTup ts2 -> List.iter2 (unify span) ts1 ts2
+    | TTup ts1, TTup ts2 -> List.iter2 (unify env span) ts1 ts2
 
     | _ ->
       let ty1' = show (generalize (-1) ty1) false in
@@ -127,9 +143,9 @@ let infer_patt ?(level=0) env patt =
   match patt with
     | PA_Variable v ->
       let v' = new_var level in
-      let env' = Env.add_symbol env v v' in
-      env', mk s v' (PA_Variable v)
-    | PA_Wildcard -> env, mk s (new_var level) PA_Wildcard
+      Env.add_symbol env v v';
+      mk s v' (PA_Variable v)
+    | PA_Wildcard -> mk s (new_var level) PA_Wildcard
 
 (** infer an expression *)
 let rec infer_expr ?(level=0) env exp =
@@ -140,16 +156,18 @@ let rec infer_expr ?(level=0) env exp =
       mk s t.typ (EX_Grouping t) 
     
     | EX_Binding (bind, body) ->
-      let env', patt' = infer_patt ~level env bind.patt in
-      let var' = infer_expr ~level:(level + 1) env bind.expr in
-      unify s patt'.typ var'.typ;
+      let env' = Env.copy env in
+      let patt' = infer_patt ~level env' bind.patt in
+      let expr' = infer_expr ~level:(level + 1) env bind.expr in
+      unify env s patt'.typ expr'.typ;
 
-      let var'' = set_ty (generalize level var'.typ) var' in
+      let expr'' = set_ty (generalize level expr'.typ) expr' in
       let body' = infer_expr ~level env' body in
-      mk s body'.typ (EX_Binding ({patt=patt'; expr=var''}, body'))
+      mk s body'.typ (EX_Binding ({patt=patt'; expr=expr''}, body'))
     
     | EX_Lambda {patt; expr} ->
-      let env', patt' = infer_patt ~level env patt in
+      let env' = Env.copy env in
+      let patt' = infer_patt ~level env' patt in
       let expr' = infer_expr ~level env' expr in
       mk s (TFun (patt'.typ, expr'.typ))
         (EX_Lambda {patt=patt'; expr=expr'})
@@ -163,7 +181,7 @@ let rec infer_expr ?(level=0) env exp =
       let t' = Parse_type.parse env level t.item in
       let e' = infer_expr ~level env e in
       begin
-        try unify s t' e'.typ
+        try unify env s t' e'.typ
         with Report.Error _ ->
           let t'' = show t' false in
           let e'' = show e'.typ false in
@@ -188,7 +206,7 @@ let rec infer_expr ?(level=0) env exp =
         | e :: es ->
           let param_ty, out_ty = match_fun_ty span fty in
           let e' = infer_expr ~level env e in
-          unify e'.span param_ty e'.typ;
+          unify env e'.span param_ty e'.typ;
 
           let new_span = Span.concat_spans span e.span in
           let next_out_ty, es' = go new_span out_ty es in
@@ -210,11 +228,11 @@ let rec infer_expr ?(level=0) env exp =
       failwith "unreachable"
 
     | EX_Literal l ->
-      let name n = TName (Path.Ident n) in
+      let name n = TName (Path.Cons (Path.Ident "_std_types", n)) in
       let l', t = match l with
         | LI_Char c   -> LI_Char c,   name "Chr"
         | LI_Float f  -> LI_Float f,  name "Flt"
-        | LI_Int i    -> LI_Int i,    name "Int"
+        | LI_Int i    -> LI_Int i,    name "Int"  
         | LI_Nil      -> LI_Nil,      name "Nll"
         | LI_String s -> LI_String s, name "Str"
       in mk s t (EX_Literal l')

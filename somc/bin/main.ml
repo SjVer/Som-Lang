@@ -52,6 +52,10 @@ let () =
     ~set_long:"print-ast"
     ~description:"Print the parsetree"
     false in
+  let print_resolved_ast = flag
+    ~set_long:"print-resolved-ast"
+    ~description:"Print the resolved parsetree"
+    false in
   let print_tast = flag
     ~set_long:"print-tast"
     ~description:"Print the typed parsetree"
@@ -107,6 +111,7 @@ let () =
 
     file;
     print_ast;
+    print_resolved_ast;
     print_tast;
 
     no_prelude;
@@ -122,8 +127,18 @@ let () =
 
   if args.print_ast then
     Parse.PrintAst.print_ast (
-      Pipeline.AnalyzeFile.call
+      Pipeline.ParseFile.call
         ((!C.args).file, None))
+  else if args.print_resolved_ast then
+    let ast =
+      Pipeline.AnalyzeFile.call
+        ((!C.args).file, None)
+    in
+    let ast' =
+      if (!Config.Cli.args).no_prelude then ast
+      else Analysis.add_implicit_prelude ast
+    in
+    Parse.PrintAst.print_ast ast'
   else if args.print_tast then
     Typing.PrintTAst.print_tast (
       Pipeline.TypecheckFile.call

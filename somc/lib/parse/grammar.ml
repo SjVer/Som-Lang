@@ -50,13 +50,14 @@ and toplevel f : toplevel =
   f := section
     |= import
     |= definition
+    |= type_definition
 
 and section f : toplevel =
   let nt = expect (dummy `LOWERNAME) f in
   let nn = mk (unpack_name nt.typ) nt.span in
   let ast = enclose
     LBRACE "{"
-    (ast [RBRACE]) "section"
+    (ast [RBRACE])
     RBRACE "}"
     f
   in
@@ -75,34 +76,37 @@ and import f : toplevel =
   
   let dir_segment f =
     let t = ident f in
-    expect SLASH f &
+    ignore (expect SLASH f);
     t
   in
 
   let rec finish_colon f =
-    if matsch f [STAR] then
+    if matsch f [AT] then
+      let name = mk "@" f.previous.span in
+      let ik = finish_name name f in
+      mk (IK_Self ik) name.span
+    else if matsch f [STAR] then
       mk IK_Glob f.previous.span
     else if check f [LBRACE] then
+      let rec body' f = 
+        if check f [RBRACE] then []
+        else begin
+          let i = ws (body true []) f in
+          if matsch f [COMMA] then
+            i :: body' f
+          else [i]
+        end
+      in
       ws (fun f ->
-        let body' = body [] in
-        let imports = enclose
-          LBRACE "{"
-          (snel COMMA (ws body')) "nested imports"
-          RBRACE "}"
-          f
-        in
+        let imports = enclose LBRACE "{" body' RBRACE "}" f in
         IK_Nested imports
       ) f
     else begin
-      error_at_current f (Expected "'{' or '*'") [];
+      error_at_current f (Expected "'{', '@' or '*'") [];
       mk IK_Error f.previous.span
     end
   and finish_name n f =
-    (* let rn nn _ s = mk (IK_Rename (n, nn)) s in
-    print_endline (show_token_typ (current f).typ);
-    f := ws (expect THICKARROW +> ident += rn)
-      |: mk (IK_Simple n) n.span *)
-    if matsch f [THICKARROW] then begin
+    if matsch f [THICKARROW] then
       let s = f.previous.span in
       try
         let nn = ident f in
@@ -110,10 +114,12 @@ and import f : toplevel =
       with Failed _ ->
         error_at_current f (Expected "an identifier") [];
         mk IK_Error s
-    end
     else mk (IK_Simple n) n.span
-  and body dir f =
-    let path = many (ident +< expect DBL_COLON) f in
+  and body nested dir f =
+    let path = if nested
+      then (many (ident +< expect DBL_COLON) |: []) f
+      else many (ident +< expect DBL_COLON) f
+    in
     let kind =
       f := ident += finish_name
         |= finish_colon
@@ -126,9 +132,9 @@ and import f : toplevel =
   in
 
   let i =
-    f := many dir_segment += body
-      |= body []
-      |! ("an import path", [])
+    f := many dir_segment += body false
+      |= body false []
+      |! ("an import directory", [])
   in
   TL_Import i
 
@@ -136,6 +142,24 @@ and definition f : toplevel =
   let b = binding true EQUAL "=" (ws expr) f in
   dot f;
   TL_Definition b
+
+and type_definition f : toplevel =
+  let params =
+    f := many (expect (dummy `PRIMENAME) +:
+          fun t -> mk (unpack_name t.typ) t.span)
+      |: []
+  in
+
+  let n = expect (dummy `UPPERNAME) f in
+  let name = mk (unpack_name n.typ) n.span in
+  ignore (consume f COLONEQUAL "':='");
+
+  let typ =
+    f := ws typ
+  in
+  dot f;
+
+  TL_Type_Definition {params; name; typ}
 
 (* =========================== binding =========================== *)
 
@@ -164,16 +188,13 @@ and strict_binding must sep sepstr efn f =
     t, mk ~g:true (EX_Lambda b) s
   in
   let body f =
-    (* let t = if matsch f [COLON]
-      then Some (typ f)
-      else None
-    in *)
+    let t = t_constr f in
     ignore (expect sep f);
     let e =
       f := efn
         |: mk ~g:true EX_Error (current f).span
     in
-    None, e
+    t, e
   in
   if must then
     f := body
@@ -229,11 +250,18 @@ and seq_expr f : expr =
   in e.item
 
 and tuple_expr f : expr = 
-  f := ssntl SEMICOLON (ws constr_expr) +: (fun es -> EX_Tuple es)
-    |= constr_expr
+  f := ssntl SEMICOLON (ws t_constr_expr) +: (fun es -> EX_Tuple es)
+    |= t_constr_expr
 
-and constr_expr f : expr =
-  f := infix_expr 7
+and t_constr_expr f : expr =
+  let rec go e =
+    match t_constr f with
+      | Some t -> 
+        let s = Span.concat_spans e.span t.span in
+        go (mk (EX_Constraint (e, t)) s)
+      | None -> e.item
+  in
+  go (ws (infix_expr 7) f)
 
 and infix_expr prec f : expr =
   if prec >= 0 then
@@ -287,14 +315,21 @@ and single_expr f : expr =
     |= lower_longident +: (fun i -> EX_Identifier i)
     |= expect HASH +> finish_external
 
-    |= enclose LBRACKET "[" list "list" RBRACKET "]"
+    |= enclose LBRACKET "[" list RBRACKET "]"
         += ghost_list
     
     (* |= enclose LPAREN "(" any_op "operator" RPAREN ")" *)
-    |= enclose LPAREN "(" (ws expr) "expression" RPAREN ")"
+    |= enclose LPAREN "(" (ws expr) RPAREN ")"
         +: (fun e -> if groups then EX_Grouping e else e.item)
 
 (* ====================== expression helpers ===================== *)
+
+and t_constr f : typ node option =
+  if matsch f [COLON] then begin
+    f := ws typ +: Option.some
+      |! ("a type", [])
+      |: None
+  end else None
 
 and infix_ops =
   [
@@ -359,6 +394,50 @@ and ghost_list es f =
       mk ~g:true (EX_Construct (cons, [e; tail])) s
   in (go es).item
  
+(* ============================= types ============================ *)
+
+and typ f : typ =
+  f := function_typ
+    |! ("a type", [])
+    |: TY_Any
+
+and function_typ f : typ =
+  let t = ws tuple_typ f in
+  if matsch f [ARROW] then
+    let rt =
+      f := ws function_typ
+        |! ("a type", [])
+        |: mk TY_Any f.previous.span
+    in
+    TY_Function (t, rt)
+  else t.item 
+
+and tuple_typ f : typ =
+  f := ssntl SEMICOLON (ws effect_typ) +: (fun ts -> TY_Tuple ts)
+    |= effect_typ
+
+and effect_typ f : typ =
+  if matsch f [BANG] then
+    try TY_Effect (Some (ws atomic_typ f))
+    with Failed _ -> TY_Effect None
+  else atomic_typ f
+
+and atomic_typ f : typ =
+  let builtin (t: token) =
+    TY_Builtin (unpack_typ t.typ)
+  in
+  f := expect UNDERSCORE +: (fun _ -> TY_Any)
+    |= expect (dummy `PRIMENAME) +: (fun t -> TY_Variable (unpack_name t.typ))
+
+    |= upper_longident +: (fun i -> TY_Construct (None, i))
+
+    |= expect (dummy `BUILTINITY) +: builtin
+    |= expect (dummy `BUILTINFTY) +: builtin
+    |= expect BUILTINVTY +: builtin
+
+    |= enclose LPAREN "(" (ws typ) RPAREN ")"
+        +: (fun t -> t.item)
+
 (* ========================== identifiers ========================= *)
 
 and longident_path f =

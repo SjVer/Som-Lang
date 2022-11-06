@@ -29,27 +29,28 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
---- private imports ---
-
--- #std/io::{
--- 	stderr => _stderr,
--- 	putsf => _putsf
--- }
 
 --- public imports ---
-
-#std/ops => _std_ops
 
 #std/types::*
 #std/ops::*
 
--- #std/str => _std_str
+--- private imports ---
+
+#std/types::@ => _std_types
 -- #std/list => _std_list
+#std/ops::@ => _std_ops
+-- #std/str => _std_str
+
+-- #std/io::{
+-- 	putsf => _putsf,
+-- 	stderr => _stderr,
+-- }
 
 --- functions ---
 
 -- wraps a value in an effect
-return v : 'a -> !'a = v.
+-- return v : 'a -> !'a = v.
 
 -- terminates the calling process immediately with the given status
 -- !!no_return

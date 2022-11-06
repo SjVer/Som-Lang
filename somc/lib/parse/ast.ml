@@ -14,7 +14,9 @@ and toplevel =
   | TL_Type_Definition of type_definition (** `string := type.` *)
   | TL_Import of import (** `#import` *)
   | TL_Section of string node * ast (** `string { ... }` *)
-  | TL_Link of string * toplevel node (** internal use *)
+
+  (* internal *)
+  | TL_Link of string * toplevel node
 
 and value_binding =
   {
@@ -39,9 +41,10 @@ and import =
   } 
     
 and import_kind =
-  | IK_Simple of string node (** `string` *)
   | IK_Glob (** `path::*` *)  
-  | IK_Rename of string node * string node (** `string => string` *)
+  | IK_Simple of string node (** `path::sym` *)
+  | IK_Self of import_kind node (** `path::@ ...` *)
+  | IK_Rename of string node * string node (** `path::sym => sym` *)
   | IK_Nested of import node list (** `path::{import, list}` *)
   | IK_Error
   

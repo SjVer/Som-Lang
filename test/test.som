@@ -1,2 +1,1 @@
-add a b = a + b.
-singleton v = [v].
+foo : $i.u.32 = 123.

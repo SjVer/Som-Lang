@@ -31,7 +31,7 @@
 
 #std/list::List => _List
 
-Str := $i.u.8 Array.
+Str := $i.u.s.
 
 !!fmt_variadic 0
 fmt: Str ... -> Str.

@@ -10,7 +10,7 @@ let extension = ".som"
 let include_dir =
   if Sys.unix then
     (* "/usr/share/som/include" *)
-    "/home/sjoerd/Coding/Languages/Som/stdlib/include"
+    "/home/sjoerd/Coding/Languages/Som/stdlib"
   else
     failwith ("unsupported os type: " ^ Sys.os_type)
 
@@ -21,3 +21,5 @@ let prelude_file = _path [prelude_dir; prelude_ident] ^ ".som"
 (* globals *)
 
 let in_lsp_mode = ref false
+
+let hide_stdlib_nodes = false

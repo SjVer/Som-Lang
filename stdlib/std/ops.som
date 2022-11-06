@@ -1,7 +1,7 @@
 ---
-	Module std/ops Standard module containing functions for basic operators.
-	
-	This file is part of the Som standard library.
+  Module std/ops Standard module containing functions for basic operators.
+
+  This file is part of the Som standard library.
 
   Copyright (c) 2022 Sjoerd Vermeulen
 
@@ -27,6 +27,8 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
+#std/types::*
+
 --- arithmetic ops ---
 
 add x y : Int -> Int -> Int = #_som_std_ops_add x y.
@@ -43,7 +45,7 @@ neg x   : Int -> Int        = #_som_std_ops_neg x.
 and x y : Bln -> Bln -> Bln = #_som_std_ops_and x y.
 xor x y : Bln -> Bln -> Bln = #_som_std_ops_xor x y.
 or x y  : Bln -> Bln -> Bln = #_som_std_ops_or x y.
-not x   : Bln -> Bln        = #_som_std_ops_not x
+not x   : Bln -> Bln        = #_som_std_ops_not x.
 
 --- comparison ops ---
 

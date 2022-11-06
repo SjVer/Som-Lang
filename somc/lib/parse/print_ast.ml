@@ -136,8 +136,11 @@ and print_expr_node i node =
 and print_import_kind_node' i node =
   let {span; item} = node in
   match item with
-    | IK_Simple n -> p i ("IK_Simple " ^ n.item) span;
     | IK_Glob -> p i "IK_Glob" span
+    | IK_Simple n -> p i ("IK_Simple " ^ n.item) span;
+    | IK_Self ik ->
+      p i "IK_self" span;
+      print_import_kind_node' (i + 1) ik
     | IK_Rename (s, d) ->
       p i ("IK_Rename " ^ s.item ^ " => " ^ d.item) span
     | IK_Nested is ->
@@ -188,7 +191,8 @@ and print_toplevel_node i node =
 
 and print_ast i nodes =
   let f nl i (tl: toplevel node) =
-    if Span.is_in_stdlib tl.span then ()
+    if Config.hide_stdlib_nodes && Span.is_in_stdlib tl.span
+    then ()
     else begin
       if nl then print_newline ();
       print_toplevel_node i tl

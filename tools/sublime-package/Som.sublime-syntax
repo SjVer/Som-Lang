@@ -20,7 +20,7 @@ variables:
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
   # basic types
-  inttype: i\.(s|u)\.[0-9]+
+  inttype: i\.(s|u)\.(s|[0-9]+)
   floattype: f\.(64|32|16)
   voidtype: v
   basictype: \$(?:{{inttype}}|{{floattype}}|{{voidtype}})
@@ -50,7 +50,7 @@ contexts:
     - include: invalid
 
   type:
-    - match: \:(?!:)
+    - match: \:(?!:|=)
       scope: punctuation.separator.som
       push:
         - include: type
@@ -118,8 +118,10 @@ contexts:
       pop: true
 
     # normal path segment, might be last
-    - match: '{{lname}}'
-      scope: entity.name.namespace.som
+    - match: '({{lname}})|(@)'
+      captures:
+        1: entity.name.namespace.som
+        2: keyword.other.self.som
       set:
         - match: (=>)\s*({{lname}})
           captures:

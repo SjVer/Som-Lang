@@ -29,17 +29,17 @@
 -- !!.warn_redef "redefinition may break stdlib"
 
 -- #std/str::Str => _Str
-#std/types::Byt
 
 --- types ---
 
 -- IOMode := [ read write append read_write ].
 
 -- File := { path: Str }.
+File := $v.
 
 --- files ---
 
-stdin : File = #_som_std_io_stdin.
+stdin  : File = #_som_std_io_stdin.
 stdout : File = #_som_std_io_stdout.
 stderr : File = #_som_std_io_stderr.
 
@@ -53,8 +53,7 @@ openf path mode : _Str -> IOMode -> !File =
 closef file : File -> ! = #_som_std_io_closef file.
 
 -- writes the given string to the given file
-putsf file string : File -> _Str -> ! =
-  #_som_std_io_putsf file string.
+putsf file string : File -> _Str -> ! = #_som_std_io_putsf file string.
 
 -- prints the given string to stdout
 puts string : _Str -> ! = putsf stdout string.

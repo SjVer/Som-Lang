@@ -16,7 +16,11 @@ let add_implicit_prelude ast =
       kind=node IK_Glob;
     }
   in
-  let tls = Import.resolve_import (ref []) import span in
+
+  let tls =
+    try Import.resolve_import (ref []) import span
+    with Report.Error r -> Report.report r; []
+  in
   List.map node tls @ ast
 
 let check ast =

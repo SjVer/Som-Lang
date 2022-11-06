@@ -40,6 +40,7 @@ type type_error =
   | Recursive_type
   | Use_of_unbound of string * string (*+symbol*)
   | Failed_to_resolve of string (*+symbol*)
+  | Has_no_section of string * string (*-section has no section*)
   | Cannot_private of string * string (*-cannot use private symbol*)
   | Cannot_import_from of string (*+non-module symbol*)
   | Could_not_infer (*+type*)
@@ -50,6 +51,7 @@ let get_type_error_msg = function
   | Recursive_type        -> f "recursive type"
   | Use_of_unbound (t, w) -> f "use of unbound %s `%s`" t w
   | Failed_to_resolve w   -> f "failed to resolve `%s`" w
+  | Has_no_section (s, n) -> f "section %s has no section named '%s'" s n
   | Cannot_private (a, w) -> f "cannot %s private symbol `%s`" a w
   | Cannot_import_from w  -> f "cannot import from non-module symbol `%s`" w
   | Could_not_infer       -> f "could not infer type"

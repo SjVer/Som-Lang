@@ -1,6 +1,8 @@
 open Parse.Ast
 open Report.Error
 
+let ext = Config.extension
+
 let get_ast_fn:
   (string -> Span.t -> ast) ref =
   ref (fun _ _ : ast -> assert false)
@@ -30,17 +32,23 @@ let get_ast_fn:
 
 (* helper functions *)
 
-let file_not_found_error dir node =
-  let f = Filename.concat dir node.item ^ Config.extension in
-  let e = Failed_to_import f in
-  Report.make_error (Other_error e) (Some node.span)
+let file_not_found_error path =
+  let e = Failed_to_import (path.item ^ ext) in
+  Report.make_error (Other_error e) (Some path.span)
   |> Report.add_note (Printf.sprintf
-      "try adding file '%s' to the search paths." f)
+    "try adding directory '%s/' or\n\
+    file '%s.som' to the search paths."
+    path.item path.item)
   |> Report.raise
 
-let symbol_not_found_error node =
+let failed_to_resolve_error node =
   let e = Failed_to_resolve node.item in
   Report.make_error (Type_error e) (Some node.span)
+  |> Report.raise
+
+let sect_has_no_sect_error sname name =
+  let e = Has_no_section (sname, name.item) in
+  Report.make_error (Type_error e) (Some name.span)
   |> Report.raise
 
 let shadowed_symbol_warning n s =
@@ -61,8 +69,6 @@ let extract_sect from = function
     Report.make_error (Type_error e) (Some from.span)
     |> Report.raise
 
-(* finding files and resolving symbols *)
-
 let resolve_file dir = function
   | [] -> failwith "Name_res.resolve_file"
   | phd :: ptl ->
@@ -76,7 +82,7 @@ let resolve_file dir = function
 
     (* executed per include path *)
     let rec go = function
-      | [] -> file_not_found_error dir' phd
+      | [] -> file_not_found_error phd
       | d :: ds ->
         let file = Filename.concat
           (Filename.concat d dir')
@@ -88,29 +94,26 @@ let resolve_file dir = function
     go search_dirs, ptl
 
 let resolve_section fname ast =
-  let rec find_sect_in_ast name = function
+  let rec find_sect_in_ast sname name = function
     | hd :: tl ->
       begin match hd.item with
         | TL_Section (n, ast)
           when n = name -> ast
-        | _ -> find_sect_in_ast name tl
+        | _ -> find_sect_in_ast sname name tl
       end
-    | [] -> symbol_not_found_error name 
+    | [] -> sect_has_no_sect_error sname name 
   in
 
-  let rec go ast = function
+  let rec go sname ast = function
     | [] -> fname, ast
     | [n] ->
         check_import_private n;
-        n, find_sect_in_ast n ast
+        n, find_sect_in_ast sname n ast
     | n :: ns ->
-      let sect = find_sect_in_ast n ast in
-      go sect ns
-  in go ast
+      let sect = find_sect_in_ast sname n ast in
+      go n.item sect ns
+  in go fname.item ast
 
-(** returns a function that when given
-    a string returns a toplevel item
-    with that name (section or ...) *)
 let find_symbol_in_sect ast name =
   let get_name_from_tl = function
     | TL_Definition b -> (match b.patt.item with
@@ -118,6 +121,7 @@ let find_symbol_in_sect ast name =
       | _ -> "")
     | TL_Type_Definition d -> d.name.item
     | TL_Section (n, _) -> n.item
+    | TL_Link (n, _) -> n
     | _ -> ""
   in
   let rec find_in_ast n = function
@@ -125,7 +129,7 @@ let find_symbol_in_sect ast name =
       let name = get_name_from_tl tl.item in
       if n.item = name then tl
       else find_in_ast n tls
-    | [] -> symbol_not_found_error n 
+    | [] -> failed_to_resolve_error n 
   in
 
   let tl = find_in_ast name ast in
@@ -135,12 +139,13 @@ let find_symbol_in_sect ast name =
 (* main stuff *)
 
 let resolve_import names ({dir; path; kind} : import) s =
-  (* TODO: allow importing directories? *)
   let file, path' = resolve_file (nmapi dir) path in
-  let fname = List.hd path in
 
-  let ast = !get_ast_fn file s in
-  let sect_name, sect = resolve_section fname ast path' in
+  let sect_name, sect =
+    let fname = List.hd path in
+    let ast = !get_ast_fn file s in
+    resolve_section fname ast path'
+  in
 
   let check_shadowing n =
     match List.find_opt ((=) n) !names with
@@ -153,6 +158,11 @@ let resolve_import names ({dir; path; kind} : import) s =
       let s = find_symbol_in_sect sect n in
       check_shadowing n.item;
       [s.item]
+    | IK_Self ik ->
+      let name = {kind with item="@"} in
+      let link = {ik with item=TL_Section (name, sect)} in
+      let sect' = link :: sect in
+      finish sect' ik.item
     | IK_Rename (on, nn) ->
       let s = find_symbol_in_sect sect on in
       let s' = match s.item with

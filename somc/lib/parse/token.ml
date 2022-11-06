@@ -83,6 +83,7 @@ let unpack_name = function
   | UPPERNAME s | LOWERNAME s
   | PRIMENAME s -> s
   | _ -> failwith "unpack_name"
+
 let unpack_lit = function
   | INTEGER i -> LI_Int i
   | FLOAT f -> LI_Float f
@@ -90,6 +91,12 @@ let unpack_lit = function
   | STRING s -> LI_String s
   | EMPTYPARENS -> LI_Nil
   | _ -> failwith "unpack_lit"
+
+let unpack_typ = function
+  | BUILTINITY (s, w) -> BT_Int (s, w)
+  | BUILTINFTY w -> BT_Float w
+  | BUILTINVTY -> BT_Void
+  | _ -> failwith "unpack_typ"
 
 let tokens_eq a b = without_arg a = without_arg b
 
