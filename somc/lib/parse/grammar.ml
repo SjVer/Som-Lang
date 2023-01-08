@@ -424,7 +424,7 @@ and effect_typ f : typ =
 
 and atomic_typ f : typ =
   let builtin (t: token) =
-    TY_Builtin (unpack_typ t.typ)
+    TY_Primitive (unpack_typ t.typ)
   in
   f := expect UNDERSCORE +: (fun _ -> TY_Any)
     |= expect (dummy `PRIMENAME) +: (fun t -> TY_Variable (unpack_name t.typ))

@@ -15,12 +15,13 @@ let show_literal = function
   | LI_String s -> "String \"" ^ String.escaped s ^ "\""
   | LI_Nil -> "Nil"
 
-let show_builtin_type = function
-  | BT_Int (s, w) ->
-    Printf.sprintf "$i.%c.%d"
-    (if s then 's' else 'u') w
-  | BT_Float w -> Printf.sprintf "$f.%d" w
-  | BT_Void -> "$v"
+let show_primitive_type = function
+  | PT_Int (Some (s, w)) ->
+    Printf.sprintf "$i.%c.%d" (if s then 's' else 'u') w
+  | PT_Float (Some w) -> Printf.sprintf "$f.%d" w
+  | PT_Int None -> "$i.*"
+  | PT_Float None -> "$f.*"
+  | PT_Void -> "$v"
 
 let rec show_path = function
   | [] -> ""
@@ -77,8 +78,8 @@ and print_type_node i node =
       if Option.is_some a
       then print_type_node (i + 1) (Option.get a);
     
-    | TY_Builtin t ->
-      p i ("TY_Builtin " ^ show_builtin_type t) span
+    | TY_Primitive t ->
+      p i ("TY_Primitive " ^ show_primitive_type t) span
 
 and print_expr_node i node =
   let { span; item } = node in

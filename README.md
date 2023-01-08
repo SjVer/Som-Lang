@@ -1,22 +1,27 @@
 # Som
 
-Som is a functional programming language that is (should be) easy to use.
+Som is a functional programming language focussed on readability and simplicity.
+
+As of right now it is a work in progress.
 
 **FizzBuzz example:**
 
 ```haskell
-#std/io::puts
-#std/str::show
+-- imports
+use std::io::puts
+use std::list::iter
+use std::int::show_int
 
-fizzbuzz n : Int -> ! =
-  n % 15 == 0 ? puts "fizzbuzz" :
-  n % 3 == 0 ? puts "fizz" :
-  n % 5 == 0 ? puts "buzz" :
-  puts (show n).
+-- fizzbuzz function
+let fizzbuzz = switch
+  | n if n % 15 = 0 then puts "FizzBuzz"
+  | n if n % 5 = 0 then puts "Fizz"
+  | n if n % 3 = 0 then puts "Buzz"
+  | n then puts (show_int n)
 
-main args =
-  ns = 1..100
-  =>
-    map fizzbuzz ns,
-    0.
+-- main function
+let main _ =
+  let ns = 1..100 in
+  iter fizzbuzz ns,
+  0
 ```

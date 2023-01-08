@@ -1,0 +1,32 @@
+-- record type
+
+type Pos2D is Int ; Int
+type Pos3D is Int ; Int ; Int
+
+type 'p 't Crate of
+  position : 'p,
+  item: 't,
+  name: Str
+
+let make_2d_crate item : 't -> (Pos2D, 't) Crate =
+  -- initialize position at (0, 0)
+  let pos = 0 ; 0 in
+  {
+    position = position,
+    item = item,
+    name = "My Crate"
+  }
+
+let float_crate f : Flt -> Crate = make_2d_crate f
+
+
+
+-- variant type
+
+type 'a List of Cons 'a ; 'a List | Nil
+
+let map f l = match l
+  | Cons a ; l' then Cons (f a) ; map f l'
+  | Nil then Nil
+
+let hd = switch Cons a ; _ then a else Nil

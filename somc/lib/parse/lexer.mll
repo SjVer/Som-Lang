@@ -113,15 +113,17 @@ rule lex = parse
   | '%' { MODULO }
   | '~' { TILDE }
 
-  | "$i." ('s'|'u' as s) '.' (digit+ as w) { BUILTINITY (s = 's', int_of_string w) }
-  | "$i." ('s'|'u' as s) ".s" { BUILTINITY (s = 's', Sys.word_size) }
-  | "$f." ("64"|"32"|"16" as w) { BUILTINFTY (int_of_string w) }
+  | "$i." ('s'|'u' as s) '.' (digit+ as w) { BUILTINITY (Some (s = 's', int_of_string w)) }
+  | "$i." ('s'|'u' as s) ".s" { BUILTINITY (Some (s = 's', Sys.word_size)) }
+  | "$i.*" { BUILTINITY None }
+  | "$f." ("64"|"32"|"16" as w) { BUILTINFTY (Some (int_of_string w)) }
+  | "$f.*" { BUILTINFTY None }
   | "$v" { BUILTINVTY }
   | "$" (alpha | '.')* alpha {
     error (curr_span lexbuf)
       (Invalid_builtin_type (Lexing.lexeme lexbuf))
       ["a valid builtin type is one of the following:\n\
-       $i.(s|u).<int>, $f.(64|32|16), $v"];
+       $i.(s|u).<int>. $i.*, $f.(64|32|16), f.*, $v"];
     BUILTINVTY
   }
 

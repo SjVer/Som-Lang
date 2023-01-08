@@ -40,3 +40,7 @@ Hlf := $f.16.   -- half
 Flt := $f.32.   -- float
 Dbl := $f.64.   -- double
 Nll := $v.      -- null
+
+AnyInt := $i.*. -- any integer
+AnyFlt := $v.   -- any float
+

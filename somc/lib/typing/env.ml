@@ -32,56 +32,48 @@ let diff oldenv newenv =
     sections = filter newenv.sections oldenv.sections;
   }
 
-let rec at_end_of_path e = function
-  | 
+(* add functions *)
 
-let add_symbol  e n t = e.symbols <- SMap.add n t e.symbols
-let add_alias   e n t =
-  let rec go env = function
-    | [] -> assert false
-    | [n] -> env.aliases <- SMap.add n t env.aliases
-    | n :: ns ->
-      let env' = match SMap.find_opt n env.sections with
-        | Some env -> env
-        | None ->
-          let env = empty () in
-          e.sections <- SMap.add n env e.sections;
-          env
-      in
-      go env' ns
-  in go e (Path.to_list n)
-  (* e.aliases <- SMap.add n t e.aliases *)
+let add_symbol e n t = e.symbols <- SMap.add n t e.symbols
+
+let add_alias e n t = e.aliases <- SMap.add n t e.aliases
 
 let add_section e n s = e.sections <- SMap.add n s e.sections
 
-let get_symbol  e n = SMap.find n e.symbols
-let get_alias   e n = SMap.find n e.aliases
-let get_section e n = SMap.find n e.sections
+(* get functions *)
 
-
-let get_w_path env path span =
-  let cant_use n =
+let at_end_of_path env path span =
+  let check_can_use n =
     if n.[0] = '_' then
       let e = Report.Error.Cannot_private ("use", n) in
       Report.make_error (Type_error e) (Some span)
-      |> Report.report;
-      true
-    else false
+      |> Report.report
   in
   let rec go env first = function
     | [n] ->
-      if not first && cant_use n then Types.TError
-      else get_symbol env n
+      if not first then check_can_use n;
+      env, n
     | n :: ns ->
-      let sect = get_section env n in
-      if not first && cant_use n then Types.TError
-      else go sect false ns
+      let sect = SMap.find n env.sections in
+      if not first then check_can_use n;
+      go sect false ns
     | [] -> assert false
   in
   go env true (Path.to_list path)
 
-let externals : Types.t SMap.t ref = ref SMap.empty
+let get_section env n = SMap.find n env.sections
 
+let get_symbol env p span =
+  let env', n = at_end_of_path env p span in
+  SMap.find n env'.symbols
+
+let get_alias env p s =
+  let env', n = at_end_of_path env p s in
+  SMap.find n env'.aliases
+
+(* misc *)
+
+let externals : Types.t SMap.t ref = ref SMap.empty
 
 let show chan env =
   let w i s =

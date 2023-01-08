@@ -1,7 +1,7 @@
 -- hello_world.som
 
-#std/io::puts
+use std::io
 
-main args = 
-	puts "Hello World!\n",
-	0;;
+let main _ =
+  io::puts "Hello World!",
+  0

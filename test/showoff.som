@@ -1,0 +1,65 @@
+-- imports
+use std::io
+
+-- definition
+let fib n : Int -> Int =
+  match n
+    | 0 then 0
+    | 1 then 1
+    else fib (n-1) + fib (n-2)
+
+-- same:
+-- let fib: Int -> Int = switch
+--   | ...
+
+let count : Int = #some_extern_int
+let numbers = [fib i for i in 0..count]
+
+let main () =
+  -- for loop
+  for n at i in numbers do
+    io::print_fmt "number %d is %d" i n,
+    io::print_newline ()
+  then
+  0
+
+-- module
+mod my_types {
+  -- primitive
+  type Nibble is $i.u.4
+
+  -- variant
+  type 'a Option of Some 'a | None
+
+  type 'a List of
+    | Cons 'a ; 'a List
+    | Nil
+
+  type Boxed of Box 'a . 'a
+
+  -- record
+  type 'a LinkedList of
+    item : 'a,
+    next : 'a LinkedList Option
+
+  -- enum
+  type IOMode of
+    read = 1,
+    write = 2,
+    read_write
+}
+
+-- directives
+!!link_name "my_exit"
+let exit i =
+  #_std_exit i,
+  !!unreachable
+
+!!debug loc
+!!debug message "type of Cons: "
+!!debug typeof my_types::Cons
+-- prints
+--   my_file.som: 65
+--   type of Cons:
+--   'a -> 'a List -> 'a List
+-- at compile time

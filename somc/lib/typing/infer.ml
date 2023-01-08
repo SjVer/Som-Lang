@@ -23,7 +23,7 @@ let rec generalize level = function
       ty := Generic id;
       TVar ty
 
-  | TVar {contents = Link ty} -> generalize level ty
+  | TVar {contents = Solved ty} -> generalize level ty
 
   | TEff t -> TEff (generalize level t)
   | TFun (p, r) -> TFun (generalize level p, generalize level r)
@@ -32,15 +32,16 @@ let rec generalize level = function
   
   | TVar {contents = Generic _}
   | TVar {contents = Unbound _}
-  | TName _ | TPrim _ | TError | TNever as ty -> ty
+  | TName _ | TPrim _ | TVague _
+  | TError | TNever as ty -> ty
 
 (** instantiates type [ty] replacing Generic
     type variables with fresh ones *)
 let instantiate level ty =
   let id_var_map = Hashtbl.create 20 in
   let rec go ty = match ty with
-    | TName _ | TPrim _ | TError | TNever -> ty
-    | TVar {contents = Link ty} -> go ty
+    | TName _ | TPrim _ | TVague _ | TError | TNever -> ty
+    | TVar {contents = Solved ty} -> go ty
     | TVar {contents = Generic id} -> begin
         try Hashtbl.find id_var_map id
         with Not_found ->
@@ -60,8 +61,8 @@ let instantiate level ty =
   if 'b comes from a higher level than 'a *)
 let occurs_check_adjust_levels span id level =
   let rec go = function
-    | TName _ | TPrim _ | TError | TNever -> ()
-    | TVar {contents = Link ty} -> go ty
+    | TName _ | TPrim _ | TVague _ | TError | TNever -> ()
+    | TVar {contents = Solved ty} -> go ty
     | TVar {contents = Generic _} -> ()
     | TVar ({contents = Unbound (other_id, other_level)} as other) ->
       if other_id = id then
@@ -79,22 +80,43 @@ let rec unify env span ty1 ty2 =
   let unify_names n1 n2 =
     n1 = n2 || begin
       try
-        let t1 = Env.get_alias env (Path.to_string n1) in
-        let t2 = Env.get_alias env (Path.to_string n2) in
+        let t1 = Env.get_alias env n1 span in
+        let t2 = Env.get_alias env n2 span in
         unify env span t1 t2;
         true
       with Not_found -> false
     end
   in
+  let rec is_vague_ty kind = function
+    | TName n -> is_vague_ty kind (Env.get_alias env n span)
+    | TPrim (PInt _) when kind = Int -> true
+    | TPrim (PFloat _) when kind = Float -> true
+    | TVague {contents = (Int | Float) as k} -> k = kind
+    | TVague {contents = Link t}
+    | TVar {contents = Solved t} -> is_vague_ty kind t
+    | _ -> false
+  in
 
   if ty1 == ty2 then ()
-  else match (ty1, ty2) with
+  else match [@warning "-57"] (ty1, ty2) with
     | TName n1, TName n2 when unify_names n1 n2 -> ()
-    | TName n, ty | ty, TName n ->
-      let ty2 = Env.get_alias env n in
-      unify env span ty ty2
+
+    (* works, but any unbound typevars will get linked
+       to the contents of the name, not the name itself *)
+    (* | TName n, ty | ty, TName n ->
+      let ty2 = Env.get_alias env n span in
+      unify env span ty ty2 *)
 
     | TPrim p1, TPrim p2 when p1 = p2 -> ()
+
+    | TVague ({contents = Int | Float} as k), ty
+    | ty, TVague ({contents = Int | Float} as k)
+      when is_vague_ty !k ty -> k := Link ty
+
+    | TVague {contents = Link ty1}, ty2
+    | ty1, TVague {contents = Link ty2} ->
+      unify env span ty1 ty2
+
     | TError, _ | _, TError
     | TNever, _ | _, TNever -> ()
 
@@ -106,14 +128,14 @@ let rec unify env span ty1 ty2 =
       unify env span a1 a2;
       unify env span t1 t2
 
-    | TVar {contents = Link ty1}, ty2
-    | ty1, TVar {contents = Link ty2} ->
+    | TVar {contents = Solved ty1}, ty2
+    | ty1, TVar {contents = Solved ty2} ->
       unify env span ty1 ty2
 
     | TVar ({contents = Unbound (id, level)} as tvar), ty
     | ty, TVar ({contents = Unbound (id, level)} as tvar) ->
       occurs_check_adjust_levels span id level ty;
-      tvar := Link ty
+      tvar := Solved ty
 
     | TTup ts1, TTup ts2 -> List.iter2 (unify env span) ts1 ts2
 
@@ -125,11 +147,11 @@ let rec unify env span ty1 ty2 =
 (** asserts that the given type is a function type *)
 let rec match_fun_ty span = function
   | TFun (p, r) -> p, r
-  | TVar {contents = Link ty} -> match_fun_ty span ty
+  | TVar {contents = Solved ty} -> match_fun_ty span ty
   | TVar ({contents = Unbound (_, level)} as tvar) ->
     let param_ty = new_var level in
     let return_ty = new_var level in
-    tvar := Link (TFun (param_ty, return_ty));
+    tvar := Solved (TFun (param_ty, return_ty));
     param_ty, return_ty
   | TError -> TError, TError
   | t ->
@@ -231,8 +253,8 @@ let rec infer_expr ?(level=0) env exp =
       let name n = TName (Path.Cons (Path.Ident "_std_types", n)) in
       let l', t = match l with
         | LI_Char c   -> LI_Char c,   name "Chr"
-        | LI_Float f  -> LI_Float f,  name "Flt"
-        | LI_Int i    -> LI_Int i,    name "Int"  
+        | LI_Float f  -> LI_Float f,  TVague (ref Float)
+        | LI_Int i    -> LI_Int i,    TVague (ref Int) 
         | LI_Nil      -> LI_Nil,      name "Nll"
         | LI_String s -> LI_String s, name "Str"
       in mk s t (EX_Literal l')
@@ -240,7 +262,7 @@ let rec infer_expr ?(level=0) env exp =
     | EX_Identifier {span; item} ->
       let path = Path.from_ident item in
       begin try
-        let t = instantiate level (Env.get_w_path env path span) in
+        let t = instantiate level (Env.get_symbol env path span) in
         mk s t (EX_Identifier (mk span t path)) 
       with Not_found ->
         let name = Path.to_string path in

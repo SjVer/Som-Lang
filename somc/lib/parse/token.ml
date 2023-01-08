@@ -62,8 +62,8 @@ type token_typ =
   | FLOAT of float
   | CHARACTER of char
   | STRING of string
-  | BUILTINITY of (bool * int)
-  | BUILTINFTY of int
+  | BUILTINITY of (bool * int) option
+  | BUILTINFTY of int option
   | BUILTINVTY
   [@@deriving show {with_path = false}, eq]
 
@@ -93,9 +93,9 @@ let unpack_lit = function
   | _ -> failwith "unpack_lit"
 
 let unpack_typ = function
-  | BUILTINITY (s, w) -> BT_Int (s, w)
-  | BUILTINFTY w -> BT_Float w
-  | BUILTINVTY -> BT_Void
+  | BUILTINITY a -> PT_Int a
+  | BUILTINFTY a -> PT_Float a
+  | BUILTINVTY -> PT_Void
   | _ -> failwith "unpack_typ"
 
 let tokens_eq a b = without_arg a = without_arg b
@@ -108,8 +108,8 @@ let dummy = function
   | `FLOAT -> FLOAT 0.0
   | `CHARACTER -> CHARACTER '\x00'
   | `STRING -> STRING ""
-  | `BUILTINITY -> BUILTINITY (false, 0)
-  | `BUILTINFTY -> BUILTINFTY 0
+  | `BUILTINITY -> BUILTINITY None
+  | `BUILTINFTY -> BUILTINFTY None
   | `OTHER t -> t
 
 type token =

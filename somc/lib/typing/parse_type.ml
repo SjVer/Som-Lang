@@ -1,5 +1,6 @@
 let check_alias_exists env name span =
-  try ignore (Env.get_alias env name)
+  try
+    ignore (Env.get_alias env (Path.Ident name) span)
   with Not_found ->
     let open Report.Error in
     let e = Type_error (Use_of_unbound ("type alias", name)) in
@@ -29,14 +30,14 @@ let parse env l =
     | TY_Tuple ts -> 
       let map = List.map (fun t -> go t.item) in
       TTup (map ts)
-    | TY_Builtin b -> begin
+    | TY_Primitive b -> begin
         let open Types in
-        let p = match b with
-          | BT_Int (s, w) -> PInt (s, w)
-          | BT_Float w -> PFloat w
-          | BT_Void -> PVoid
-        in
-        TPrim p
+        match b with
+          | PT_Int (Some (s, w)) -> TPrim (PInt (s, w))
+          | PT_Int None -> TVague (ref Int)
+          | PT_Float (Some w) -> TPrim (PFloat w)
+          | PT_Float None -> TVague (ref Float)
+          | PT_Void -> TPrim PVoid
       end
     | TY_Construct (None, t) ->
       let path = Path.from_ident t.item in

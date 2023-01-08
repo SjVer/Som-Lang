@@ -13,6 +13,7 @@ end
 type t =
   | TName of Path.t
   | TPrim of prim
+  | TVague of vague ref
   | TVar of var ref
   | TEff of t
   | TApp of t * t
@@ -21,17 +22,22 @@ type t =
   | TNever
   | TError
 
-and var =
-  | Unbound of int * int (** [id] and [level] *)
-  | Link of t (** already solved *)
-  | Generic of int (** [id] *)
+and vague =
+  | Int
+  | Float
+  | Link of t
 
 and prim =
   | PInt of bool * int
   | PFloat of int
   | PVoid
 
-let new_var level = TVar (ref (Unbound (ID.next (), level)))
+and var =
+  | Unbound of int * int (** [id] and [depth] *)
+  | Solved of t
+  | Generic of int (** [id] *)
+
+let new_var depth = TVar (ref (Unbound (ID.next (), depth)))
 let new_gen_var () = TVar (ref (Generic (ID.next ())))
 
 let show_prim =
@@ -68,13 +74,18 @@ let show ty debug =
         name
   in
 
-  let ret prim s = if prim then "("^s^")" else s in
+  let ret prim s = if prim then "(" ^ s ^ ")" else s in
 
   let rec go prim = function
     | TName p -> Path.to_string p
     | TPrim p -> show_prim p
+    | TVague k -> begin match !k with
+        | Int -> if debug then "<int>" else "$i.*"
+        | Float -> if debug then "<float>" else "$f.*"
+        | Link t -> go prim t
+      end
     | TVar {contents=Unbound (id, _)} -> do_var `U unames id
-    | TVar {contents=Link ty} -> go prim ty
+    | TVar {contents=Solved ty} -> go prim ty
     | TVar {contents=Generic id} -> do_var `G gnames id
     | TApp (t1, t2) ->
       ret prim (go false t1 ^ " " ^ go true t2)

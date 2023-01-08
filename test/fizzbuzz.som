@@ -1,26 +1,17 @@
--- import some functions
-#std/io::puts
-#std/str::show
+-- imports
+use std::io::puts
+use std::list::iter
+use std::int::show_int
 
--- define a custom integer type
--- of 69 bits just bc we can
-NiceInt = $i.s.69.
+-- fizzbuzz function
+let fizzbuzz = switch
+  | n if n % 15 = 0 then puts "FizzBuzz"
+  | n if n % 5 = 0 then puts "Fizz"
+  | n if n % 3 = 0 then puts "Buzz"
+  | n then puts (show_int n)
 
--- forward declaration
-fizzbuzz: NiceInt -> !.
-
--- `main` returns an effect carrying an integer
-!!no_mangle
-main: Str List -> !Int.
-main args =
-  ns = 1..100
-  =>
-    map fizzbuzz ns,
-    0.
-
--- simple fizzbuzz impl
-fizzbuzz n =
-  n % 15 = 0 ? puts "fizzbuzz" :
-  n % 3 = 0 ? puts "fizz" :
-  n % 5 = 0 ? puts "buzz" :
-  puts (show n).
+-- main function
+let main _ =
+  let ns = 1..100 in
+  iter fizzbuzz ns,
+  0

@@ -92,12 +92,12 @@ and typ =
   | TY_Function of typ node * typ node (** `typ -> typ` *)
   | TY_Tuple of typ node list (** `typ; ...` *)
   | TY_Construct of typ node option * Ident.t node (** `ident` | `typ ident`*)
-  | TY_Builtin of builtin_typ (** `$llvm_typ` *)
+  | TY_Primitive of primitive_typ (** `$...` *)
 
-and builtin_typ =
-  | BT_Int of bool * int (* `$i.bool.int` *)
-  | BT_Float of int (* `$f.int` *)
-  | BT_Void (* `$v` *)
+and primitive_typ =
+  | PT_Int of (bool * int) option (* `$i.bool.int` | `$i.*` *)
+  | PT_Float of int option (* `$f.int` | `$f.*` *)
+  | PT_Void (* `$v` *)
 
 (* ===================== Directive ===================== *)
 

@@ -11,6 +11,7 @@ variables:
   lname: '\b_*[a-z][A-Za-z_0-9]*\b'
   uname: '\b_*[A-Z][A-Za-z_0-9]*\b'
   pname: \'{{lname}}(?!\')
+  lnamep: '{{lname}}''*'
 
   # numbers
   decimal: '\b[0-9]+(?:\.[0-9]+)?\b'
@@ -20,8 +21,8 @@ variables:
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
   # basic types
-  inttype: i\.(s|u)\.(s|[0-9]+)
-  floattype: f\.(64|32|16)
+  inttype: i\.((s|u)\.(s|[0-9]+)|\*)
+  floattype: f\.(64|32|16|\*)
   voidtype: v
   basictype: \$(?:{{inttype}}|{{floattype}}|{{voidtype}})
 
@@ -33,371 +34,321 @@ variables:
 contexts:
   prototype:
     #
-    - include: comments
+    - include: comment
 
   main:
-    # The main context is the initial starting point of our syntax.
-    # Include other contexts from here (or specify them directly).
-    - include: comment
     - include: directive
-    - include: section
     - include: import
+    - include: module
     - include: typedef
-    - include: type
-    - include: declaration
     - include: definition
     - include: expression
     - include: invalid
 
-  type:
-    - match: \:(?!:|=)
-      scope: punctuation.separator.som
-      push:
-        - include: type
-        - match: (?=\S)
-          pop: true
-
-    - match: (?<!!)!(?!!)
-      scope: keyword.operator.som
-
-    # basic types
-    - match: '{{basictype}}|{{uname}}|{{pname}}|_|\.\.\.'
-      scope: storage.type.som
-      push:
-        - match: ->
-          scope: keyword.other.arrow.som
-        - match: ;(?!;)
-          scope: punctuation.separator.sequence.som
-
-        - match: (?=\S)
-          pop: true
-
-  finish_tuple_type:
-    - match: \(
-      scope: punctuation.section.parens.begin.som
-      push:
-      - meta_scope: meta.tuple-type.som
-      - include: type
-      - match: \)
-        scope: punctuation.section.parens.end.som
-        pop: open_parens
-
-      - match: \S
-        fail: open_parens
-
   # STATEMENTS
 
-  directive:
-    - match: (\!\!\.?)({{directive}})?
-      scope: meta.directive.som
-      captures:
-        1: punctuation.definition.annotation.som
-        2: variable.annotation.som
-
-  section:
-    - match: ({{lname}})\s*(\{)
-      captures:
-        1: entity.name.namespace.som
-        2: punctuation.section.braces.begin.som
-      push:
-        - match: \}
-          scope: punctuation.section.braces.end.som
-          pop: true
-        - include: main
-
   import:
-    - match: \#\s*(?={{lname}}|{{uname}})
+    - match: \buse\b
       scope: keyword.import.som
-      push: import_finish
-
-  import_finish:
-    - meta_scope: meta.import.som
-
-    - match: (?<=::)\*
-      scope: keyword.other.glob.som
-      pop: true
-
-    # normal path segment, might be last
-    - match: '({{lname}})|(@)'
-      captures:
-        1: entity.name.namespace.som
-        2: keyword.other.self.som
-      set:
-        - match: (=>)\s*({{lname}})
+      push:
+        - match: (?:(?<=\buse\b)|(::))\s*({{lname}})
           captures:
-            1: keyword.operator.as.som
+            1: punctuation.accessor.double-colon.som
             2: entity.name.namespace.som
+
+        - include: pop-otherwise
+
+  module:
+    - match: \bmod\b
+      scope: keyword.definition.namespace.som
+      push:
+        - match: '{{lname}}'
+          scope: entity.name.namespace.som
+          set:
+            - match: \{
+              scope: punctuation.section.braces.begin.som
+              set:
+                - match: \}
+                  scope: punctuation.section.braces.end.som
+                  pop: true
+                - include: main
+
+            - include: invalid
+        - include: invalid
+
+  typedef:
+    - match: \btype\b
+      scope: keyword.definition.type.som
+      push:
+        - match: '{{pname}}'
+          scope: storage.type.typevar.som
+        - match: '{{uname}}'
+          scope: storage.type.som
+          set:
+            # alias
+            - match: \bis\b
+              scope: keyword.definition.type.alias.som
+              set: type
+
+            # complex
+            - match: \bof\b
+              scope: keyword.definition.type.complex.som
+              set:
+                # variant
+                - match: (\|)?\s*(?={{uname}})
+                  scope: punctuation.separator.sequence.som
+                  set: finish-variant-type
+
+                # record
+                - match: (?={{lname}}\s*\:)
+                  set: finish-record-type
+
+                # enum
+                - match: (?={{lname}})
+                  set: finish-enum-type
+
+                - include: invalid
+            - include: invalid
+        - include: invalid
+
+  definition:
+    - match: \blet\b
+      scope: keyword.definition.function.som
+      push:
+        - match: ':'
+          scope: punctuation.separator.annotation.som
+          push: type
+        - match: =
+          scope: keyword.operator.assignment.som
           pop: true
+        - include: pattern
 
-        - match: '::|\/'
-          scope: punctuation.accessor.som
-          set: import_finish
+  # TYPES
 
-        - match: (?=\S)
-          pop: true
+  optional-type:
+    - match: (?=(?<!!)!(?!!)|\(|{{basictype}}|{{uname}}|{{pname}}|_)
+      push: type
 
-    # uppername, is last
-    - match: '{{uname}}'
-      scope: storage.type.som
-      pop: true
+  type:
+    - match: (?<!!)!(?!!)
+      scope: storage.modifier.som
 
-    # start of block which cannot be
-    # followed by another segment
-    - match: \{
-      scope: punctuation.section.braces.begin.som
+    - match: \(
+      scope: punctuation.section.parens.begin.som
       set:
+          # to allow `(A, B) C`
         - match: \,
           scope: punctuation.separator.sequence.som
 
-        - match: \}
-          scope: punctuation.section.braces.end.som
-          pop: true
+        - match: \)
+          scope: punctuation.section.parens.end.som
+          set: finish-type
 
-        # we need to push recursively bc `set` is used
         - match: (?=\S)
-          push: import_finish
+          push: type
+
+    - match: '{{basictype}}|{{uname}}|{{pname}}|_'
+      scope: storage.type.som
+      set: finish-type
 
     - include: invalid
 
-  typedef:
-    - match: ({{pname}}\s*)*({{uname}})\s*(=)
+  finish-type:
+    - match: '{{basictype}}|{{uname}}|{{pname}}|_'
+      scope: storage.type.som
+
+    # function
+    - match: ->
+      scope: storage.modifier.function.som
+      set: type
+
+    # forall
+    - match: \.
+      scope: punctuation.separator.forall.som
+      set: type
+
+    # tuple
+    - match: ;
+      scope: punctuation.separator.sequence.som
+      set: type
+
+    - include: pop-otherwise
+
+  finish-variant-type:
+    # first optional '|' handled
+    - match: '{{uname}}'
+      scope: entity.name.type.variant.som
+      set:
+        - match: \|
+          scope: punctuation.separator.sequence.som
+          set: finish-variant-type
+
+        - include: optional-type
+        - include: pop-otherwise
+
+    - include: invalid
+
+  finish-record-type:
+    - match: ({{lnamep}})\s*(?:(\:)|(\S))
       captures:
-        1: variable.parameter.type.som
-        2: name.type.som
-        3: keyword.operator.typedef.som
-      push:
-        - include: typedef_record
-        - include: typedef_enum
+        1: variable.member.record.som
+        2: punctuation.definition.member.som
+        3: invalid.illegal.som
+      set:
+        - match: \,
+          scope: punctuation.separator.sequence.som
+          set: finish-record-type
 
-        - include: typedef_variant
-        # - include: typedef_variant_aux
+        - include: optional-type
+        - include: pop-otherwise
 
-        - match: (?=\S)
-          pop: true
+    - include: invalid
 
-  typedef_record:
-    - match: \{
-      scope: punctuation.section.braces.begin.som
-      push:
-        - meta_scope: meta.record-type.som
-
-        - match: '({{lname}})\s*(:)'
-          captures:
-            1: name.field.som
-            2: punctuation.separator.som
-
-        - include: type
-
-        - match: \}
-          scope: punctuation.section.braces.end.som
-          pop: true
-
-        - include: invalid
-
-  typedef_enum:
-    - match: \[
-      scope: punctuation.section.brackets.begin.som
-      push:
-        - meta_scope: meta.enum-type.som
-
-        - match: '{{lname}}'
-          scope: entity.name.constant.som
-
+  finish-enum-type:
+    - match: '{{lnamep}}'
+      scope: variable.member.enum.som
+      set:
         - match: =
           scope: keyword.operator.assignment.som
-
-        - include: expression
-
-        - match: \]
-          scope: punctuation.section.brackets.end.som
-          pop: true
-
-        - include: invalid
-
-  typedef_variant:
-    - match: \|
-      scope: punctuation.separator.variant-definition.som
-      set:
-        - match: '{{uname}}'
-          scope: entity.name.type.variant.som
-          set:
-            - meta_scope: meta.variant-type.som
-
-            - match: ':'
-              scope: punctuation.separator.constructor-type.som
-
-            - include: typedef_variant
-            - include: type
-
-            - match: (?=\S)
+          push:
+            - match: (?=\,)
               pop: true
+            - include: expression
+            - include: invalid
 
-  # typedef_variant_aux:
-    # - match: ({{lname}})(?!\s*::)
-    #   scope: entity.name.type.variant
-    #   set:
-    #     - include: typedef_variant
-    #     - include: type
-    #     - match: (?=\S)
-    #       pop: true
+        - match: \,
+          scope: punctuation.separator.sequence.som
+          set: finish-enum-type
 
-  # declaration:
-    # - match: ({{lname}})\s*(\[)(?=.*\]\s*:(?!:))
-    #   captures:
-    #     1: entity.name.function.som
-    #     2: punctuation.section.brackets.begin.som
+        - include: pop-otherwise
 
-    #   embed: generic_embedded
-    #   escape: (\])\s*(:(?!:))?
-    #   escape_captures:
-    #     1: punctuation.section.brackets.end.som
-    #     2: punctuation.separator.som
-
-    # - match: ({{lname}})\s*(:(?!:))
-      # captures:
-      #   1: entity.name.function.som
-      #   2: punctuation.separator.som
-
-  # definition:
-    # - match: (@)
-    #   scope: keyword.definition.som
-    #   push:
-    #     - include: pattern
-    #     - include: type
-    #     - match: (=)(\s*\.\.\.)?
-    #       captures:
-    #         1: keyword.operator.definition.som
-    #         2: keyword.operator.extern.som
-    #       pop: true
-
-  generic_embedded:
-    - include: type
-    - match: \,
-      scope: punctuation.separator.sequence.som
+    - include: invalid
 
   # PATTERNS
 
   pattern:
-    - match: '(?<=\@){{lname}}'
+    - match: '(?<=\blet\b)\s*{{lname}}(?!\s*(:|=))'
       scope: entity.name.function.som
-    - match: '{{lname}}'
+    - match: '(?<=\blet\b)\s*{{lname}}(?=\s*(:|=))'
+      scope: entity.name.variable.som
+
+    - match: '{{lnamep}}'
       scope: variable.parameter.som
-    - match: _(?![A-za-z])
+
+    - match: \b_\b
       scope: constant.language.wildcard.som
+
+    - include: expression
 
   # EXPRESSION
 
   expression:
-    - include: comment
-
-    - include: special
+    - include: keyword
     - include: operator
     - include: lambda
     - include: grouping
-    - include: subscript
-    - include: array
     - include: record
-    - include: number
+    - include: literal
     - include: variable
-    - include: string-char
+
+  keyword:
+    - match: \b(match)\b
+      scope: keyword.control.switch.som
+    - match: \b(if|then|else)\b
+      scope: keyword.control.conditional.som
+    - match: \b(while|for|do)\b
+      scope: keyword.control.loop.som
+    - match: \b(at|in)\b
+      scope: keyword.other.som
+
+    - match: \||switch
+      scope: keyword.control.switch.som
+      push:
+        - match: (?=\b(if|then)\b)
+          pop: true
+        - include: pattern
+        - include: expression
+        - include: invalid
 
   operator:
-    - match: \?\?
-      scope: keyword.operator.conditional.switch.som
-    - match: ->
-      scope: keyword.operator.switch-arm.som
-
-    - match: =>
-      scope: keyword.operator.do.som
-
-    - match: \?
-      scope: keyword.operator.ternary.if.som
-    - match: ':(?!:)'
-      scope: keyword.operator.ternary.else.som
-
-    # - match: ->
-      # scope: keyword.operator.cast.som
-
     - match: <<|>>
       scope: keyword.operator.bitwise.shift.som
     - match: =|/=
       scope: keyword.operator.comparison.som
     - match: <=|>=|<|>
       scope: keyword.operator.relational.som
-    - match: \!|&&|\|\||\^\^
+    - match: \&\&|\|\|
       scope: keyword.operator.logical.som
-    - match: \&|\^|\|
-      scope: keyword.operator.bitwise.som
     - match: \*|/|-|\+|\%
       scope: keyword.operator.arithmetic.som
     - match: (?<!!)!(?!!)
       scope: keyword.operator.logical.som
 
     - match: \.\.
-      scope: punctuation.definition.range.som
-    - match: ->
-      scope: punctuation.accessor.arrow.som
-    - match: \,|;|\.
+      scope: keyword.operator.range.som
+    - match: \,|;
       scope: punctuation.separator.sequence.som
 
-    - match: \~
+    - match: \~|\!
       scope: keyword.operator.unary.som
 
   lambda:
     - match: \\
       scope: keyword.other.lambda.som
       push:
-        - include: pattern
         - match: ->
           scope: keyword.operator.definition.som
           pop: true
+        - include: pattern
 
   grouping:
-    - match: \(
+    - match: \((?!\))
       scope: punctuation.section.parens.begin.som
       push:
-        - meta_scope: meta.grouping.som
         - match: \)
           scope: punctuation.section.parens.end.som
           pop: true
-        - include: type
         - include: expression
         - include: invalid
 
-  subscript:
     - match: \[
       scope: punctuation.section.brackets.begin.som
       push:
-        - include: expression
         - match: \]
           scope: punctuation.section.brackets.end.som
           pop: true
-        - include: comments
-        - include: invalids
-
-  array:
-    - match: \[
-      scope: punctuation.section.brackets.begin.som
-      push:
-        - meta_scope: meta.array-elements.som
-        - match: \]
-          scope: punctuation.section.brackets.end.som
-          pop: true
-        - include: comment
         - include: expression
         - include: invalid
 
-  # PRIMARIES
+  record:
+    - match: \{
+      scope: punctuation.section.braces.begin.som
+      push:
+        - match: '{{lnamep}}'
+          scope: variable.member.enum.som
+          push:
+            - match: =
+              scope: keyword.operator.assignment.som
+              set:
+                - match: \,|(?=\})
+                  scope: punctuation.separator.sequence.som
+                  pop: true
 
-  number:
+                - include: expression
+                - include: invalid
+
+        - match: \}
+          scope: punctuation.section.braces.end.som
+          pop: true
+        - include: invalid
+
+  literal:
     - match: \b{{number}}\b
       scope: constant.numeric.som
-
-  special:
     - match: \(\)
       scope: constant.language.null.som
 
-  string-char:
+    # string
     - match: '\"'
       push:
         - meta_scope: string.quoted.double
@@ -406,6 +357,7 @@ contexts:
         - include: escaped-char
         - include: format-specifier
 
+    # char
     - match: \'[^\\]\'
       scope: string.quoted.single.som
     - match: \'(\\(?:{{escape_seq}}))\'
@@ -417,42 +369,39 @@ contexts:
         0: string.quoted.single.som
         1: invalid.illegal.unknown-escape.som
 
-  record:
-    - match: \{
-      scope: punctuation.section.braces.begin.som
-      push:
-        - meta_scope: meta.record-fields.som
-        - match: \}
-          scope: punctuation.section.braces.end.som
-          pop: true
-        - include: comment
-        - include: expression
-        - include: invalid
-
   variable:
     - match: ({{lname}})\s*(\:\:)
       captures:
         1: entity.name.namespace.som
         2: punctuation.accessor.double-colon.som
 
-    # - match: ({{uname}})(\.)
-    #   captures:
-    #     1: entity.name.enum.som
-    #     2: punctuation.accessor.dot.som
+    - match: (\.)\s*({{lnamep}})
+      captures:
+        1: punctuation.accessor.dot.som
+        2: variable.member.som
 
-    # - match: (?<=\.)({{uname}})
-      # scope: entity.name.constant.som
-
-    - match: '{{lname}}''*'
+    - match: '{{lnamep}}'
       scope: variable.som
 
-    - match: \`
-      scope: keyword.operator.som
+    - match: '{{uname}}'
+      scope: entity.name.type.variant.som
+
+    - match: \#{{lname}}
+      scope: constant.language.som
+
+  # DIRECTIVES
+
+  directive:
+    - match: \!\!\s*\.?\s*{{directive}}
+      scope: support.function.som
 
   # MISC
 
+  pop-otherwise:
+    - match: (?=\S)
+      pop: true
+
   invalid:
-    - include: comment
     - match: \S
       scope: invalid.som
 
