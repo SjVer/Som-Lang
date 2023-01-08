@@ -28,16 +28,14 @@ variables:
 
   escape_seq: a|b|f|n|r|t|v|\\|\'|\"|0
 
-  # directives
-  directive: '{{lname}}'
+  directive_prefix: \!\!\s*\.?\s*
 
 contexts:
   prototype:
-    #
     - include: comment
+    - include: directive
 
   main:
-    - include: directive
     - include: import
     - include: module
     - include: typedef
@@ -50,13 +48,10 @@ contexts:
   import:
     - match: \buse\b
       scope: keyword.import.som
-      push:
-        - match: (?:(?<=\buse\b)|(::))\s*({{lname}})
-          captures:
-            1: punctuation.accessor.double-colon.som
-            2: entity.name.namespace.som
-
-        - include: pop-otherwise
+      branch_point: import-start
+      branch:
+        - import-segment
+        - import-path
 
   module:
     - match: \bmod\b
@@ -122,6 +117,53 @@ contexts:
           scope: keyword.operator.assignment.som
           pop: true
         - include: pattern
+
+  # IMPORTS
+
+  import-segment:
+    - match: \*
+      scope: keyword.other.glob.som
+      set: import-continue
+
+    - match: '{{lnamep}}'
+      scope: variable.som
+      set: import-continue
+
+    - match: '{{uname}}'
+      scope: storage.type.som
+      set: import-continue
+
+    - include: invalid
+
+  import-as:
+    - match: \b(as)\s*(?:({{lnamep}})|({{uname}}))
+      captures:
+        1: keyword.import.as.som
+        2: variable.som
+        3: storage.type.som
+
+  import-continue:
+    - include: import-as
+
+    - match: \,
+      scope: punctuation.separator.sequence.som
+      set: import-segment
+
+    - match: \bfrom\b
+      scope: keyword.import.from.som
+      set: import-path
+
+    - match: \S
+      fail: import-start
+
+  import-path:
+    - match: (?:(?<=\buse\b|\bfrom\b)|(::))\s*({{lname}})
+      captures:
+        1: punctuation.accessor.double-colon.som
+        2: entity.name.namespace.som
+
+    - include: import-as
+    - include: pop-otherwise
 
   # TYPES
 
@@ -281,15 +323,13 @@ contexts:
       scope: keyword.operator.logical.som
     - match: \*|/|-|\+|\%
       scope: keyword.operator.arithmetic.som
-    - match: (?<!!)!(?!!)
-      scope: keyword.operator.logical.som
 
     - match: \.\.
       scope: keyword.operator.range.som
     - match: \,|;
       scope: punctuation.separator.sequence.som
 
-    - match: \~|\!
+    - match: \~|(?<!!)!(?!!)
       scope: keyword.operator.unary.som
 
   lambda:
@@ -389,11 +429,21 @@ contexts:
     - match: \#{{lname}}
       scope: constant.language.som
 
+    - match: \#\!{{lname}}
+      scope: constant.language.builtin.som
+
   # DIRECTIVES
 
   directive:
-    - match: \!\!\s*\.?\s*{{directive}}
+    # normal directives
+    - match: '{{directive_prefix}}{{lname}}'
       scope: support.function.som
+      push:
+        - match: (\.)\s*({{lname}})
+          captures:
+            1: punctuation.separator.sequence.som
+            2: support.function.som
+        - include: pop-otherwise
 
   # MISC
 

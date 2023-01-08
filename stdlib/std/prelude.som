@@ -5,7 +5,7 @@
 
 	This file is part of the Som standard library.
 
-	Copyright (c) 2022 Sjoerd Vermeulen
+	Copyright (c) 2023 Sjoerd Vermeulen
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -32,26 +32,29 @@
 
 --- public imports ---
 
-#std/types::*
-#std/ops::*
+use * from std::types
+use * from std::ops
+use Str from std::str
 
 --- private imports ---
 
-#std/types::@ => _std_types
--- #std/list => _std_list
-#std/ops::@ => _std_ops
--- #std/str => _std_str
+use std::types as _std_types
+use std::list as _std_list
+use std::ops as _std_ops
+use std::str as _std_str
 
--- #std/io::{
--- 	putsf => _putsf,
--- 	stderr => _stderr,
--- }
+use
+	putsf as _putsf,
+	stderr as _stderr
+from std::io
 
 --- functions ---
 
 -- wraps a value in an effect
--- return v : 'a -> !'a = v.
+let return v : 'a -> !'a = v
 
 -- terminates the calling process immediately with the given status
 -- !!no_return
-exit status : Int -> ! = #_som_std_prelude_exit status.
+let exit status : Int -> !Nll =
+	#_som_std_prelude_exit status,
+	!!unreachable

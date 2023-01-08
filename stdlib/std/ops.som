@@ -3,7 +3,7 @@
 
   This file is part of the Som standard library.
 
-  Copyright (c) 2022 Sjoerd Vermeulen
+  Copyright (c) 2023 Sjoerd Vermeulen
 
   Permission is hereby granted, free of charge, to any person obtaining x copy
   of this software and associated documentation files (the "Software"), to deal
@@ -27,31 +27,30 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
-#std/types::*
-
 --- arithmetic ops ---
 
-add x y : Int -> Int -> Int = #_som_std_ops_add x y.
-sub x y : Int -> Int -> Int = #_som_std_ops_sub x y.
-mul x y : Int -> Int -> Int = #_som_std_ops_mul x y.
-div x y : Int -> Int -> Int = #_som_std_ops_div x y.
-pow x y : Int -> Int -> Int = #_som_std_ops_pow x y.
-mod x y : Int -> Int -> Int = #_som_std_ops_mod x y.
-abs x   : Int -> Int        = #_som_std_ops_abs x.
-neg x   : Int -> Int        = #_som_std_ops_neg x.
+let add = #!add
+let sub = #!sub
+let mul = #!mul
+let div = #!div
+let pow = #!pow
+let mod = #!mod
+let abs = #!abs
+let neg = #!neg
 
 --- logical ops ---
 
-and x y : Bln -> Bln -> Bln = #_som_std_ops_and x y.
-xor x y : Bln -> Bln -> Bln = #_som_std_ops_xor x y.
-or x y  : Bln -> Bln -> Bln = #_som_std_ops_or x y.
-not x   : Bln -> Bln        = #_som_std_ops_not x.
+let and = #!and
+let xor = #!xor
+let or  = #!or
+let not = #!not
 
 --- comparison ops ---
 
-eq x y   : Int -> Int -> Bln = #_som_std_ops_eq x y.
-neq x y  : Int -> Int -> Bln = not (eq x y).
-gr x y   : Int -> Int -> Bln = #_som_std_ops_gr x y.
-greq x y : Int -> Int -> Bln = or (gr x y) (eq x y).
-ls x y   : Int -> Int -> Bln = #_som_std_ops_ls x y.
-lseq x y : Int -> Int -> Bln = or (ls x y) (eq x y).
+let eq   = #!eq x y
+let gr   = #!gr x y
+let ls   = #!ls x y
+
+let neq  = not (eq x y)
+let greq = or (gr x y) (eq x y)
+let lseq = or (ls x y) (eq x y)

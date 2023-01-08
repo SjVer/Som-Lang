@@ -5,7 +5,7 @@
 
   This file is part of the Som standard library.
 
-  Copyright (c) 2022 Sjoerd Vermeulen
+  Copyright (c) 2023 Sjoerd Vermeulen
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -27,28 +27,16 @@
 ---
 
 -- !!.stdlib
-!!.warn_redef "redefinition may break stdlib"
+-- !!.warn_redef "redefinition may break stdlib"
 
-#std/list::List => _List
+type Str is $i.u.s
 
-Str := $i.u.s.
+let concat str1 str2: Str -> Str -> Str = #_som_std_str_concat str1 str2
+let substr str start len: Str -> Str -> Str = #_som_std_str_substr str start len
+let split str delim: Str -> Str -> Str = #_som_std_str_split str delim
+let lstrip str delim: Str -> Str -> Str = #_som_std_str_lstrip str delim
+let rstrip str delim: Str -> Str -> Str = #_som_std_str_rstrip str delim
+let strip str delim: Str -> Str -> Str = lstrip (rstrip str delim) delim
 
 !!fmt_variadic 0
-fmt: Str ... -> Str.
-@fmt f args = ....
-
-show[V]: V -> Str.
-
-@show[Str] v = v.
-@show[Bln] v = v ? "true" : "false".
-@show[Int] v = ....
--- etc...
-
--- idk abt this one
--- cast['a, Str] v = show v.
-
-join: Str -> Str _List -> Str
-@join sep l = l ??
-  empty -> "",
-  cons (lh; empty) -> lh,
-  cons (lh; lr) -> lh + sep + join sep lr.
+let fmt f args: Str -> Args -> Str = #_som_std_str_fmt f args

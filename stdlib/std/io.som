@@ -4,7 +4,7 @@
 
   This file is part of the Som standard library.
 
-  Copyright (c) 2022 Sjoerd Vermeulen
+  Copyright (c) 2023 Sjoerd Vermeulen
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -28,32 +28,36 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
--- #std/str::Str => _Str
+use Str from std::str
 
 --- types ---
 
--- IOMode := [ read write append read_write ].
+type IOMode of
+  read,
+  write,
+  append,
+  read_write
 
--- File := { path: Str }.
-File := $v.
+type File of
+  path: Str
 
 --- files ---
 
-stdin  : File = #_som_std_io_stdin.
-stdout : File = #_som_std_io_stdout.
-stderr : File = #_som_std_io_stderr.
+let stdin  : File = #_som_std_io_stdin
+let stdout : File = #_som_std_io_stdout
+let stderr : File = #_som_std_io_stderr
 
 --- functions ---
 
 -- opens the file with the given path and mode
-openf path mode : _Str -> IOMode -> !File =
-  #_som_std_io_openf path mode.
+let openf path mode : _Str -> IOMode -> !File =
+  #_som_std_io_openf path mode
 
 -- closes the given file
-closef file : File -> ! = #_som_std_io_closef file.
+let closef file : File -> !Nll = #_som_std_io_closef file
 
 -- writes the given string to the given file
-putsf file string : File -> _Str -> ! = #_som_std_io_putsf file string.
+let putsf file string : File -> _Str -> !Nll = #_som_std_io_putsf file string
 
 -- prints the given string to stdout
-puts string : _Str -> ! = putsf stdout string.
+let puts string : _Str -> !Nll = putsf stdout string

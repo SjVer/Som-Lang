@@ -4,7 +4,7 @@
 
 	This file is part of the Som standard library.
 
-	Copyright (c) 2022 Sjoerd Vermeulen
+	Copyright (c) 2023 Sjoerd Vermeulen
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -30,17 +30,17 @@
 
 -- useful aliases for basic types
 
-Bln := $i.u.1.  -- boolean
-Nyb := $i.u.4.  -- nybble
-Byt := $i.u.8.  -- byte
-Chr := $i.u.8.  -- character
-Int := $i.s.32. -- integer
-Lng := $i.s.64. -- long
-Hlf := $f.16.   -- half
-Flt := $f.32.   -- float
-Dbl := $f.64.   -- double
-Nll := $v.      -- null
+type Bln is $i.u.1  -- boolean
+type Nyb is $i.u.4  -- nybble
+type Byt is $i.u.8  -- byte
+type Chr is $i.u.8  -- character
+type Int is $i.s.32 -- integer
+type Lng is $i.s.64 -- long
+type Hlf is $f.16   -- half
+type Flt is $f.32   -- float
+type Dbl is $f.64   -- double
+type Nll is $v      -- null
 
-AnyInt := $i.*. -- any integer
-AnyFlt := $v.   -- any float
+type AnyInt is $i.* -- any integer
+type AnyFlt is $f.* -- any float
 

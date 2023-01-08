@@ -55,9 +55,9 @@ let exit i =
   #_std_exit i,
   !!unreachable
 
-!!debug loc
-!!debug message "type of Cons: "
-!!debug typeof my_types::Cons
+!!debug.loc
+!!debug.message "type of Cons: "
+!!debug.typeof my_types::Cons
 -- prints
 --   my_file.som: 65
 --   type of Cons:
