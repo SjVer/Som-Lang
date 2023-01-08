@@ -1,5 +1,5 @@
 ---
-  Module std/io
+  Module str::io
   Standard module containing types and functions for (file) input/output.
 
   This file is part of the Som standard library.
@@ -57,7 +57,7 @@ let openf path mode : _Str -> IOMode -> !File =
 let closef file : File -> !Nll = #_som_std_io_closef file
 
 -- writes the given string to the given file
-let putsf file string : File -> _Str -> !Nll = #_som_std_io_putsf file string
+let putsf file str : File -> _Str -> !Nll = #_som_std_io_putsf file str
 
 -- prints the given string to stdout
-let puts string : _Str -> !Nll = putsf stdout string
+let puts str : _Str -> !Nll = putsf stdout str, putsf stdout "\n"

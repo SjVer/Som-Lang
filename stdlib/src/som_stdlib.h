@@ -1,4 +1,9 @@
-#include <string.h>
+// macros
+
+#define CTOR void __attribute__((constructor)) som_CTOR
+#define DTOR void __attribute__((destructor)) som_DTOR
+
+// types
 
 typedef _Bool         som_Bln;
 typedef unsigned char som_Nyb;

@@ -1,14 +1,16 @@
 #include <stdio.h>
-#include "types.h"
+#include <string.h>
+
+#include "som_stdlib.h"
 
 #ifndef STDIN_PATH
-#   define STDIN_PATH "stdin"
+#   define STDIN_PATH "<stdin>"
 #endif
 #ifndef STDOUT_PATH
-#   define STDOUT_PATH "stdout"
+#   define STDOUT_PATH "<stdout>"
 #endif
 #ifndef STDERR_PATH
-#   define STDERR_PATH "stderr"
+#   define STDERR_PATH "<stderr>"
 #endif
 
 // types
@@ -51,11 +53,8 @@ som_File som_openf(som_Str path, som_IOMode mode) {
             break;
     };
 
+    // TODO: error handling
     FILE* file_ptr = fopen(path, modes);
-
-    if (file_ptr == NULL) {
-        // TODO: error handling
-    }
 
     som_File file;
     strcpy(path, file.path);
@@ -77,7 +76,7 @@ void som_putsf(som_File file, som_Str str) {
 
 // ctors
 
-void __attribute__((constructor)) _Som_std_io__ctor() {
+CTOR() {
     som_stdin = (som_File) {
         .path = STDIN_PATH,
         ._mode = IOMode_append,
@@ -95,7 +94,7 @@ void __attribute__((constructor)) _Som_std_io__ctor() {
     };
 }
 
-void __attribute__((destructor)) _Som_std_io__dtor() {
+DTOR() {
     som_closef(som_stdin);
     som_closef(som_stdout);
     som_closef(som_stderr);

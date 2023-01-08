@@ -1,5 +1,5 @@
 ---
-	Module std/types
+	Module str::types
 	Standard module containing basic type aliases.
 
 	This file is part of the Som standard library.

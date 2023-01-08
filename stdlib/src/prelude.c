@@ -1,6 +1,6 @@
-#include "types.h"
+#include <stdlib.h>
 
-void exit(int) __attribute__((noreturn));
+#include "som_stdlib.h"
 
 void som_exit(som_Int status) {
     exit(status);

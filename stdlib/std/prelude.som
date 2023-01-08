@@ -1,5 +1,5 @@
 ---
-	Module std/prelude
+	Module str::prelude
 	Standard module implicitly imported by default into all Som modules unless
 	explicitly disabled using the `no_prelude` or `no_stdlib` directive.
 
@@ -26,9 +26,8 @@
 	SOFTWARE.
 ---
 
--- !!.stdlib
--- !!.warn_redef "redefinition may break stdlib"
-
+!!.stdlib
+!!.warn_redef "redefinition may break stdlib"
 
 --- public imports ---
 
@@ -54,7 +53,12 @@ from std::io
 let return v : 'a -> !'a = v
 
 -- terminates the calling process immediately with the given status
--- !!no_return
-let exit status : Int -> !Nll =
+let exit status : Int -> Nll =
 	#_som_std_prelude_exit status,
 	!!unreachable
+
+let assert cond msg : Bln -> Str -> Nll =
+	if cond then
+		_putsf _stderr msg,
+		exit 1
+	else ()
