@@ -1,5 +1,6 @@
 open Report.Error
-open Control
+open Parser
+open Handling
 open Token
 open Ast
 
@@ -8,459 +9,238 @@ open Ast
 (* if true produce stuff like EX_Grouping *)
 let groups = false
 
-let ws r f =
-  let s = (current f).span in
-  let item = r f in
-  let s' = Span.concat_spans
-    s f.previous.span
-  in
-  mk item s'
+let mk span item = {span; item}
+let mk_g span item = mk {span with ghost = true} item
+let mk_t item (t: token) = {span = t.span; item}
 
-let dot f =
-  ignore (
-    f := expect DOT
-      |! ("a terminating '.'", [`S DOT])
-  )
+let catnspans n1 n2 = Span.concat_spans n1.span n2.span
 
-let left_assoc f efn sepfn mkfn =
+let left_assoc (p : parser) itemfn sep makefn =
   let rec go lhs =
-    try
-      let sep = sepfn f in
-      let rhs = efn f in
-      let s = Span.concat_spans lhs.span rhs.span in
-      go (mkfn lhs sep rhs s)
-    with Failed _ ->
+    if matsch sep p then
+      let rhs = itemfn p in
+      let s = catnspans lhs rhs in
+      go (makefn lhs rhs s)
+    else
       lhs
-  in go (efn f)
+  in go (itemfn p)
+
+let many (p : parser) checkfn parsefn =
+  let rec go acc =
+    if checkfn p then acc @ [parsefn p] |> go
+    else acc
+  in go []
 
 (* =========================== toplevel =========================== *)
 
-let rec prog f : ast =
-  let ast' = ast [EOF] f in
-  consume f EOF "EOF" &
-  ast'
-  
-and ast ts f : ast =
-  f := (cons (ws toplevel) (ast ts))
-    |. (ts, [])
-    |! ("expected a toplevel statement", [`S DOT])
-    |> ast ts
+let rec prog p =
+  let tls = many p not_at_end toplevel in
+  consume EOF "end of file" p &>
+  tls
 
-and toplevel f : toplevel =
-  f := section
-    |= import
-    |= definition
-    |= type_definition
+and toplevel p : unit =
+  let e = expression p in
+  Print_ast.print_expr_node e
 
-and section f : toplevel =
-  let nt = expect (dummy `LOWERNAME) f in
-  let nn = mk (unpack_name nt.typ) nt.span in
-  let ast = enclose
-    LBRACE "{"
-    (ast [RBRACE])
-    RBRACE "}"
-    f
-  in
-  TL_Section (nn, ast)
+(* ============================ binding =========================== *)
 
-and import f : toplevel =
-  ignore (expect HASH f); 
+and binding (p : parser) exprfn sep sepstr : value_binding =
+  let patt = pattern p in
+  let (t, e) = strict_binding p exprfn sep sepstr in
 
-  let ident f =
-    let i =
-      f := expect (dummy `LOWERNAME)
-        |= expect (dummy `UPPERNAME)
-    in
-    mk (unpack_name i.typ) i.span
-  in
-  
-  let dir_segment f =
-    let t = ident f in
-    ignore (expect SLASH f);
-    t
-  in
-
-  let rec finish_colon f =
-    if matsch f [AT] then
-      let name = mk "@" f.previous.span in
-      let ik = finish_name name f in
-      mk (IK_Self ik) name.span
-    else if matsch f [STAR] then
-      mk IK_Glob f.previous.span
-    else if check f [LBRACE] then
-      let rec body' f = 
-        if check f [RBRACE] then []
-        else begin
-          let i = ws (body true []) f in
-          if matsch f [COMMA] then
-            i :: body' f
-          else [i]
-        end
-      in
-      ws (fun f ->
-        let imports = enclose LBRACE "{" body' RBRACE "}" f in
-        IK_Nested imports
-      ) f
-    else begin
-      error_at_current f (Expected "'{', '@' or '*'") [];
-      mk IK_Error f.previous.span
-    end
-  and finish_name n f =
-    if matsch f [THICKARROW] then
-      let s = f.previous.span in
-      try
-        let nn = ident f in
-        mk (IK_Rename (n, nn)) s
-      with Failed _ ->
-        error_at_current f (Expected "an identifier") [];
-        mk IK_Error s
-    else mk (IK_Simple n) n.span
-  and body nested dir f =
-    let path = if nested
-      then (many (ident +< expect DBL_COLON) |: []) f
-      else many (ident +< expect DBL_COLON) f
-    in
-    let kind =
-      f := ident += finish_name
-        |= finish_colon
-    in
-    {
-      dir;
-      path;
-      kind;
-    }
-  in
-
-  let i =
-    f := many dir_segment += body false
-      |= body false []
-      |! ("an import directory", [])
-  in
-  TL_Import i
-
-and definition f : toplevel =
-  let b = binding true EQUAL "=" (ws expr) f in
-  dot f;
-  TL_Definition b
-
-and type_definition f : toplevel =
-  let params =
-    f := many (expect (dummy `PRIMENAME) +:
-          fun t -> mk (unpack_name t.typ) t.span)
-      |: []
-  in
-
-  let n = expect (dummy `UPPERNAME) f in
-  let name = mk (unpack_name n.typ) n.span in
-  ignore (consume f COLONEQUAL "':='");
-
-  let typ =
-    f := ws typ
-  in
-  dot f;
-
-  TL_Type_Definition {params; name; typ}
-
-(* =========================== binding =========================== *)
-
-and binding must sep sepstr efn f : value_binding =
-  let p = ws pattern f in
-  let (t, e) = strict_binding must sep sepstr efn f in
-
-  let e' = match t with
+  (* put in the ghost EX_Constraint *)
+  let expr = match t with
     | Some t -> {
-        span = Span.{e.span with ghost = true};
+        span = {e.span with ghost = true};
         item = EX_Constraint (e, t);
       }
     | None -> e
   in
-  {
-    patt = p;
-    expr = e';
-  }
+  {patt; expr}
 
-and strict_binding must sep sepstr efn f =
-  let another_pattern f =
-    let patt = ws pattern f in
-    let (t, expr) = strict_binding must sep sepstr efn f in
-    let b = {patt; expr} in
-    let s = Span.concat_spans patt.span expr.span in
-    t, mk ~g:true (EX_Lambda b) s
-  in
-  let body f =
-    let t = t_constr f in
-    ignore (expect sep f);
-    let e =
-      f := efn
-        |: mk ~g:true EX_Error (current f).span
+and strict_binding p exprfn sep sepstr =
+  if checks [COLON; sep] p then begin
+    (* type annotation *)
+    let t = if matsch COLON p
+      then Some (typ p)
+      else None
     in
+    (* sep and body *)
+    i (consume sep ("a pattern or \"" ^ sepstr ^ "\"") p);
+    let e = exprfn p in
     t, e
-  in
-  if must then
-    f := body
-      |= another_pattern
-      |! (Printf.sprintf "a pattern or '%s'" sepstr, [])
-  else
-    f := body
-      |= another_pattern
+  end else begin
+    (* another pattern *)
+    let patt = pattern p in
+    let (t, expr) = strict_binding p exprfn sep sepstr in
+    let s = catnspans patt expr in
+    t, mk_g s (EX_Lambda {patt; expr})
+  end
 
-(* =========================== patterns =========================== *)
+(* ============================ patterns ========================== *)
 
-and pattern f : pattern = simple_pattern f
+and pattern p : pattern node =
+  (* TODO *)
+  atom_pattern p
 
-and simple_pattern f : pattern =
-  f := expect (dummy `LOWERNAME) +: (fun p -> PA_Variable (unpack_name p.typ))
-    |= expect UNDERSCORE +: (fun _ -> PA_Wildcard)
+and atom_pattern p : pattern node =
+  let curr = current p in
+  let mk' i = mk curr.span i in
+  
+  if matsch (dummy `LOWERNAME) p then mk' (PA_Variable (unpack_str curr.typ))
+  else if matsch UNDERSCORE p then mk' PA_Wildcard
+  else fail ()
 
 (* =========================== expression ========================= *)
 
-and expr f : expr =
-  let bind b f =
-    ignore (expect THICKARROW f);
-    let e = ws expr f in
-    EX_Binding (b, e)
-  in
-  f := binding false EQUAL "=" (ws lambda_expr) += bind
-    |= lambda_expr
-    |! ("an expression", [])
-    |: EX_Error
+and expression p : expr node = let_expression p
 
-and lambda_expr f : expr =
-  let lambda f =
-    try
-      let b = binding true ARROW "->" (ws lambda_expr) f in
-      EX_Lambda b
-    with Failed _ ->
-      (* (* TODO: we're skipping the token that was supposed
-         to be '->' and ignoring an expression so that no
-         duplicate errors are reported. might be shit. *)
-      ignore (advance f);
-      seq_expr f & *)
-      EX_Error
-  in
-  f := expect BACKSLASH +> lambda
-    |= seq_expr
+and let_expression p : expr node =
+  if matsch LET p then begin
+    let let_s = p.previous.span in
+    let bind = binding p let_expression EQUAL "=" in
+    i (consume IN "\"in\"" p);
+    let body = let_expression p in
+    let s = Span.concat_spans let_s body.span in 
+    mk s (EX_Binding (bind, body))
+  end
+  else sequence_expression p
 
-and seq_expr f : expr =
-  let e =
-    left_assoc f
-      (ws tuple_expr)
-      (expect COMMA)
-      (fun e1 _ e2 s -> mk (EX_Sequence (e1, e2) ) s)
-  in e.item
+and sequence_expression p : expr node =
+  let mk_seq e1 e2 s = mk s (EX_Sequence (e1, e2)) in
+  left_assoc p lambda_expression COMMA mk_seq
 
-and tuple_expr f : expr = 
-  f := ssntl SEMICOLON (ws t_constr_expr) +: (fun es -> EX_Tuple es)
-    |= t_constr_expr
+and lambda_expression p : expr node =
+  if matsch BACKSLASH p then begin
+    let start_s = p.previous.span in
+    let bind = binding p tuple_expression ARROW "->" in
+    let s = Span.concat_spans start_s bind.expr.span in
+    mk s (EX_Lambda bind)
+  end else tuple_expression p
 
-and t_constr_expr f : expr =
-  let rec go e =
-    match t_constr f with
-      | Some t -> 
-        let s = Span.concat_spans e.span t.span in
-        go (mk (EX_Constraint (e, t)) s)
-      | None -> e.item
-  in
-  go (ws (infix_expr 7) f)
+and tuple_expression p : expr node =
+  let e = t_constr_expression p in
+  let parsefn p = i (advance p); t_constr_expression p in
+  let es = many p (check SEMICOLON) parsefn in
 
-and infix_expr prec f : expr =
+  if es <> [] then
+    let s = catnspans e (List.hd es) in
+    mk s (EX_Tuple (e :: es))
+  else e
+
+and t_constr_expression p : expr node =
+  let e = infix_expression p max_precedence in
+  if matsch COLON p then
+    let t = typ p in
+    let s = catnspans e t in
+    mk s (EX_Constraint (e, t))
+  else
+    e
+
+and infix_expression p prec : expr node =
   if prec >= 0 then
-    (* TODO: associativity? *)
-    let e = left_assoc f
-      (ws (infix_expr (prec - 1)))
-      (ws (infix_op prec))
-      (fun lhs op rhs s -> mk (EX_Application (op, [lhs; rhs])) s)
+    (* TODO: allow right associativity? *)
+    let rec go lhs = 
+      if matschs (allowed_infix_operators prec) p then
+        let op = mk_infix_operator p.previous in
+        let rhs = infix_expression p (prec - 1) in
+        let s = catnspans lhs rhs in
+        go (mk_g s (EX_Application (op, [lhs; rhs])))
+      else
+        lhs
     in
-    e.item
-  else base_expr f
+    go (infix_expression p (prec - 1))
+  else
+    base_expression p
 
-and base_expr f : expr =
-  let constr c f =
-    let es = many (ws single_expr) f in
-    EX_Construct (c, es)
-  in
-  let app e f =
-    let es = many (ws single_expr) f in
-    EX_Application (e, es)
-  in
-  let unary o f =
-    let e = ws base_expr f in
-    EX_Application (o, [e])
-  in
-  f := upper_longident += constr
-    |= ws single_expr += app
-    |= single_expr
-    |= ws unary_op += unary
-    |! ("an expression", [])
-    |: EX_Error
+and base_expression p : expr node =
+  (* TODO *)
+  atom_expression p 
 
-and single_expr f : expr =
-  let mklit (n : token) =
-    EX_Literal (unpack_lit n.typ)
-  in
-  let finish_external f =
-    try
-      let i = expect (dummy `LOWERNAME) f in
-      EX_External (unpack_name i.typ)
-    with Failed _ ->
-      error_at_current f (Expected "an identifier") [];
-      EX_Error
-  in
-  f := expect (dummy `INTEGER) +: mklit
-    |= expect (dummy `FLOAT) +: mklit
-    |= expect (dummy `CHARACTER) +: mklit
-    |= expect (dummy `STRING) +: mklit
-    |= expect EMPTYPARENS +: mklit
+and atom_expression p : expr node =
+  let mk' i = mk_t i (advance p) in
+  match current_t p with
+    | INTEGER i -> mk' (EX_Literal (LI_Int i))
+    | FLOAT f -> mk' (EX_Literal (LI_Float f))
+    | CHARACTER c -> mk' (EX_Literal (LI_Char c))
+    | STRING s -> mk' (EX_Literal (LI_String s))
+    | EMPTYPARENS -> mk' (EX_Literal LI_Nil)
 
-    |= lower_longident +: (fun i -> EX_Identifier i)
-    |= expect HASH +> finish_external
+    | LPAREN -> begin
+        let start_s = (advance p).span in
+        let e = expression p in
+        if not (matsch RPAREN p) then fail ();
 
-    |= enclose LBRACKET "[" list RBRACKET "]"
-        += ghost_list
-    
-    (* |= enclose LPAREN "(" any_op "operator" RPAREN ")" *)
-    |= enclose LPAREN "(" (ws expr) RPAREN ")"
-        +: (fun e -> if groups then EX_Grouping e else e.item)
+        let s = Span.concat_spans start_s p.previous.span in
+        if groups then mk s (EX_Grouping e)
+        else mk s e.item
+      end
+
+    (* TODO *)
+    | _ -> error_at_current p Unexpected []
 
 (* ====================== expression helpers ===================== *)
 
-and t_constr f : typ node option =
-  if matsch f [COLON] then begin
-    f := ws typ +: Option.some
-      |! ("a type", [])
-      |: None
-  end else None
-
-and infix_ops =
+and max_precedence = 5
+and infix_operators =
   [
-    [CARET, "^"];
     [STAR, "*"; SLASH, "/"; MODULO, "%"];
     [PLUS, "+"; MINUS, "-"];
     [GREATER, ">"; GREATEREQUAL, ">="; LESSER, "<"; LESSEREQUAL, "<="];
     [EQUAL, "="; NOTEQUAL, "/="];
     [DBL_AMPERSAND, "&&"];
-    [DBL_CARET, "^^"];
     [DBL_PIPE, "||"]; 
   ]
 
-and unary_ops =
-  [
-    PLUS, "~+";
-    MINUS, "~-";
-    BANG, "~!";
-  ]
-
-and operator f = function
-  | [] -> fail false
-  | (tt, on) :: tl ->
-    let f' = backup f in
-    try
-      let t = expect tt f in
-      let i = Ident.Ident on in
-      EX_Identifier (mk i t.span)
-    with Failed _ ->
-      restore f' f;
-      operator f tl
-
-and infix_op prec f : expr =
-  operator f (List.nth infix_ops prec)
-
-and unary_op f : expr =
-  operator f unary_ops
-
-and list f =
-  if check f [RBRACKET] then []
-  else begin
-    let e = ws tuple_expr f in
-    if matsch f [COMMA] then
-      e :: list f
-    else [e]
-  end
-
-and ghost_list es f =
-  let span nodes =
-    Span.concat_spans
-      (List.hd nodes).span
-      (List.hd (List.rev nodes)).span
+and allowed_infix_operators prec =
+  List.nth infix_operators prec
+  |> List.map fst
+and mk_infix_operator t : expr node =
+  let name =
+    let rec go = function
+      | (op, (name : string)) :: _ when op = t.typ -> name
+      | _ :: ops -> go ops
+      | [] -> failwith "mk_infix_operator"
+    in go (List.flatten infix_operators)
   in
-  let rec go = function
-    | [] ->
-      let nil = mk ~g:true (Ident.Ident "[]") f.previous.span in
-      mk ~g:true (EX_Construct (nil, [])) nil.span
-    | e :: es ->
-      let cons = mk ~g:true (Ident.Ident "::") e.span in
-      let tail = go es in
-      let s = span (e :: es) in
-      mk ~g:true (EX_Construct (cons, [e; tail])) s
-  in (go es).item
- 
+  let op = mk t.span (Ident.Ident name) in
+  mk t.span (EX_Identifier op)
+
 (* ============================= types ============================ *)
 
-and typ f : typ =
-  f := function_typ
-    |! ("a type", [])
-    |: TY_Any
+and typ p : typ node = function_type p
 
-and function_typ f : typ =
-  let t = ws tuple_typ f in
-  if matsch f [ARROW] then
-    let rt =
-      f := ws function_typ
-        |! ("a type", [])
-        |: mk TY_Any f.previous.span
-    in
-    TY_Function (t, rt)
-  else t.item 
+and function_type p : typ node =
+  let mk_fn lhs rhs s = mk s (TY_Function (lhs, rhs)) in
+  left_assoc p tuple_type ARROW mk_fn
 
-and tuple_typ f : typ =
-  f := ssntl SEMICOLON (ws effect_typ) +: (fun ts -> TY_Tuple ts)
-    |= effect_typ
+and tuple_type p : typ node =
+  let t = effect_type p in
+  let parsefn p = i (advance p); effect_type p in
+  let ts = many p (check SEMICOLON) parsefn in
 
-and effect_typ f : typ =
-  if matsch f [BANG] then
-    try TY_Effect (Some (ws atomic_typ f))
-    with Failed _ -> TY_Effect None
-  else atomic_typ f
+  if ts <> [] then
+    let s = catnspans t (List.hd ts) in
+    mk s (TY_Tuple (t :: ts))
+  else t
 
-and atomic_typ f : typ =
-  let builtin (t: token) =
-    TY_Primitive (unpack_typ t.typ)
-  in
-  f := expect UNDERSCORE +: (fun _ -> TY_Any)
-    |= expect (dummy `PRIMENAME) +: (fun t -> TY_Variable (unpack_name t.typ))
+and effect_type p : typ node =
+  if matsch BANG p then
+    let b_span = p.previous.span in
+    let t = effect_type p in
+    let s = Span.concat_spans b_span t.span in
+    mk s (TY_Effect t)
+  else
+    atom_type p
 
-    |= upper_longident +: (fun i -> TY_Construct (None, i))
+and atom_type p : typ node =
+  let mk' i = mk_t i (advance p) in
+  let builtin t = mk' (TY_Primitive (unpack_typ t)) in
+  let curr_t = current_t p in
 
-    |= expect (dummy `BUILTINITY) +: builtin
-    |= expect (dummy `BUILTINFTY) +: builtin
-    |= expect BUILTINVTY +: builtin
-
-    |= enclose LPAREN "(" (ws typ) RPAREN ")"
-        +: (fun t -> t.item)
-
-(* ========================== identifiers ========================= *)
-
-and longident_path f =
-  let ident f =
-    let i = expect (dummy `LOWERNAME) f in
-    unpack_name i.typ
-  in
-  f := many (ident +< expect DBL_COLON)
-    |: []
-
-and lower_longident f =
-  let go f =
-    let p = longident_path f in
-    let i = expect (dummy `LOWERNAME) f in
-    Ident.from_list (p @ [unpack_name i.typ])
-  in
-  ws go f
-
-and upper_longident f =
-  let go f =
-    let p = longident_path f in
-    let i = expect (dummy `UPPERNAME) f in
-    Ident.from_list (p @ [unpack_name i.typ])
-  in
-  ws go f
+  if matsch (dummy `BUILTINITY) p then builtin curr_t
+  else if matsch (dummy `BUILTINFTY) p then builtin curr_t
+  else if matsch BUILTINVTY p then builtin curr_t
+    (* TODO *)
+  else fail ()
 

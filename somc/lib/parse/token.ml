@@ -1,63 +1,55 @@
 open Ast
 
 type token_typ =
-  (* single *)
-  | AT
-  | EOF
-  | HASH
+  (* keywords *)
+  | USE   | FROM   | AS
+  | MOD
+  | TYPE  | IS     | OF
+  | LET   | IN
+  | IF    | THEN   | ELSE
+  | FOR   | AT     | DO
+  | MATCH | SWITCH
+
+  (* single symbol *)
   | UNDERSCORE
-  | QUESTION
   | SEMICOLON
   | DOT
   | COMMA
-  | COLON
   | BANG
   | BACKSLASH
   | TILDE
+  | PIPE
 
   (* enclosing *)
-  | RPAREN
-  | LPAREN
-  | RBRACKET
-  | LBRACKET
-  | RBRACE
-  | LBRACE
+  | LPAREN   | RPAREN
+  | LBRACKET | RBRACKET
+  | LBRACE   | RBRACE
 
   (* operators *)
-  | PLUS
-  | MINUS
-  | STAR
-  | SLASH
+  | PLUS    | MINUS
+  | STAR    | SLASH
   | MODULO
-  | CARET
-  | AMPERSAND
-  | PIPE
-  | EQUAL
-  | NOTEQUAL
-  | GREATER
-  | GREATEREQUAL
-  | LESSER
-  | LESSEREQUAL
+  | EQUAL   | NOTEQUAL
+  | GREATER | GREATEREQUAL
+  | LESSER  | LESSEREQUAL
 
   (* multiple *)
   | ARROW
-  | DBL_PIPE
   | DBL_DOT
-  | DBL_COLON
-  | DBL_CARET
-  | DBL_BANG
-  | DBL_AMPERSAND
-  | DBL_SEMICOLON
-  | DBL_QUESTION
-  | THICKARROW
   | TRP_DOT
+  | COLON
+  | DBL_COLON
+  | DBL_PIPE
+  | DBL_AMPERSAND
   | EMPTYPARENS
-  | COLONEQUAL
-
+  
   (* ambigous *)
   | UPPERNAME of string
   | LOWERNAME of string
   | PRIMENAME of string
+  | DIRECTNAME of string
+  | EXTERNNAME of string
+  | MAGICNAME of string
   | INTEGER of int
   | FLOAT of float
   | CHARACTER of char
@@ -65,12 +57,18 @@ type token_typ =
   | BUILTINITY of (bool * int) option
   | BUILTINFTY of int option
   | BUILTINVTY
-  [@@deriving show {with_path = false}, eq]
 
+  (* misc *)
+  | EOF
+  [@@deriving show {with_path = false}, eq]
+  
 let without_arg = function
   | UPPERNAME _ -> `UPPERNAME
   | LOWERNAME _ -> `LOWERNAME
   | PRIMENAME _ -> `PRIMENAME
+  | DIRECTNAME _ -> `DIRECTNAME
+  | EXTERNNAME _ -> `EXTERNNAME
+  | MAGICNAME _ -> `MAGICNAME
   | INTEGER _ -> `INTEGER
   | FLOAT _ -> `FLOAT
   | CHARACTER _ -> `CHARACTER
@@ -79,8 +77,10 @@ let without_arg = function
   | BUILTINFTY _ -> `BUILTINFTY
   | t -> `OTHER t
 
-let unpack_name = function
+let unpack_str = function
   | UPPERNAME s | LOWERNAME s
+  | EXTERNNAME s | MAGICNAME s
+  | DIRECTNAME s
   | PRIMENAME s -> s
   | _ -> failwith "unpack_name"
 
@@ -104,6 +104,9 @@ let dummy = function
   | `UPPERNAME -> UPPERNAME ""
   | `LOWERNAME -> LOWERNAME ""
   | `PRIMENAME -> PRIMENAME ""
+  | `DIRECTNAME -> DIRECTNAME ""
+  | `EXTERNNAME -> EXTERNNAME ""
+  | `MAGICNAME -> MAGICNAME ""
   | `INTEGER -> INTEGER 0
   | `FLOAT -> FLOAT 0.0
   | `CHARACTER -> CHARACTER '\x00'

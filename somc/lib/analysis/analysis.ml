@@ -11,7 +11,6 @@ let add_implicit_prelude ast =
 
   let import =
     {
-      dir=[node prelude_dir];
       path=[node prelude_ident];
       kind=node IK_Glob;
     }

@@ -9,14 +9,10 @@ and 'a node =
 (* ====================== Toplevel ===================== *)
 
 and toplevel =
-  | TL_Declaration of string node * typ node (** `string: typ.` *)
-  | TL_Definition of value_binding (** `patt = expr.` *)
-  | TL_Type_Definition of type_definition (** `string := type.` *)
-  | TL_Import of import (** `#import` *)
-  | TL_Section of string node * ast (** `string { ... }` *)
-
-  (* internal *)
-  | TL_Link of string * toplevel node
+  | TL_Definition of value_binding
+  | TL_Type_Definition of type_definition
+  | TL_Import of import
+  | TL_Module of string node * ast
 
 and value_binding =
   {
@@ -26,8 +22,8 @@ and value_binding =
 
 and type_definition =
   {
-    name: string node;
     params: string node list;
+    name: string node;
     typ: typ node;
   }
   
@@ -35,18 +31,15 @@ and type_definition =
 
 and import =
   {
-    dir: string node list;
     path: string node list;
     kind: import_kind node;
   } 
     
 and import_kind =
-  | IK_Glob (** `path::*` *)  
-  | IK_Simple of string node (** `path::sym` *)
-  | IK_Self of import_kind node (** `path::@ ...` *)
-  | IK_Rename of string node * string node (** `path::sym => sym` *)
-  | IK_Nested of import node list (** `path::{import, list}` *)
-  | IK_Error
+  | IK_Simple of string node
+  | IK_Glob
+  | IK_Rename of string node * string node
+  | IK_Nested of import node list
   
 (* ====================== Pattern ====================== *)
 
@@ -59,17 +52,17 @@ and pattern =
 (* ===================== Expression ===================== *)
 
 and expr =
-  | EX_Grouping of expr node (** `(expr)` *)
-  | EX_Binding of value_binding * expr node (** `patt = expr => expr` *)
-  | EX_Lambda of value_binding (** `\patt => expr` *)
-  | EX_Sequence of expr node * expr node (** `expr, expr` *)
-  | EX_Constraint of expr node * typ node (** `expr : typ` *)
-  | EX_Application of expr node * expr node list (** `appl expr ...` *)
-  | EX_Tuple of expr node list (** `expr; expr; ...` *)
-  | EX_Construct of Ident.t node * expr node list (** `String expr` *)
-  | EX_Literal of literal (** `literal` *)
-  | EX_Identifier of Ident.t node (** `variable` *)
-  | EX_External of string (** `#string` *)
+  | EX_Grouping of expr node
+  | EX_Binding of value_binding * expr node
+  | EX_Lambda of value_binding
+  | EX_Sequence of expr node * expr node
+  | EX_Constraint of expr node * typ node
+  | EX_Application of expr node * expr node list
+  | EX_Tuple of expr node list
+  | EX_Construct of Ident.t node * expr node list
+  | EX_Literal of literal
+  | EX_Identifier of Ident.t node
+  | EX_External of string
   | EX_Error
 
 and literal =
@@ -85,19 +78,19 @@ and typ =
   (* typedef-only *)
   | TY_Variant of (string node * typ node list) list
   (* generic *)
-  | TY_Grouping of typ node (** `(typ)` *)
-  | TY_Any (** `_` *)
-  | TY_Variable of string (** `'string` *)
-  | TY_Effect of typ node option (** `!typ` *)
-  | TY_Function of typ node * typ node (** `typ -> typ` *)
-  | TY_Tuple of typ node list (** `typ; ...` *)
-  | TY_Construct of typ node option * Ident.t node (** `ident` | `typ ident`*)
-  | TY_Primitive of primitive_typ (** `$...` *)
+  | TY_Grouping of typ node
+  | TY_Any
+  | TY_Variable of string
+  | TY_Effect of typ node
+  | TY_Function of typ node * typ node
+  | TY_Tuple of typ node list
+  | TY_Construct of typ node option * Ident.t node
+  | TY_Primitive of primitive_typ
 
 and primitive_typ =
-  | PT_Int of (bool * int) option (* `$i.bool.int` | `$i.*` *)
-  | PT_Float of int option (* `$f.int` | `$f.*` *)
-  | PT_Void (* `$v` *)
+  | PT_Int of (bool * int) option
+  | PT_Float of int option
+  | PT_Void
 
 (* ===================== Directive ===================== *)
 

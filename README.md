@@ -8,9 +8,9 @@ As of right now it is a work in progress.
 
 ```haskell
 -- imports
-use std::io::puts
-use std::list::iter
-use std::int::show_int
+use puts from std::io
+use iter from std::list
+use show_int from std::int
 
 -- fizzbuzz function
 let fizzbuzz = switch

@@ -63,7 +63,7 @@ let check_import_private n =
     |> Report.report
 
 let extract_sect from = function
-  | TL_Section (_, ast) -> ast
+  | TL_Module (_, ast) -> ast
   | _ ->
     let e = Cannot_import_from from.item in
     Report.make_error (Type_error e) (Some from.span)
@@ -97,7 +97,7 @@ let resolve_section fname ast =
   let rec find_sect_in_ast sname name = function
     | hd :: tl ->
       begin match hd.item with
-        | TL_Section (n, ast)
+        | TL_Module (n, ast)
           when n = name -> ast
         | _ -> find_sect_in_ast sname name tl
       end
@@ -120,8 +120,7 @@ let find_symbol_in_sect ast name =
       | PA_Variable n -> n
       | _ -> "")
     | TL_Type_Definition d -> d.name.item
-    | TL_Section (n, _) -> n.item
-    | TL_Link (n, _) -> n
+    | TL_Module (n, _) -> n.item
     | _ -> ""
   in
   let rec find_in_ast n = function
@@ -138,8 +137,8 @@ let find_symbol_in_sect ast name =
 
 (* main stuff *)
 
-let resolve_import names ({dir; path; kind} : import) s =
-  let file, path' = resolve_file (nmapi dir) path in
+let resolve_import names ({path; kind} : import) s =
+  let file, path' = "", path in
 
   let sect_name, sect =
     let fname = List.hd path in
@@ -158,18 +157,12 @@ let resolve_import names ({dir; path; kind} : import) s =
       let s = find_symbol_in_sect sect n in
       check_shadowing n.item;
       [s.item]
-    | IK_Self ik ->
-      let name = {kind with item="@"} in
-      let link = {ik with item=TL_Section (name, sect)} in
-      let sect' = link :: sect in
-      finish sect' ik.item
     | IK_Rename (on, nn) ->
       let s = find_symbol_in_sect sect on in
       let s' = match s.item with
-        | TL_Declaration (_, t) -> TL_Declaration (nn, t)
         | TL_Type_Definition d -> TL_Type_Definition {d with name=nn}
-        | TL_Section (_, ast) -> TL_Section (nn, ast)
-        | _ -> TL_Link (nn.item, s)
+        | TL_Module (_, ast) -> TL_Module (nn, ast)
+        | _ -> invalid_arg "TODO"
       in
       check_shadowing nn.item;
       [s']
@@ -182,7 +175,6 @@ let resolve_import names ({dir; path; kind} : import) s =
       List.flatten (List.map go is)
     | IK_Glob ->
       List.map (fun n -> n.item) sect
-    | IK_Error -> []
   in finish sect kind.item
 
 let resolve =

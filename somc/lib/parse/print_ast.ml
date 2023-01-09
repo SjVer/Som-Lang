@@ -61,8 +61,7 @@ and print_type_node i node =
 
     | TY_Effect t ->
       p i "TY_Effect" span;
-      if Option.is_some t
-      then print_type_node (i + 1) (Option.get t)
+      print_type_node (i + 1) t
     
     | TY_Function (a, r) ->
       p i "TY_Function" span;
@@ -137,29 +136,21 @@ and print_expr_node i node =
 and print_import_kind_node' i node =
   let {span; item} = node in
   match item with
+    | IK_Simple n -> p i ("IK_Simple " ^ n.item) span
     | IK_Glob -> p i "IK_Glob" span
-    | IK_Simple n -> p i ("IK_Simple " ^ n.item) span;
-    | IK_Self ik ->
-      p i "IK_self" span;
-      print_import_kind_node' (i + 1) ik
     | IK_Rename (s, d) ->
-      p i ("IK_Rename " ^ s.item ^ " => " ^ d.item) span
+      p i ("IK_Rename " ^ s.item ^ " as " ^ d.item) span
     | IK_Nested is ->
       p i "IK_Nested" span;
       List.iter (
-        fun {span; item = {dir=_; path; kind}} ->
+        fun {span; item = {path; kind}} ->
           p (i + 1) (show_path path) span;
           print_import_kind_node' (i + 2) kind
         ) is
-    | IK_Error -> p i "IK_error" span
 
 and print_toplevel_node i node =
   let { span; item } = node in
   match item with
-    | TL_Declaration (n, t) ->
-      p i ("TL_Declaration " ^ n.item) span;
-      print_type_node (i + 1) t
-    
     | TL_Definition { patt; expr } ->
       p i "TL_Definition" span;
       print_patt_node' (i + 1) patt;
@@ -173,23 +164,14 @@ and print_toplevel_node i node =
       p i ("TL_Type_Definition " ^ name) span;
       print_type_node (i + 1) d.typ
 
-    | TL_Import {dir; path; kind} ->
-      let dir' = match dir with
-        | [] -> ""
-        | l ->
-          String.concat "/" (nmapi l) ^ "/"
-      in
-      p i ("TL_Import " ^ dir' ^ show_path path) span;
+    | TL_Import {path; kind} ->
+      p i ("TL_Import " ^ show_path path) span;
       print_import_kind_node' (i + 1) kind
 
-    | TL_Section (n, ast) ->
-      p i ("TL_Section " ^ n.item) span;
+    | TL_Module (n, ast) ->
+      p i ("TL_Module " ^ n.item) span;
       print_ast (i + 1) ast
     
-    | TL_Link (n, tl) ->
-      p i ("TL_Link " ^ n) span;
-      print_toplevel_node (i + 1) tl
-
 and print_ast i nodes =
   let f nl i (tl: toplevel node) =
     if Config.hide_stdlib_nodes && Span.is_in_stdlib tl.span

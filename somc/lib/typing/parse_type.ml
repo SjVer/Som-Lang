@@ -24,8 +24,7 @@ let parse env l =
     | TY_Grouping t -> go t.item
     | TY_Any -> Types.new_var l
     | TY_Variable n -> get_tvar n
-    | TY_Effect (Some t) -> TEff (go t.item)
-    | TY_Effect None -> TEff (TPrim PVoid)
+    | TY_Effect t -> TEff (go t.item)
     | TY_Function (a, r) -> TFun (go a.item, go r.item)
     | TY_Tuple ts -> 
       let map = List.map (fun t -> go t.item) in

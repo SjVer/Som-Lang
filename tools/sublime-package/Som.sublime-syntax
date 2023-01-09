@@ -9,7 +9,7 @@ scope: source.som
 
 variables:
   lname: '\b_*[a-z][A-Za-z_0-9]*\b'
-  uname: '\b_*[A-Z][A-Za-z_0-9]*\b'
+  uname: '\b_*[A-Z][A-Za-z_0-9]*''*'
   pname: \'{{lname}}(?!\')
   lnamep: '{{lname}}''*'
 

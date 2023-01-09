@@ -58,10 +58,8 @@ let rec rename_builtings ast =
     let item = match tl.item with
       | TL_Definition b ->
         TL_Definition {b with expr = rename_expr b.expr}
-      | TL_Section (n, ast) ->
-        TL_Section (n, rename_builtings ast)
-      | TL_Link (n, tl) ->
-        TL_Link (n, List.hd (rename_builtings [tl]))
+      | TL_Module (n, ast) ->
+        TL_Module (n, rename_builtings ast)
       | _ as tl -> tl
     in
     {tl with item}

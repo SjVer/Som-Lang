@@ -22,6 +22,26 @@ let incr_loc lexbuf delta =
 let set_start_loc lexbuf loc =
   lexbuf.Lexing.lex_start_p <- loc
 
+let kw_from_str = function
+  | "use" -> USE
+  | "from" -> FROM
+  | "as" -> AS
+  | "mod" -> MOD
+  | "type" -> TYPE
+  | "is" -> IS 
+  | "of" -> OF 
+  | "let" -> LET 
+  | "in" -> IN
+  | "if" -> IF
+  | "then" -> THEN
+  | "else" -> ELSE
+  | "for" -> FOR
+  | "at" -> AT
+  | "do" -> DO
+  | "match" -> MATCH
+  | "switch" -> SWITCH
+  | _ -> raise Not_found
+
 (* string stuff *)
 let string_buff = Buffer.create 256
 let reset_string_buffer () = Buffer.clear string_buff
@@ -63,7 +83,6 @@ rule lex = parse
   | "--" { simple_comment lexbuf; lex lexbuf }
 
   | "/=" { NOTEQUAL }
-  | ":=" { COLONEQUAL }
   | '=' { EQUAL }
 
   | "..." { TRP_DOT }
@@ -71,10 +90,9 @@ rule lex = parse
   | '.' { DOT }
 
   | "::" { DBL_COLON }
-  | ':' { COLON }
-  | ',' { COMMA }
-  | ";;" { DBL_SEMICOLON }
+  | ":" { COLON }
   | ';' { SEMICOLON }
+  | ',' { COMMA }
 
   | "()" { EMPTYPARENS }
   | '(' { LPAREN }
@@ -84,17 +102,8 @@ rule lex = parse
   | '{' { LBRACE }
   | '}' { RBRACE }
 
-  | "!!" { DBL_BANG }
-  | '!' { BANG }
-  | "??" { DBL_QUESTION }
-  | '?' { QUESTION }
-
-  | "->" { ARROW }
-  | "=>" { THICKARROW }
-  | '#' { HASH }
-  | '@' { AT }
   | '\\' { BACKSLASH }
-
+  | "->" { ARROW }
   | "<=" { LESSEREQUAL }
   | '<' { LESSER }
   | ">=" { GREATEREQUAL }
@@ -103,14 +112,12 @@ rule lex = parse
   | "||" { DBL_PIPE }
   | '|' { PIPE }
   | "&&" { DBL_AMPERSAND }
-  | '&' { AMPERSAND }
-  | "^^" { DBL_CARET }
-  | '^' { CARET }
   | '*' { STAR }
   | '+' { PLUS }
   | '-' { MINUS }
   | '/' { SLASH }
   | '%' { MODULO }
+  | '!' { BANG }
   | '~' { TILDE }
 
   | "$i." ('s'|'u' as s) '.' (digit+ as w) { BUILTINITY (Some (s = 's', int_of_string w)) }
@@ -146,8 +153,8 @@ rule lex = parse
   | int as n { INTEGER (int_of_string n) }
   | float as n { FLOAT (float_of_string n) }
 
-  | (lower_name prime*) as name { LOWERNAME name }
-  | upper_name as name { UPPERNAME name }
+  | (lower_name prime*) as name { try kw_from_str name with Not_found -> LOWERNAME name }
+  | (upper_name prime*) as name { UPPERNAME name }
   | "'" (lower_name as ident) { PRIMENAME ident }
 
   | '_' { UNDERSCORE }

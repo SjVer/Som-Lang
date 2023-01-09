@@ -26,8 +26,8 @@
 	SOFTWARE.
 ---
 
-!!.stdlib
-!!.warn_redef "redefinition may break stdlib"
+-- !!.stdlib
+-- !!.warn_redef "redefinition may break stdlib"
 
 --- public imports ---
 

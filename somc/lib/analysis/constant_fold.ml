@@ -59,10 +59,8 @@ let rec fold_constants ast =
     let item = match tl.item with
       | TL_Definition b ->
         TL_Definition {b with expr = fold_expr b.expr}
-      | TL_Section (n, ast) ->
-        TL_Section (n, fold_constants ast)
-      | TL_Link (n, tl) ->
-        TL_Link (n, List.hd (fold_constants [tl]))
+      | TL_Module (n, ast) ->
+        TL_Module (n, fold_constants ast)
       | _ as tl -> tl
     in
     {tl with item}
