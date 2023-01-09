@@ -39,6 +39,11 @@ let advance p =
 let check t p = tokens_eq (current_t p) t
 let checks ts p = List.exists (Fun.flip check p) ts
 
+let check_peek t p =
+  match p.tokens with
+    | _ :: p :: _ -> p.typ = t
+    | _ -> false
+
 let matsch t p =
   if check t p then (advance p &> true)
   else false

@@ -244,3 +244,12 @@ and atom_type p : typ node =
     (* TODO *)
   else fail ()
 
+(* ========================== identifiers ========================= *)
+
+and longident_path p =
+  let checkfn p =
+    check (dummy `LOWERNAME) p
+    && check_peek DBL_COLON p
+  in
+  let parsefn p = unpack_str (advance p).typ in
+  many p checkfn parsefn
