@@ -127,11 +127,9 @@ and print_expr_node i node =
     | EX_Identifier {span = _; item = id} ->
       p i ("EX_Identifier " ^ Ident.to_string id) span
     
-    | EX_External n ->
-      p i ("EX_External " ^ n) span
-
-    | EX_Error ->
-      p i "EX_Error" span
+    | EX_External n -> p i ("EX_External #" ^ n) span
+    | EX_Magical n -> p i ("EX_Magical #!" ^ n) span
+    | EX_Error -> p i "EX_Error" span
 
 and print_import_kind_node' i node =
   let {span; item} = node in

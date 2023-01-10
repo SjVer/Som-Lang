@@ -63,6 +63,7 @@ and expr =
   | EX_Literal of literal
   | EX_Identifier of Ident.t node
   | EX_External of string
+  | EX_Magical of string
   | EX_Error
 
 and literal =

@@ -82,7 +82,7 @@ let unpack_str = function
   | EXTERNNAME s | MAGICNAME s
   | DIRECTNAME s
   | PRIMENAME s -> s
-  | _ -> failwith "unpack_name"
+  | t -> failwith ("unpack_str " ^ show_token_typ t)
 
 let unpack_lit = function
   | INTEGER i -> LI_Int i
@@ -96,7 +96,7 @@ let unpack_typ = function
   | BUILTINITY a -> PT_Int a
   | BUILTINFTY a -> PT_Float a
   | BUILTINVTY -> PT_Void
-  | _ -> failwith "unpack_typ"
+  | t -> failwith ("unpack_typ " ^ show_token_typ t)
 
 let tokens_eq a b = without_arg a = without_arg b
 

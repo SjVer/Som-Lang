@@ -13,6 +13,7 @@ let mk span item = {span; item}
 let mk_g span item = mk {span with ghost = true} item
 let mk_t item (t: token) = {span = t.span; item}
 
+let catspans s1 s2 = Span.concat_spans s1 s2
 let catnspans n1 n2 = Span.concat_spans n1.span n2.span
 
 let left_assoc (p : parser) itemfn sep makefn =
@@ -31,21 +32,46 @@ let many (p : parser) checkfn parsefn =
     else acc
   in go []
 
+let many_try p parsefn =
+  let rec go acc =
+    try try_parse p (fun p -> acc @ [parsefn p] |> go)
+    with Backtrack -> acc
+  in go []
+
+let try_and_skip_until p parsefn until default =
+  try parsefn p
+  with Failed ->
+    skip_until until p;
+    mk p.previous.span default
+
 (* =========================== toplevel =========================== *)
 
-let rec prog p =
-  let tls = many p not_at_end toplevel in
+let rec parse_file p : ast =
+  let toplevel' p =
+    try Some (toplevel p)
+    with Failed ->
+      skip_until [LET; TYPE; MOD; USE] p;
+      None
+  in
+  let tls = many p not_at_end toplevel' in
   consume EOF "end of file" p &>
-  tls
+  List.map Option.get (List.filter Option.is_some tls)
 
-and toplevel p : unit =
-  let e = expression p in
-  Print_ast.print_expr_node e
+and toplevel p : toplevel node =
+  match current_t p with
+    | LET -> toplevel_definition p
+    | _ -> error_at_current p (Expected "a toplevel statement") []
+
+and toplevel_definition p : toplevel node =
+  let start_s = (advance p).span in
+  let bind = binding p expression EQUAL "=" in
+  let s = catspans start_s p.previous.span in
+  mk s (TL_Definition bind)
 
 (* ============================ binding =========================== *)
 
 and binding (p : parser) exprfn sep sepstr : value_binding =
-  let patt = pattern p in
+  let patt = try_and_skip_until p pattern [sep; COLON] PA_Wildcard in
   let (t, e) = strict_binding p exprfn sep sepstr in
 
   (* put in the ghost EX_Constraint *)
@@ -69,13 +95,12 @@ and strict_binding p exprfn sep sepstr =
     i (consume sep ("a pattern or \"" ^ sepstr ^ "\"") p);
     let e = exprfn p in
     t, e
-  end else begin
+  end else
     (* another pattern *)
-    let patt = pattern p in
+    let patt = try_and_skip_until p pattern [sep; COLON] PA_Wildcard in
     let (t, expr) = strict_binding p exprfn sep sepstr in
     let s = catnspans patt expr in
     t, mk_g s (EX_Lambda {patt; expr})
-  end
 
 (* ============================ patterns ========================== *)
 
@@ -89,7 +114,7 @@ and atom_pattern p : pattern node =
   
   if matsch (dummy `LOWERNAME) p then mk' (PA_Variable (unpack_str curr.typ))
   else if matsch UNDERSCORE p then mk' PA_Wildcard
-  else fail ()
+  else error_at_current p (Expected "a pattern") []
 
 (* =========================== expression ========================= *)
 
@@ -101,7 +126,7 @@ and let_expression p : expr node =
     let bind = binding p let_expression EQUAL "=" in
     i (consume IN "\"in\"" p);
     let body = let_expression p in
-    let s = Span.concat_spans let_s body.span in 
+    let s = catspans let_s body.span in 
     mk s (EX_Binding (bind, body))
   end
   else sequence_expression p
@@ -114,7 +139,7 @@ and lambda_expression p : expr node =
   if matsch BACKSLASH p then begin
     let start_s = p.previous.span in
     let bind = binding p tuple_expression ARROW "->" in
-    let s = Span.concat_spans start_s bind.expr.span in
+    let s = catspans start_s bind.expr.span in
     mk s (EX_Lambda bind)
   end else tuple_expression p
 
@@ -154,10 +179,35 @@ and infix_expression p prec : expr node =
     base_expression p
 
 and base_expression p : expr node =
-  (* TODO *)
-  atom_expression p 
+  (* first try construct *)
+  try try_parse p begin fun p ->
+    let ident = upper_longident p false in
+    let parsefn p = i (advance p); unary_expression true p in
+    let es =
+      (* TODO: optional nonempty sep list of unary_expression's *)
+    in
+    let es = many p (check SEMICOLON) parsefn in
+    mk ident.span (EX_Construct (ident, es))
 
-and atom_expression p : expr node =
+  end with Backtrack ->
+    (* otherwise maybe application *)
+    let e = unary_expression true p in
+    let es = many_try p (unary_expression false) in
+    if es <> [] then
+      let s = catnspans e (List.hd es) in
+      mk s (EX_Application (e, es))
+    else e
+
+and unary_expression must p : expr node =
+  if matschs (allowed_unary_operators ()) p then
+    let op = mk_unary_operator p.previous in
+    let e = unary_expression must p in
+    let s = catnspans op e in
+    mk_g s (EX_Application (op, [e]))
+  else
+    atom_expression must p
+
+and atom_expression must p : expr node =
   let mk' i = mk_t i (advance p) in
   match current_t p with
     | INTEGER i -> mk' (EX_Literal (LI_Int i))
@@ -165,19 +215,29 @@ and atom_expression p : expr node =
     | CHARACTER c -> mk' (EX_Literal (LI_Char c))
     | STRING s -> mk' (EX_Literal (LI_String s))
     | EMPTYPARENS -> mk' (EX_Literal LI_Nil)
+    
+    | t when tokens_eq t (dummy `EXTERNNAME) ->
+      mk' (EX_External (unpack_str t))
+    | t when tokens_eq t (dummy `MAGICNAME) ->
+      mk' (EX_Magical (unpack_str t))
+    | t when tokens_eq t (dummy `LOWERNAME) ->
+      let i = lower_longident p true in
+      mk i.span (EX_Identifier i)
 
     | LPAREN -> begin
         let start_s = (advance p).span in
         let e = expression p in
         if not (matsch RPAREN p) then fail ();
 
-        let s = Span.concat_spans start_s p.previous.span in
-        if groups then mk s (EX_Grouping e)
-        else mk s e.item
+        let s = catspans start_s p.previous.span in
+        let e' = if groups then EX_Grouping e else e.item in
+        mk s e'
       end
 
     (* TODO *)
-    | _ -> error_at_current p Unexpected []
+    | _ ->
+      if must then error_at_current p (Expected "an expression") []
+      else backtrack ()
 
 (* ====================== expression helpers ===================== *)
 
@@ -206,6 +266,18 @@ and mk_infix_operator t : expr node =
   let op = mk t.span (Ident.Ident name) in
   mk t.span (EX_Identifier op)
 
+and unary_operators = [BANG, "~!"; PLUS, "~+"; MINUS, "~-"]
+
+and allowed_unary_operators _ = List.map fst unary_operators
+and mk_unary_operator t : expr node =
+  let name =
+    let find_fn (tt, _) = t.typ = tt in
+    try snd (List.find find_fn unary_operators)
+    with Not_found -> failwith "mk_unary_operator"
+  in
+  let op = mk t.span (Ident.Ident name) in
+  mk t.span (EX_Identifier op)
+
 (* ============================= types ============================ *)
 
 and typ p : typ node = function_type p
@@ -228,21 +300,23 @@ and effect_type p : typ node =
   if matsch BANG p then
     let b_span = p.previous.span in
     let t = effect_type p in
-    let s = Span.concat_spans b_span t.span in
+    let s = catspans b_span t.span in
     mk s (TY_Effect t)
   else
     atom_type p
 
 and atom_type p : typ node =
-  let mk' i = mk_t i (advance p) in
-  let builtin t = mk' (TY_Primitive (unpack_typ t)) in
-  let curr_t = current_t p in
+  if matschs [dummy `BUILTINITY; dummy `BUILTINFTY; BUILTINVTY] p then
+    mk p.previous.span (TY_Primitive (unpack_typ p.previous.typ))
 
-  if matsch (dummy `BUILTINITY) p then builtin curr_t
-  else if matsch (dummy `BUILTINFTY) p then builtin curr_t
-  else if matsch BUILTINVTY p then builtin curr_t
-    (* TODO *)
-  else fail ()
+  else if matsch (dummy `PRIMENAME) p then
+    mk p.previous.span (TY_Variable (unpack_str p.previous.typ))
+
+  else try try_parse p begin fun p ->
+    let i = upper_longident p false in
+    mk i.span (TY_Construct (None, i))
+  end with Backtrack ->
+    error_at_current p (Expected "a type") []
 
 (* ========================== identifiers ========================= *)
 
@@ -251,5 +325,22 @@ and longident_path p =
     check (dummy `LOWERNAME) p
     && check_peek DBL_COLON p
   in
-  let parsefn p = unpack_str (advance p).typ in
+  let parsefn p =
+    let t = unpack_str (advance p).typ in
+    advance p &> t
+  in
   many p checkfn parsefn
+
+and longident kind p must =
+  let start_s = (current p).span in
+  let path = longident_path p in
+  if check (dummy kind) p then
+    let i = advance p in
+    let s = catspans start_s i.span in
+    mk s (Ident.from_list (path @ [unpack_str i.typ]))
+  else
+    if must then error_at_current p (Expected "an identifier") []
+    else backtrack ()
+  
+and lower_longident p must = longident `LOWERNAME p must
+and upper_longident p must = longident `UPPERNAME p must

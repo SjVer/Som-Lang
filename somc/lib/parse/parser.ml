@@ -45,7 +45,7 @@ let check_peek t p =
     | _ -> false
 
 let matsch t p =
-  if check t p then (advance p &> true)
+  if check t p then advance p &> true
   else false
 let matschs ts p = List.exists (Fun.flip matsch p) ts
 
@@ -55,3 +55,21 @@ let consume t str p =
 
 let at_end p = check EOF p
 let not_at_end p = not (at_end p)
+
+exception Backtrack
+
+let try_parse p parsefn =
+  let old_tokens = p.tokens in
+  let old_previous = p.previous in
+  try parsefn p
+  with Backtrack as e ->
+    p.tokens <- old_tokens;
+    p.previous <- old_previous;
+    raise e
+
+let backtrack () = raise Backtrack
+
+let skip_until ts p =
+  while not (checks (EOF :: ts) p) do
+    i (advance p)
+  done

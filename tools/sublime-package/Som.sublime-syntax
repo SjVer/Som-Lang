@@ -269,10 +269,10 @@ contexts:
   # PATTERNS
 
   pattern:
-    - match: '(?<=\blet\b)\s*{{lname}}(?!\s*(:|=))'
-      scope: entity.name.function.som
-    - match: '(?<=\blet\b)\s*{{lname}}(?=\s*(:|=))'
-      scope: entity.name.variable.som
+    - match: '(?<=\blet\b)\s*{{lnamep}}\s*(?=(:|=))'
+      scope: entity.name.variable.def-var.som
+    - match: '(?<=\blet\b)\s*{{lnamep}}'
+      scope: entity.name.function.def-func.som
 
     - match: '{{lnamep}}'
       scope: variable.parameter.som

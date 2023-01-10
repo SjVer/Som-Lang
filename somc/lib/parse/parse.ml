@@ -20,11 +20,10 @@ let parse file source import_span =
     let tokens = Lexer.get_tokens lexbuf in
     (* print_tokens tokens; *)
 
-    ignore (Grammar.prog Parser.{
+    Grammar.parse_file Parser.{
       tokens = tokens;
       previous = List.hd tokens;
-    });
-    []
+    }
 
   with Report.Error e ->
     Report.report e;

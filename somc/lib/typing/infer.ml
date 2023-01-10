@@ -279,6 +279,8 @@ let rec infer_expr ?(level=0) env exp =
         t'
       end in
       mk s t (EX_External n)
+    
+    | EX_Magical _ -> failwith "infer_expr magical"
 
     | EX_Error -> mk s TError EX_Error
 

@@ -1,1 +1,1 @@
-let f x = 'x' in \y -> "y" * 2
+let put_in_some x = None, One 1, Two 2 ; 2
