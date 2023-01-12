@@ -17,7 +17,7 @@ exec: build
 	@$(EXE) $(args)
 
 test: build
-	@$(EXE) -i stdlib/include -i test $(args) test/test.som -v
+	@$(EXE) -i stdlib/std -i test $(args) test/test.som -v
 
 .PHONY: stdlib
 stdlib:
@@ -27,8 +27,8 @@ install: build stdlib
 	sudo cp $(EXE) /usr/bin/somc
 
 	sudo cp stdlib/bin/libsom.so /usr/lib/
-	sudo rm -r $(SOM_INCL_DIR)/std
-	sudo cp -r stdlib/include $(SOM_INCL_DIR)/std
+	sudo rm -r $(SOM_INCL_DIR)/std || true
+	sudo cp -r stdlib/std $(SOM_INCL_DIR)/std
 
 	sudo cp tools/bash-completion.sh /usr/share/bash-completion/completions/somc
 	source ~/.bashrc

@@ -4,6 +4,8 @@ let _path = List.fold_left Filename.concat ""
 
 (* internally used configs *)
 
+let force_tty = true
+
 let print_std_trees = true
 
 let extension = ".som"

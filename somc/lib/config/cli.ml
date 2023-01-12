@@ -6,12 +6,16 @@ let usage_msg = name ^ " [options] files..."
 let version_msg = name ^ " " ^ version
 let description = "Official Som compiler"
 
+let explain_help_message = "For more information go to <TODO>."
+
 (* global config struct type *)
 
 type args_t =
   {
     verbose: bool;
+    compact: bool;
     mute: bool;
+    force_tty: bool;
 
     file: string;
     print_ast: bool;
@@ -28,7 +32,9 @@ type args_t =
 
 let args = ref {
     verbose = false;
+    compact = false;
     mute = false;
+    force_tty = false;
     
     file = "";
     print_ast = false;

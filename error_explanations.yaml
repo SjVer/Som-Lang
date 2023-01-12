@@ -1,0 +1,16 @@
+lexing:
+  Unexpected_character: >
+    This error is raised when the compiler's input contains
+    an unexpected character, such as non-ascii characters.
+  
+  Illegal_escape: >
+    This error is raised when a string or character literal
+    contains an invalid escape sequence. Valid escape sequences
+    include the following: \a, \b, \f, \n, \r, \t, \v, \\, \', \", \0.
+
+  Unterminated_string: >
+    This error is raised when a string isn't terminated by a ".
+
+  Invalid_literal: >
+    This error is raised when an integer, float or character
+    literal contains invalid digits or an invalid character.

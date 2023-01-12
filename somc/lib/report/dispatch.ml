@@ -47,9 +47,9 @@ let r_single_line_span c s l d t m =
   Option.iter (prerr_string (bold c)) m;
   prerr_newline ()
 
-let r_double_line_span _ _ _ _ _ = ignore
+let r_double_line_span _ _ _ _ _ = failwith "r_double_line_span"
 
-let r_multi_line_span _ _ _ _ _ = ignore
+let r_multi_line_span _ _ _ _ _ = failwith "r_multi_line_span"
 
 let r_span color print_tail txt span =
   let lines = read_lines span.file in

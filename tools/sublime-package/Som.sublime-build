@@ -1,18 +1,18 @@
 {
-	"shell": true,
-	"quiet": true,
 	"word_wrap": false,
 	"kill_previous": true,
 
-	// "syntax": "Packages/ANSIescape/ANSI.sublime-syntax",
-	// "target": "ansi_color_build",
-
-	// "env": {"CLICOLOR_FORCE": "1"},
-
 	// "cmd": ["/usr/bin/somc $file -o $file_path/$file_base_name && $file_path/$file_base_name; rm $file_path/$file_base_name"],
-	"cmd": ["/usr/bin/somc $file"],
+	"cmd": [
+		"/usr/bin/somc",
+		"$file",
+		"--compact",
+	],
 
-	// "file_regex": ".*\n (.+):([0-9]*)",
+	"file_regex": "^((?:[^:])+)(?::([0-9]+)(?:-[0-9]+)?(?::([0-9]+)(?:-[0-9]+)?)?)?: (.*)$",
 	"selector": "source.som",
-	"file_patterns": ["*.som"]
+	"file_patterns": ["*.som"],
+
+	"target": "ansi_color_build",
+  "syntax": "Packages/ANSIescape/ANSI.tmLanguage"
 }

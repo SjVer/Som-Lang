@@ -1,1 +1,3 @@
 let id x : 'a . 'a -> 'a = x
+
+let main _ = id error

@@ -15,15 +15,26 @@ let opt_typ = enum "" [
 (* explain given error code *)
 let explain_ecode code =
   let open Report in
-  match Codes.error_name_from_int code with
-  | Some (kind, name) ->
-    Printf.printf "%s error E%03d: %s\n" kind code name;
-    exit 0
-  | None ->
-    let open Error in
-    Report.make_error (Other_error (Error.Cannot_explain code)) None
-    |> Report.report;
-    exit 1
+  (* code, kind and name *)
+  begin match Codes.error_name_from_code code with
+    | Some (kind, name) ->
+      Printf.printf "%s error E%03d: %s\n" kind code name;
+    | None ->
+      let open Error in
+      Report.make_error (Other_error (Error.Cannot_explain code)) None
+      |> Report.report;
+      exit 1
+  end;
+  (* explanation *)
+  begin match Codes.explanation_from_code code with
+    | Some expl -> 
+      print_newline ();
+      print_endline expl;
+      print_newline ();
+      print_endline Config.Cli.explain_help_message
+    | None -> ()
+  end;
+  exit 0
       
 (* cli parsing & entrypoint *)
 
@@ -36,12 +47,20 @@ let () =
     ~set_short:'v'
     ~description:"Produce verbose output"
     false in
+  let compact = flag
+    ~set_long:"compact"
+    ~description:"Produce compact output"
+    false in
   let mute = flag
     ~set_long:"mute"
     ~set_short:'m'
     ~description:"Mute all warnings"
     false in
-  
+  let force_tty = flag
+    ~set_long:"force-tty"
+    ~description:"Force TTY output behaviour"
+    false in
+
   (* output stuff *)
   let explain = optional_int
     ~long:"explain"
@@ -60,7 +79,7 @@ let () =
     ~set_long:"print-tast"
     ~description:"Print the typed parsetree"
     false in
-
+  
   (* parse stuff *)
   let no_prelude = flag
     ~set_long:"no-prelude"
@@ -97,7 +116,8 @@ let () =
   if has_arg "--usage" "-u"   then exit_after (print_endline C.usage_msg);
   if has_arg "--version" "-V" then exit_after (print_endline C.version_msg);
 
-  (* check --explain *)
+  (* act on args *)
+  if force_tty then Report.enable_force_tty ();
   if Option.is_some explain then explain_ecode (Option.get explain);
 
   (* unwrap opt_level and map passes *)
@@ -107,7 +127,9 @@ let () =
   close();
   C.args := C.{
     verbose;
+    compact;
     mute;
+    force_tty;
 
     file;
     print_ast;
