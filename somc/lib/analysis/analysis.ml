@@ -9,22 +9,21 @@ let add_implicit_prelude ast =
   let span = {file=prelude_file; start=loc; end_=loc; ghost=true} in
   let node i = {span; item=i} in
 
-  let import =
+  let _import =
     {
-      path=[node prelude_ident];
+      path=List.map node prelude_import_path;
       kind=node IK_Glob;
     }
   in
 
   let tls =
-    try Import.resolve_import (ref []) import span
-    with Report.Error r -> Report.report r; []
+    (* try Import.resolve_import (ref []) import span
+    with Report.Error r -> Report.report r; [] *)
+    []
   in
   List.map node tls @ ast
 
 let check ast =
   Import.resolve ast |>
   Constant_fold.fold_constants |>
-  Builtins.rename_builtings
-
-(* TODO: don't desugar ops in parse but here for opts *)
+  Builtins.rename_builtins

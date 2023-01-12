@@ -23,6 +23,7 @@ let parse env l =
   let rec go = function
     | TY_Grouping t -> go t.item
     | TY_Any -> Types.new_var l
+    | TY_Forall _ -> failwith "Types.parse_type (forall)"
     | TY_Variable n -> get_tvar n
     | TY_Effect t -> TEff (go t.item)
     | TY_Function (a, r) -> TFun (go a.item, go r.item)

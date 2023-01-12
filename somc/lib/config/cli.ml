@@ -15,7 +15,7 @@ type args_t =
 
     file: string;
     print_ast: bool;
-    print_resolved_ast: bool;
+    print_rast: bool;
     print_tast: bool;
 
     search_dirs: string list;
@@ -32,7 +32,7 @@ let args = ref {
     
     file = "";
     print_ast = false;
-    print_resolved_ast = false;
+    print_rast = false;
     print_tast = false;
 
     search_dirs = [];

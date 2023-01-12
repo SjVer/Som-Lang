@@ -53,13 +53,13 @@ let rec rename_expr e =
   in
   {e with item}
 
-let rec rename_builtings ast =
+let rec rename_builtins ast =
   let go tl =
     let item = match tl.item with
       | TL_Definition b ->
         TL_Definition {b with expr = rename_expr b.expr}
       | TL_Module (n, ast) ->
-        TL_Module (n, rename_builtings ast)
+        TL_Module (n, rename_builtins ast)
       | _ as tl -> tl
     in
     {tl with item}

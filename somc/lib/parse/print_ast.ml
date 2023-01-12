@@ -53,6 +53,12 @@ and print_type_node i node =
       p i "TY_Grouping" span;
       print_type_node (i + 1) t
 
+    | TY_Forall (args, t) ->
+      let args' = List.map ((^) "'") (nmapi args) in 
+      let args'' = String.concat " " args' in 
+      p i ("TY_Forall " ^ args'') span;
+      print_type_node (i + 1) t
+
     | TY_Any ->
       p i "TY_Any" span
 
@@ -140,11 +146,12 @@ and print_import_kind_node' i node =
       p i ("IK_Rename " ^ s.item ^ " as " ^ d.item) span
     | IK_Nested is ->
       p i "IK_Nested" span;
-      List.iter (
-        fun {span; item = {path; kind}} ->
-          p (i + 1) (show_path path) span;
-          print_import_kind_node' (i + 2) kind
-        ) is
+      let go {span; item = {path; kind}} =
+        let path' = if path <> [] then show_path path else "<no path>" in
+        p (i + 1) path' span;
+        print_import_kind_node' (i + 2) kind
+      in
+      List.iter go is
 
 and print_toplevel_node i node =
   let { span; item } = node in

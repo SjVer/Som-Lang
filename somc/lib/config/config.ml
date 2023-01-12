@@ -14,9 +14,9 @@ let include_dir =
   else
     failwith ("unsupported os type: " ^ Sys.os_type)
 
-let prelude_dir = _path [include_dir; "std"]
 let prelude_ident = "prelude"
-let prelude_file = _path [prelude_dir; prelude_ident] ^ ".som"
+let prelude_import_path = ["std"; prelude_ident]
+let prelude_file = _path (include_dir :: prelude_import_path) ^ ".som"
 
 (* globals *)
 

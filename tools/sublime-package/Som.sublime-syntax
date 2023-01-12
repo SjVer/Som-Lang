@@ -48,10 +48,10 @@ contexts:
   import:
     - match: \buse\b
       scope: keyword.import.som
-      branch_point: import-start
-      branch:
-        - import-segment
-        - import-path
+      push: import-normal
+    - match: \bfrom\b
+      scope: keyword.import.som
+      push: import-from
 
   module:
     - match: \bmod\b
@@ -120,50 +120,57 @@ contexts:
 
   # IMPORTS
 
-  import-segment:
-    - match: \*
-      scope: keyword.other.glob.som
-      set: import-continue
+  import-path:
+    - match: ({{lname}})\s*(::)
+      captures:
+        1: entity.name.namespace.som
+        2: punctuation.accessor.double-colon.som
 
-    - match: '{{lnamep}}'
-      scope: variable.som
-      set: import-continue
+  import-normal:
+    - include: import-path
 
-    - match: '{{uname}}'
-      scope: storage.type.som
-      set: import-continue
+    - match: ({{lnamep}})|({{uname}})
+      captures:
+        1: variable.som
+        2: entity.name.type.som
+      pop: true
 
     - include: invalid
 
-  import-as:
-    - match: \b(as)\s*(?:({{lnamep}})|({{uname}}))
+  import-from:
+    - include: import-path
+
+    - match: ({{lnamep}})|({{uname}})
       captures:
-        1: keyword.import.as.som
-        2: variable.som
-        3: storage.type.som
+        1: variable.som
+        2: entity.name.type.som
+      set:
+        - match: \buse\b
+          scope: keyword.import.som
+          set: import-from-finish
 
-  import-continue:
-    - include: import-as
+        - include: invalid
+    - include: invalid
 
-    - match: \,
-      scope: punctuation.separator.sequence.som
-      set: import-segment
+  import-from-finish:
+    - include: import-path
 
-    - match: \bfrom\b
-      scope: keyword.import.from.som
-      set: import-path
+    - match: (?<=\buse\b)\s*\*
+      scope: keyword.import.glob.som
+      pop: true
 
-    - match: \S
-      fail: import-start
-
-  import-path:
-    - match: (?:(?<=\buse\b|\bfrom\b)|(::))\s*({{lname}})
+    - match: ({{lnamep}})|({{uname}})
       captures:
-        1: punctuation.accessor.double-colon.som
-        2: entity.name.namespace.som
+        1: variable.som
+        2: entity.name.type.som
+      push:
+        - match: \,
+          scope: punctuation.separator.sequence.som
+          pop: 1
+        - match: (?=\S)
+          pop: 2
 
-    - include: import-as
-    - include: pop-otherwise
+    - include: invalid
 
   # TYPES
 

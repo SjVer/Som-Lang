@@ -58,15 +58,72 @@ let rec parse_file p : ast =
   List.map Option.get (List.filter Option.is_some tls)
 
 and toplevel p : toplevel node =
-  match current_t p with
+  let start_s = (current p).span in
+  let tl = match current_t p with
+    | USE -> toplevel_import_normal p
+    | FROM -> toplevel_import_from p
     | LET -> toplevel_definition p
     | _ -> error_at_current p (Expected "a toplevel statement") []
-
-and toplevel_definition p : toplevel node =
-  let start_s = (advance p).span in
-  let bind = binding p expression EQUAL "=" in
+  in
   let s = catspans start_s p.previous.span in
-  mk s (TL_Definition bind)
+  mk s tl
+
+(* TODO: `use ... as ...` *)
+
+and toplevel_import_normal p : toplevel =
+  i (advance p);
+  let path = finish_import_path p false in
+  let kind =
+    if matschs [dummy `LOWERNAME; dummy `UPPERNAME] p then
+      IK_Simple (mk_t (unpack_str p.previous.typ) p.previous)
+    else error_at_current p (Expected "an indentifier") []
+  in
+  TL_Import { path; kind = mk_t kind p.previous }
+
+and toplevel_import_from p : toplevel =
+  i (advance p);
+  let path = finish_import_path p true in
+  i (consume USE "\"use\"" p);
+  let start_s = (current p).span in
+  let kind =
+    (* `use *` or `use ...` *)
+    if matsch STAR p then IK_Glob
+    else finish_import_from p
+  in
+  let s = catspans start_s p.previous.span in
+  TL_Import { path; kind = mk s kind}
+
+and toplevel_definition p : toplevel =
+  i (advance p);
+  let bind = binding p expression EQUAL "=" in
+  TL_Definition bind
+
+(* ============================ imports =========================== *)
+
+and finish_import_from p =
+  let go p =
+    (* single "sub-import" *)
+    let path = finish_import_path p false in
+    let mk_t' p i = mk_t i p.previous in
+    let ident =
+      if matschs [dummy `LOWERNAME; dummy `UPPERNAME] p then
+        mk_t' p (unpack_str p.previous.typ)
+      else error_at_current p (Expected "an indentifier") []
+    in
+    let kind = mk_t' p (IK_Simple ident) in
+    mk_t' p { path; kind } 
+  in
+  (* at least one, maybe more *)
+  let first = go p in
+  let other = many p (matsch COMMA) go in
+  IK_Nested (first :: other)
+
+and finish_import_path p complete =
+  let path = longident_path p in
+  if complete then
+    let last = consume (dummy `LOWERNAME) "an identifier" p in
+    path @ [mk_t (unpack_str last.typ) last]
+  else path
 
 (* ============================ binding =========================== *)
 
@@ -91,8 +148,9 @@ and strict_binding p exprfn sep sepstr =
       then Some (typ p)
       else None
     in
+    let pat_or_ty = if t = None then "pattern" else "type" in
     (* sep and body *)
-    i (consume sep ("a pattern or \"" ^ sepstr ^ "\"") p);
+    i (consume sep ("a " ^ pat_or_ty ^ " or \"" ^ sepstr ^ "\"") p);
     let e = exprfn p in
     t, e
   end else
@@ -145,8 +203,7 @@ and lambda_expression p : expr node =
 
 and tuple_expression p : expr node =
   let e = t_constr_expression p in
-  let parsefn p = i (advance p); t_constr_expression p in
-  let es = many p (check SEMICOLON) parsefn in
+  let es = many p (matsch SEMICOLON) t_constr_expression in
 
   if es <> [] then
     let s = catnspans e (List.hd es) in
@@ -182,11 +239,13 @@ and base_expression p : expr node =
   (* first try construct *)
   try try_parse p begin fun p ->
     let ident = upper_longident p false in
-    let parsefn p = i (advance p); unary_expression true p in
     let es =
-      (* TODO: optional nonempty sep list of unary_expression's *)
+      try
+        let e = try_parse p (unary_expression false) in
+        let es = many p (matsch SEMICOLON) (unary_expression true) in
+        e :: es
+      with Backtrack -> []
     in
-    let es = many p (check SEMICOLON) parsefn in
     mk ident.span (EX_Construct (ident, es))
 
   end with Backtrack ->
@@ -280,7 +339,18 @@ and mk_unary_operator t : expr node =
 
 (* ============================= types ============================ *)
 
-and typ p : typ node = function_type p
+and typ p : typ node = forall_type p
+
+and forall_type p : typ node =
+  try try_parse p begin fun p ->
+    let start_s = (current p).span in
+    let parsefn p = mk_t (unpack_str p.previous.typ) p.previous in
+    let args = many p (matsch (dummy `PRIMENAME)) parsefn in
+    if not (matsch DOT p) then backtrack ();
+    let ty = forall_type p in
+    mk (catspans start_s ty.span) (TY_Forall (args, ty))
+  end with Backtrack ->
+    function_type p
 
 and function_type p : typ node =
   let mk_fn lhs rhs s = mk s (TY_Function (lhs, rhs)) in
@@ -288,13 +358,14 @@ and function_type p : typ node =
 
 and tuple_type p : typ node =
   let t = effect_type p in
-  let parsefn p = i (advance p); effect_type p in
-  let ts = many p (check SEMICOLON) parsefn in
+  let ts = many p (matsch SEMICOLON) effect_type in
 
   if ts <> [] then
     let s = catnspans t (List.hd ts) in
     mk s (TY_Tuple (t :: ts))
   else t
+
+(* TODO: constructed types *)
 
 and effect_type p : typ node =
   if matsch BANG p then
@@ -320,20 +391,21 @@ and atom_type p : typ node =
 
 (* ========================== identifiers ========================= *)
 
-and longident_path p =
+and longident_path p : string node list =
   let checkfn p =
     check (dummy `LOWERNAME) p
     && check_peek DBL_COLON p
   in
   let parsefn p =
-    let t = unpack_str (advance p).typ in
-    advance p &> t
+    let tok = advance p in
+    let t = unpack_str tok.typ in
+    advance p &> mk_t t tok
   in
   many p checkfn parsefn
 
 and longident kind p must =
   let start_s = (current p).span in
-  let path = longident_path p in
+  let path = nmapi (longident_path p) in
   if check (dummy kind) p then
     let i = advance p in
     let s = catspans start_s i.span in

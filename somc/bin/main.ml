@@ -52,8 +52,8 @@ let () =
     ~set_long:"print-ast"
     ~description:"Print the parsetree"
     false in
-  let print_resolved_ast = flag
-    ~set_long:"print-resolved-ast"
+  let print_rast = flag
+    ~set_long:"print-rast"
     ~description:"Print the resolved parsetree"
     false in
   let print_tast = flag
@@ -111,7 +111,7 @@ let () =
 
     file;
     print_ast;
-    print_resolved_ast;
+    print_rast;
     print_tast;
 
     no_prelude;
@@ -129,7 +129,7 @@ let () =
     Parse.PrintAst.print_ast (
       Pipeline.ParseFile.call
         ((!C.args).file, None))
-  else if args.print_resolved_ast then
+  else if args.print_rast then
     let ast =
       Pipeline.AnalyzeFile.call
         ((!C.args).file, None)

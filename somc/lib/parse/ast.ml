@@ -81,6 +81,7 @@ and typ =
   (* generic *)
   | TY_Grouping of typ node
   | TY_Any
+  | TY_Forall of string node list * typ node
   | TY_Variable of string
   | TY_Effect of typ node
   | TY_Function of typ node * typ node

@@ -1,1 +1,1 @@
-let put_in_some x = None, One 1, Two 2 ; 2
+let id x : 'a . 'a -> 'a = x
