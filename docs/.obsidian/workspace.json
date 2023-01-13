@@ -1,0 +1,160 @@
+{
+  "main": {
+    "id": "c7837a4fe32b25d1",
+    "type": "split",
+    "children": [
+      {
+        "id": "ff0b28f1d022cd77",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "190bb5baca9e7836",
+            "type": "leaf",
+            "state": {
+              "type": "canvas",
+              "state": {
+                "file": "ignore/Name Resolution.canvas",
+                "viewState": {
+                  "x": 1110,
+                  "y": 50,
+                  "zoom": -0.2774589894304546,
+                  "snapToGrid": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "6ae7b6d2b3dd4e45",
+    "type": "split",
+    "children": [
+      {
+        "id": "8dede7a713ac5998",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "021402cc4ee49064",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "438368082809cc98",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "4a72933f22696db1",
+            "type": "leaf",
+            "state": {
+              "type": "starred",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 229.5
+  },
+  "right": {
+    "id": "14cd92064e41eaa7",
+    "type": "split",
+    "children": [
+      {
+        "id": "6ddc624648d42109",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d6b441b100e796cc",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "ignore/Name Resolution.canvas",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "47d5774a86dc8181",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "ignore/Name Resolution.canvas",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "cb040b55290a832b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "754d8cc6da7dd25f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "ignore/Name Resolution.canvas"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "190bb5baca9e7836",
+  "lastOpenFiles": [
+    "ignore/Name Resolution.md",
+    "ignore/Name Resolution.canvas",
+    "Untitled.canvas",
+    "Name Resolution.canvas"
+  ]
+}
