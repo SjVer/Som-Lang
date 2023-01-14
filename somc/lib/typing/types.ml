@@ -11,7 +11,7 @@ module ID = struct
 end
 
 type t =
-  | TName of Path.t
+  | TName of Symboltable.Ident.t
   | TPrim of prim
   | TVague of vague ref
   | TVar of var ref
@@ -77,7 +77,7 @@ let show ty debug =
   let ret prim s = if prim then "(" ^ s ^ ")" else s in
 
   let rec go prim = function
-    | TName p -> Path.to_string p
+    | TName p -> Symboltable.Ident.to_string p
     | TPrim p -> show_prim p
     | TVague k -> begin match !k with
         | Int -> if debug then "<int>" else "$i.*"

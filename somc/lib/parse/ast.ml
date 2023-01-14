@@ -1,3 +1,5 @@
+module Ident = Symboltable.Ident
+
 type ast = toplevel node list
 
 and 'a node =
@@ -9,30 +11,30 @@ and 'a node =
 (* ====================== Toplevel ===================== *)
 
 and toplevel =
-  | TL_Definition of value_binding
-  | TL_Type_Definition of type_definition
-  | TL_Import of import
-  | TL_Module of string node * ast
+| TL_Definition of value_definition
+| TL_Type_Definition of type_definition
+| TL_Import of import
+| TL_Module of string node * ast
 
-and value_binding =
+and value_definition =
   {
-    patt: pattern node;
-    expr: expr node;
+    vd_name: string node;
+    vd_expr: expr node;
   }
 
 and type_definition =
   {
-    params: string node list;
-    name: string node;
-    typ: typ node;
+    td_params: string node list;
+    td_name: string node;
+    td_typ: typ node;
   }
   
 (* ======================= Import ======================= *)
 
 and import =
   {
-    path: string node list;
-    kind: import_kind node;
+    i_path: string node list;
+    i_kind: import_kind node;
   } 
     
 and import_kind =
@@ -72,6 +74,12 @@ and literal =
   | LI_Char of char
   | LI_String of string
   | LI_Nil
+
+and value_binding =
+  {
+    vb_patt: pattern node;
+    vb_expr: expr node;
+  }
 
 (* ======================== Type ======================== *)
 

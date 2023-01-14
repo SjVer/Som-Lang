@@ -72,17 +72,17 @@ and toplevel p : toplevel node =
 
 and toplevel_import_normal p : toplevel =
   i (advance p);
-  let path = finish_import_path p false in
+  let i_path = finish_import_path p false in
   let kind =
     if matschs [dummy `LOWERNAME; dummy `UPPERNAME] p then
       IK_Simple (mk_t (unpack_str p.previous.typ) p.previous)
     else error_at_current p (Expected "an indentifier") []
   in
-  TL_Import { path; kind = mk_t kind p.previous }
+  TL_Import { i_path; i_kind = mk_t kind p.previous }
 
 and toplevel_import_from p : toplevel =
   i (advance p);
-  let path = finish_import_path p true in
+  let i_path = finish_import_path p true in
   i (consume USE "\"use\"" p);
   let start_s = (current p).span in
   let kind =
@@ -91,27 +91,39 @@ and toplevel_import_from p : toplevel =
     else finish_import_from p
   in
   let s = catspans start_s p.previous.span in
-  TL_Import { path; kind = mk s kind}
+  TL_Import { i_path; i_kind = mk s kind}
 
 and toplevel_definition p : toplevel =
   i (advance p);
-  let bind = binding p expression EQUAL "=" in
-  TL_Definition bind
+  (* name *)
+  let vd_name =
+    if matsch (dummy `LOWERNAME) p then
+      mk_t (unpack_str p.previous.typ) p.previous
+    else
+      try error_at_current p (Expected "an identifier") []
+      with Failed ->
+        let t = mk_t "<parse error>" p.previous in
+        i (advance p) &> t
+  in
+  
+  (* expression *)
+  let (t, e) = strict_binding p expression EQUAL "=" in
+  TL_Definition {vd_name; vd_expr = wrap_type_constraint t e}
 
 (* ============================ imports =========================== *)
 
 and finish_import_from p =
   let go p =
     (* single "sub-import" *)
-    let path = finish_import_path p false in
+    let i_path = finish_import_path p false in
     let mk_t' p i = mk_t i p.previous in
     let ident =
       if matschs [dummy `LOWERNAME; dummy `UPPERNAME] p then
         mk_t' p (unpack_str p.previous.typ)
       else error_at_current p (Expected "an indentifier") []
     in
-    let kind = mk_t' p (IK_Simple ident) in
-    mk_t' p { path; kind } 
+    let i_kind = mk_t' p (IK_Simple ident) in
+    mk_t' p { i_path; i_kind } 
   in
   (* at least one, maybe more *)
   let first = go p in
@@ -128,18 +140,9 @@ and finish_import_path p complete =
 (* ============================ binding =========================== *)
 
 and binding (p : parser) exprfn sep sepstr : value_binding =
-  let patt = try_and_skip_until p pattern [sep; COLON] PA_Wildcard in
+  let vb_patt = try_and_skip_until p pattern [sep; COLON] PA_Wildcard in
   let (t, e) = strict_binding p exprfn sep sepstr in
-
-  (* put in the ghost EX_Constraint *)
-  let expr = match t with
-    | Some t -> {
-        span = {e.span with ghost = true};
-        item = EX_Constraint (e, t);
-      }
-    | None -> e
-  in
-  {patt; expr}
+  {vb_patt; vb_expr = wrap_type_constraint t e}
 
 and strict_binding p exprfn sep sepstr =
   if checks [COLON; sep] p then begin
@@ -155,10 +158,18 @@ and strict_binding p exprfn sep sepstr =
     t, e
   end else
     (* another pattern *)
-    let patt = try_and_skip_until p pattern [sep; COLON] PA_Wildcard in
-    let (t, expr) = strict_binding p exprfn sep sepstr in
-    let s = catnspans patt expr in
-    t, mk_g s (EX_Lambda {patt; expr})
+    let vb_patt = try_and_skip_until p pattern [sep; COLON] PA_Wildcard in
+    let (t, vb_expr) = strict_binding p exprfn sep sepstr in
+    let s = catnspans vb_patt vb_expr in
+    t, mk_g s (EX_Lambda {vb_patt; vb_expr})
+
+and wrap_type_constraint t e =
+  match t with
+    | Some t -> {
+        span = {e.span with ghost = true};
+        item = EX_Constraint (e, t);
+      }
+    | None -> e
 
 (* ============================ patterns ========================== *)
 
@@ -197,7 +208,7 @@ and lambda_expression p : expr node =
   if matsch BACKSLASH p then begin
     let start_s = p.previous.span in
     let bind = binding p tuple_expression ARROW "->" in
-    let s = catspans start_s bind.expr.span in
+    let s = catspans start_s bind.vb_expr.span in
     mk s (EX_Lambda bind)
   end else tuple_expression p
 

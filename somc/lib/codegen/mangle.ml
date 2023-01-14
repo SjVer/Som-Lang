@@ -1,4 +1,4 @@
-module Path = Typing.Path
+module Ident = Symboltable.Ident
 open Typing.Types
 
 (*
@@ -11,8 +11,8 @@ open Typing.Types
 let mangle_ident = String.map (fun c -> if c = '\'' then '.' else c)
 
 let rec mangle_path = function
-  | Path.Ident i -> mangle_ident i
-  | Path.Cons (p, i) ->
+  | Ident.Ident i -> mangle_ident i
+  | Ident.Cons (p, i) ->
     mangle_path p ^ ".." ^ mangle_ident i
 
 (*

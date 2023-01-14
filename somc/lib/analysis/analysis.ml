@@ -11,8 +11,8 @@ let add_implicit_prelude ast =
 
   let _import =
     {
-      path=List.map node prelude_import_path;
-      kind=node IK_Glob;
+      i_path = List.map node prelude_import_path;
+      i_kind = node IK_Glob;
     }
   in
 

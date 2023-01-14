@@ -1,7 +1,6 @@
 ### Algorithm
 1. Add all symbols to a symbol table with absolute paths for the current file and all imported files recursively
 2. Apply import statements recursively adding to the symbol table of the importing file
-3. Remove duplicates(?) and unused symbols
 
 ### Example
 
@@ -50,17 +49,17 @@ let main =
 ##### Symbol tables:
 mymod.som:
 
-| Path | Id | Value |
-|---|---|---|
-| mymod::mymod_fn | 01 | `\x -> x` |
-| mymod::mymod_fn2 | 02 | `\y -> mymod::mymod_fn y` |
+| Path | Pointing to |
+|---|---|
+| mymod::mymod_fn | `\x -> x` |
+| mymod::mymod_fn2 | `\y -> mymod::mymod_fn y` |
 
 myfile.som:
 
-| Path | Id | Value |
-|---|---|---|	
-| myfile::submod::submod_fn | 03 | `\z -> z` |
-| | myfile::main | 04 | `...` |
+| Path | Pointing to |
+|---|---|	
+| myfile::submod::submod_fn | `\z -> z` |
+| myfile::main | `...` |
 
 #### Step 2
 Applying import statements
@@ -83,39 +82,39 @@ let main =
 
 ##### Symbol table:
 
-| Path | Id | Value |
-|---|---|---|
-| myfile::mymod_fn | 01 | `\x -> x` |
-| myfile::mymod::mymod_fn | 01 | `\x -> x` |
-| myfile::mymod::mymod_fn2 | 02 | `\y -> mymod::mymod_fn y` |
-| myfile::submod::submod_fn | 03 | `\z -> z` |
-| myfile::main | 04 | `...` |
+| Path | Pointing to |
+|---|---|
+| myfile::mymod_fn | `\x -> x` |
+| myfile::mymod::mymod_fn | `\x -> x` |
+| myfile::mymod::mymod_fn2 | `\y -> mymod::mymod_fn y` |
+| myfile::submod::submod_fn | `\z -> z` |
+| myfile::main | `...` |
 
-#### Step 3
-Removing duplicates and unused symbols
-```haskell
--- use mymod_fn from mymod
-let myfile::mymod_fn x = x
+### Design
 
--- use mymod
-let myfile::mymod::mymod_fn x = x -- duplicate?
-let myfile::mymod::mymod_fn2 y = mymod::mymod_fn y
+Types:
+```ocaml
+module IMap = Map.Make(Ident)
 
--- mod submod
-let myfile::submod::submod_fn z = z
+type 'a entry =
+  {
+    symbol: 'a;
+    original_ident: Ident.t;
+    usages: Span.t list;
+  }
 
-let main =
-  myfile::mymod_fn 1,
-  myfile::mymod::mymod_fn2 2,
-  myfile::submod::submod_fn 3
+type ('v, 't) t =
+  {
+    values: 'v entry IMap.t;
+    types: 't entry IMap.t;
+  }
 ```
 
-##### Symbol table:
-
-| Path | Id | Value |
-|---|---|---|
-| myfile::mymod_fn | 01 | `\x -> x` |
-| myfile::mymod::mymod_fn (?) | 01 | `\x -> x` |
-| myfile::mymod::mymod_fn2 | 02 | `\y -> mymod::mymod_fn y` |
-| myfile::submod::submod_fn | 03 | `\z -> z` |
-| myfile::main | 04 | `...` |
+Usage:
+1. Parsing:
+   Just construct the AST as usual.
+2. Name resolution:
+   Execute algorithm with a `(value_definition, type_definition) t`.
+   Pass the table and the AST to the typechecker.
+3. Typechecking:
+   Transform existing symbol table into a `(???, ???) t`.

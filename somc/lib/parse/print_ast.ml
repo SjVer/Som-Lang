@@ -95,14 +95,14 @@ and print_expr_node i node =
 
     | EX_Binding (bind, e) ->
       p i "EX_Binding" span;
-      print_patt_node' (i + 1) bind.patt;
-      print_expr_node (i + 1) bind.expr;
+      print_patt_node' (i + 1) bind.vb_patt;
+      print_expr_node (i + 1) bind.vb_expr;
       print_expr_node (i + 1) e
 
-    | EX_Lambda {patt; expr} ->
+    | EX_Lambda {vb_patt; vb_expr} ->
       p i "EX_Lambda" span;
-      print_patt_node' (i + 1) patt;
-      print_expr_node (i + 1) expr
+      print_patt_node' (i + 1) vb_patt;
+      print_expr_node (i + 1) vb_expr
 
     | EX_Sequence (e1, e2) ->
       p i "EX_Sequence" span;
@@ -146,32 +146,31 @@ and print_import_kind_node' i node =
       p i ("IK_Rename " ^ s.item ^ " as " ^ d.item) span
     | IK_Nested is ->
       p i "IK_Nested" span;
-      let go {span; item = {path; kind}} =
-        let path' = if path <> [] then show_path path else "<no path>" in
+      let go {span; item = {i_path; i_kind}} =
+        let path' = if i_path <> [] then show_path i_path else "<no path>" in
         p (i + 1) path' span;
-        print_import_kind_node' (i + 2) kind
+        print_import_kind_node' (i + 2) i_kind
       in
       List.iter go is
 
 and print_toplevel_node i node =
   let { span; item } = node in
   match item with
-    | TL_Definition { patt; expr } ->
-      p i "TL_Definition" span;
-      print_patt_node' (i + 1) patt;
-      print_expr_node (i + 1) expr
+    | TL_Definition { vd_name; vd_expr } ->
+      p i ("TL_Definition " ^ vd_name.item) span;
+      print_expr_node (i + 1) vd_expr
 
     | TL_Type_Definition d ->
       let rec join = function
-      | [] -> ""
-      | v :: vs -> "'" ^ v.item ^ " " ^ join vs
-      in let name = join d.params ^ d.name.item in
+        | [] -> ""
+        | v :: vs -> "'" ^ v.item ^ " " ^ join vs
+      in let name = join d.td_params ^ d.td_name.item in
       p i ("TL_Type_Definition " ^ name) span;
-      print_type_node (i + 1) d.typ
+      print_type_node (i + 1) d.td_typ
 
-    | TL_Import {path; kind} ->
-      p i ("TL_Import " ^ show_path path) span;
-      print_import_kind_node' (i + 1) kind
+    | TL_Import { i_path; i_kind} ->
+      p i ("TL_Import " ^ show_path i_path) span;
+      print_import_kind_node' (i + 1) i_kind
 
     | TL_Module (n, ast) ->
       p i ("TL_Module " ^ n.item) span;

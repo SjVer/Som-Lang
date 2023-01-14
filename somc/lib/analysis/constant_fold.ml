@@ -1,5 +1,5 @@
 open Parse.Ast
-open Parse.Ident
+open Symboltable.Ident
 
 let rec pow a = function
   | 0 -> 1
@@ -58,7 +58,7 @@ let rec fold_constants ast =
   let go tl =
     let item = match tl.item with
       | TL_Definition b ->
-        TL_Definition {b with expr = fold_expr b.expr}
+        TL_Definition {b with vd_expr = fold_expr b.vd_expr}
       | TL_Module (n, ast) ->
         TL_Module (n, fold_constants ast)
       | _ as tl -> tl

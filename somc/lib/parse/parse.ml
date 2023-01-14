@@ -1,6 +1,5 @@
 module Ast = Ast
 module PrintAst = Print_ast
-module Ident = Ident
 
 open Report.Error
 

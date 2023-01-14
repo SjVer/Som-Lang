@@ -1,6 +1,8 @@
 open Tast
 open ANSITerminal
 
+module Ident = Symboltable.Ident
+
 let p i str span =
   print_string [] (String.make i '\t' ^ str);
   print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
@@ -63,7 +65,7 @@ and print_expr_node i node =
       List.iter (print_expr_node (i + 1)) es
     
     | EX_Construct (n, e) ->
-      pt i ("EX_Construct " ^ Path.to_string n.item) typ span;
+      pt i ("EX_Construct " ^ Ident.to_string n.item) typ span;
       if Option.is_some e
       then print_expr_node (i + 1) (Option.get e)
     
@@ -71,7 +73,7 @@ and print_expr_node i node =
       pt i ("EX_Literal " ^ show_literal l) typ span
     
     | EX_Identifier {span=_; item=id; typ=_} ->
-      pt i ("EX_Identifier " ^ Path.to_string id) typ span
+      pt i ("EX_Identifier " ^ Ident.to_string id) typ span
 
     | EX_External n ->
       pt i ("EX_External " ^ n) typ span

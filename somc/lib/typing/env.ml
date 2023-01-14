@@ -1,3 +1,4 @@
+module Ident = Symboltable.Ident
 module SMap = Map.Make(String)
 
 type t =
@@ -59,7 +60,7 @@ let at_end_of_path env path span =
       go sect false ns
     | [] -> assert false
   in
-  go env true (Path.to_list path)
+  go env true (Ident.to_list path)
 
 let get_section env n = SMap.find n env.sections
 

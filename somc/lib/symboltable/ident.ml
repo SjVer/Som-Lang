@@ -6,6 +6,8 @@ let rec to_string = function
   | Ident s -> s
   | Cons (l, s) -> to_string l ^ "::" ^ s
 
+let compare a b = compare (to_string a) (to_string b)
+
 let rec from_rev_list = function
   | [] -> invalid_arg "from_rev_list"
   | [s] -> Ident s
@@ -14,10 +16,6 @@ let rec from_rev_list = function
 let from_list = function
   | [] -> invalid_arg "from_list"
   | l -> from_rev_list (List.rev l)
-
-let rec from_ident = function
-  | Parse.Ident.Ident i -> Ident i
-  | Parse.Ident.Cons (is, i) -> Cons (from_ident is, i)
 
 let rec to_list = function
   | Ident s -> [s]

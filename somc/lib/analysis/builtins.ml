@@ -1,5 +1,5 @@
 open Parse.Ast
-open Parse.Ident
+open Symboltable.Ident
 
 let rename_ident node =
   let op str = from_list ["_std_ops"; str] in
@@ -33,11 +33,11 @@ let rec rename_expr e =
   let item = match e.item with
     | EX_Grouping e -> EX_Grouping (rename_expr e)
     | EX_Binding (b, e) ->
-      let b' = {b with expr = rename_expr b.expr} in
+      let b' = {b with vb_expr = rename_expr b.vb_expr} in
       let e' = rename_expr e in
       EX_Binding (b', e')
-    | EX_Lambda b ->
-      let b' = {b with expr = rename_expr b.expr} in
+    | EX_Lambda {vb_patt; vb_expr} ->
+      let b' = {vb_patt;  vb_expr = rename_expr vb_expr} in
       EX_Lambda b'
     | EX_Sequence (e1, e2) ->
       EX_Sequence (rename_expr e1, rename_expr e2)
@@ -56,8 +56,8 @@ let rec rename_expr e =
 let rec rename_builtins ast =
   let go tl =
     let item = match tl.item with
-      | TL_Definition b ->
-        TL_Definition {b with expr = rename_expr b.expr}
+      | TL_Definition {vd_name; vd_expr} ->
+        TL_Definition {vd_name; vd_expr = rename_expr vd_expr}
       | TL_Module (n, ast) ->
         TL_Module (n, rename_builtins ast)
       | _ as tl -> tl

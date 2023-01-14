@@ -2,6 +2,7 @@ open Types
 open Tast
 open Report.Error
 
+module Ident = Symboltable.Ident
 module Ast = Parse.Ast
 
 let error ?(fatal=false) e span =
@@ -179,18 +180,18 @@ let rec infer_expr ?(level=0) env exp =
     
     | EX_Binding (bind, body) ->
       let env' = Env.copy env in
-      let patt' = infer_patt ~level env' bind.patt in
-      let expr' = infer_expr ~level:(level + 1) env bind.expr in
+      let patt' = infer_patt ~level env' bind.vb_patt in
+      let expr' = infer_expr ~level:(level + 1) env bind.vb_expr in
       unify env s patt'.typ expr'.typ;
 
       let expr'' = set_ty (generalize level expr'.typ) expr' in
       let body' = infer_expr ~level env' body in
       mk s body'.typ (EX_Binding ({patt=patt'; expr=expr''}, body'))
     
-    | EX_Lambda {patt; expr} ->
+    | EX_Lambda {vb_patt; vb_expr} ->
       let env' = Env.copy env in
-      let patt' = infer_patt ~level env' patt in
-      let expr' = infer_expr ~level env' expr in
+      let patt' = infer_patt ~level env' vb_patt in
+      let expr' = infer_expr ~level env' vb_expr in
       mk s (TFun (patt'.typ, expr'.typ))
         (EX_Lambda {patt=patt'; expr=expr'})
     
@@ -245,12 +246,12 @@ let rec infer_expr ?(level=0) env exp =
       mk s (TTup ts) (EX_Tuple es')
 
     | EX_Construct (pnode, _enode) ->
-      let name = Parse.Ident.to_string pnode.item in
+      let name = Ident.to_string pnode.item in
       error ~fatal:true (Use_of_unbound ("constructor", name)) (Some pnode.span);
       failwith "unreachable"
 
     | EX_Literal l ->
-      let name n = TName (Path.Cons (Path.Ident "_std_types", n)) in
+      let name n = TName (Ident.Cons (Ident.Ident "_std_types", n)) in
       let l', t = match l with
         | LI_Char c   -> LI_Char c,   name "Chr"
         | LI_Float f  -> LI_Float f,  TVague (ref Float)
@@ -260,14 +261,13 @@ let rec infer_expr ?(level=0) env exp =
       in mk s t (EX_Literal l')
     
     | EX_Identifier {span; item} ->
-      let path = Path.from_ident item in
       begin try
-        let t = instantiate level (Env.get_symbol env path span) in
-        mk s t (EX_Identifier (mk span t path)) 
+        let t = instantiate level (Env.get_symbol env item span) in
+        mk s t (EX_Identifier (mk span t item)) 
       with Not_found ->
-        let name = Path.to_string path in
+        let name = Ident.to_string item in
         error (Use_of_unbound ("variable", name)) (Some span);
-        mk s TError (EX_Identifier (mk span TError path))
+        mk s TError (EX_Identifier (mk span TError item))
       end
 
     | EX_External n ->

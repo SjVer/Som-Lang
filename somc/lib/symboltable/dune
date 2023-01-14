@@ -1,0 +1,4 @@
+(library
+ (name symboltable)
+ (libraries report span)
+)

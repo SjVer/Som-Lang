@@ -37,9 +37,9 @@ and expr =
   | EX_Sequence of expr tnode * expr tnode
   | EX_Application of expr tnode * expr tnode list
   | EX_Tuple of expr tnode list
-  | EX_Construct of Path.t tnode * expr tnode option
+  | EX_Construct of Symboltable.Ident.t tnode * expr tnode option
   | EX_Literal of literal
-  | EX_Identifier of Path.t tnode
+  | EX_Identifier of Symboltable.Ident.t tnode
   | EX_External of string
   | EX_Error
 

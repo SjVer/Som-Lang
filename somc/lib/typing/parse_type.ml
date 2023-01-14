@@ -1,6 +1,8 @@
+module Ident = Symboltable.Ident
+
 let check_alias_exists env name span =
   try
-    ignore (Env.get_alias env (Path.Ident name) span)
+    ignore (Env.get_alias env (Ident.Ident name) span)
   with Not_found ->
     let open Report.Error in
     let e = Type_error (Use_of_unbound ("type alias", name)) in
@@ -40,9 +42,8 @@ let parse env l =
           | PT_Void -> TPrim PVoid
       end
     | TY_Construct (None, t) ->
-      let path = Path.from_ident t.item in
-      check_alias_exists env (Path.to_string path) t.span;
-      TName path
+      check_alias_exists env (Ident.to_string t.item) t.span;
+      TName t.item
     | TY_Construct _ -> failwith "Types.parse_type (constr)"
     | TY_Variant _ -> failwith "Types.parse_type (variant)"
   in go
