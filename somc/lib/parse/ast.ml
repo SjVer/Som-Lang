@@ -11,7 +11,7 @@ and 'a node =
 (* ====================== Toplevel ===================== *)
 
 and toplevel =
-| TL_Definition of value_definition
+| TL_Value_Definition of value_definition
 | TL_Type_Definition of type_definition
 | TL_Import of import
 | TL_Module of string node * ast
@@ -26,7 +26,7 @@ and type_definition =
   {
     td_params: string node list;
     td_name: string node;
-    td_typ: typ node;
+    td_type: typ node;
   }
   
 (* ======================= Import ======================= *)

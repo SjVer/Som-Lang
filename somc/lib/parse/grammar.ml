@@ -62,7 +62,8 @@ and toplevel p : toplevel node =
   let tl = match current_t p with
     | USE -> toplevel_import_normal p
     | FROM -> toplevel_import_from p
-    | LET -> toplevel_definition p
+    | LET -> toplevel_value_definition p
+    | TYPE -> toplevel_type_definition p
     | _ -> error_at_current p (Expected "a toplevel statement") []
   in
   let s = catspans start_s p.previous.span in
@@ -93,7 +94,7 @@ and toplevel_import_from p : toplevel =
   let s = catspans start_s p.previous.span in
   TL_Import { i_path; i_kind = mk s kind}
 
-and toplevel_definition p : toplevel =
+and toplevel_value_definition p : toplevel =
   i (advance p);
   (* name *)
   let vd_name =
@@ -108,7 +109,32 @@ and toplevel_definition p : toplevel =
   
   (* expression *)
   let (t, e) = strict_binding p expression EQUAL "=" in
-  TL_Definition {vd_name; vd_expr = wrap_type_constraint t e}
+  TL_Value_Definition {vd_name; vd_expr = wrap_type_constraint t e}
+
+and toplevel_type_definition p : toplevel =
+  i (advance p);
+  (* params *)
+  let parsefn p = mk_t (unpack_str p.previous.typ) p.previous in
+  let td_params = many p (matsch (dummy `PRIMENAME)) parsefn in
+  (* name *)
+  let td_name =
+    if matsch (dummy `UPPERNAME) p then
+      mk_t (unpack_str p.previous.typ) p.previous
+    else
+      try error_at_current p (Expected "an identifier") []
+      with Failed ->
+        let t = mk_t "<parse error>" p.previous in
+        i (advance p) &> t
+  in
+  (* type *)
+  let td_type =
+    if matsch IS p then typ p
+    else begin
+      i (consume OF "\"is\" or \"of\"" p);
+      failwith "TODO: parse complex type definition"
+    end
+  in
+  TL_Type_Definition {td_params; td_name; td_type}
 
 (* ============================ imports =========================== *)
 

@@ -39,6 +39,7 @@ contexts:
     - include: import
     - include: module
     - include: typedef
+    - include: external
     - include: definition
     - include: expression
     - include: invalid
@@ -104,6 +105,17 @@ contexts:
 
                 - include: invalid
             - include: invalid
+        - include: invalid
+
+  external:
+    - match: \bext\b
+      scope: keyword.declaration.function.som
+      push:
+        - match: '{{lname}}'
+          scope:
+            entity.name.function.def-func.som
+            constant.language.som
+          pop: true
         - include: invalid
 
   definition:

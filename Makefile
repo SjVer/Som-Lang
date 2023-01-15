@@ -17,7 +17,7 @@ exec: build
 	@$(EXE) $(args)
 
 test: build
-	@$(EXE) -i stdlib/std -i test $(args) test/test.som -v
+	@$(EXE) -i test $(args) test/test.som -v
 
 .PHONY: stdlib
 stdlib:

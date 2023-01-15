@@ -28,7 +28,7 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
-use Str from std::str
+from std::str use Str
 
 --- types ---
 

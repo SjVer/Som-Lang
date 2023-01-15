@@ -6,16 +6,21 @@
       {
         "id": "ff0b28f1d022cd77",
         "type": "tabs",
+        "dimension": 60.29143897996357,
         "children": [
           {
             "id": "190bb5baca9e7836",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "canvas",
               "state": {
-                "file": "ignore/Name Resolution.md",
-                "mode": "source",
-                "source": false
+                "file": "ignore/Name Resolution.canvas",
+                "viewState": {
+                  "x": 1060.5,
+                  "y": 68,
+                  "zoom": -0.3117724857484051,
+                  "snapToGrid": true
+                }
               }
             }
           }
@@ -24,6 +29,7 @@
       {
         "id": "50b634655305b9f0",
         "type": "tabs",
+        "dimension": 39.708561020036434,
         "children": [
           {
             "id": "0e18de6e3db6ac0b",
@@ -32,7 +38,7 @@
               "type": "markdown",
               "state": {
                 "file": "ignore/TODO.md",
-                "mode": "preview",
+                "mode": "source",
                 "source": false
               }
             }
@@ -103,7 +109,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "ignore/Name Resolution.md",
+                "file": "ignore/TODO.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -120,7 +126,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "ignore/Name Resolution.md",
+                "file": "ignore/TODO.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -143,7 +149,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "ignore/Name Resolution.md"
+                "file": "ignore/TODO.md"
               }
             }
           }
@@ -164,11 +170,11 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "190bb5baca9e7836",
+  "active": "0e18de6e3db6ac0b",
   "lastOpenFiles": [
-    "ignore/TODO.md",
-    "ignore/Name Resolution.md",
     "ignore/Name Resolution.canvas",
+    "ignore/Name Resolution.md",
+    "ignore/TODO.md",
     "Untitled.canvas",
     "Name Resolution.canvas"
   ]

@@ -1,7 +1,7 @@
 -- imports
-use puts from std::io
-use iter from std::list
-use show_int from std::int
+from std::io use puts
+from std::list use iter
+from std::int use show_int
 
 -- fizzbuzz function
 let fizzbuzz = switch

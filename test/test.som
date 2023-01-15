@@ -1,3 +1,7 @@
-let id x : 'a . 'a -> 'a = x
+use module
 
-let main _ = id error
+-- type IntToInt is Int -> Int
+
+-- let id x : IdFn = x
+
+-- let main _ = id error

@@ -38,7 +38,7 @@ let explain_ecode code =
       
 (* cli parsing & entrypoint *)
 
-let () =
+let parseargs () =
   description C.description;
 
   (* cli stuff *)
@@ -145,22 +145,15 @@ let () =
 
 (* entrypoint *)
 let () =
+  parseargs ();
   let args = !(C.args) in
 
   if args.print_ast then
-    Parse.PrintAst.print_ast (
-      Pipeline.ParseFile.call
-        ((!C.args).file, None))
+    let ast = Pipeline.ParseFile.call ((!C.args).file, None) in
+    Parse.PrintAst.print_ast ast
   else if args.print_rast then
-    let ast =
-      Pipeline.AnalyzeFile.call
-        ((!C.args).file, None)
-    in
-    let ast' =
-      if (!Config.Cli.args).no_prelude then ast
-      else Analysis.add_implicit_prelude ast
-    in
-    Parse.PrintAst.print_ast ast'
+    let table = Pipeline.AnalyzeFile.call ((!C.args).file, None) in
+    Analysis.print_ast_table table
   else if args.print_tast then
     Typing.PrintTAst.print_tast (
       Pipeline.TypecheckFile.call

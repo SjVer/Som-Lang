@@ -86,8 +86,8 @@ and print_toplevel_node i node =
     | TL_Declaration (n, t) ->
       pt i ("TL_Declaration " ^ n.item) t.item span;
     
-    | TL_Definition { patt; expr } ->
-      p i "TL_Definition" span;
+    | TL_Value_Definition { patt; expr } ->
+      p i "TL_Value_Definition" span;
       print_patt_node' (i + 1) patt;
       print_expr_node (i + 1) expr
 

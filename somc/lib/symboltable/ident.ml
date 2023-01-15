@@ -8,6 +8,10 @@ let rec to_string = function
 
 let compare a b = compare (to_string a) (to_string b)
 
+let rec prepend a = function
+  | Ident b -> Cons (a, b)
+  | Cons (i, b) -> Cons (prepend a i, b)
+
 let rec from_rev_list = function
   | [] -> invalid_arg "from_rev_list"
   | [s] -> Ident s

@@ -12,18 +12,18 @@ let mk s i = Some {span=s; item=i}
 let rec typecheck_tl_node env node =
   let Parse.Ast.{span; item : toplevel} = node in
   match item with
-    | TL_Definition {vd_name; vd_expr} ->
+    | TL_Value_Definition {vd_name; vd_expr} ->
       (* let patt' = infer_patt ~level:0 env vd_patt in *)
       let name' = { span = vd_name.span; item = Types.new_var 0 } in
       let expr' = infer_expr env vd_expr in
       unify env span name'.item expr'.typ;
       
       let _expr'' = set_ty (generalize (-1) expr'.typ) expr' in
-      failwith "TODO"
-      (* mk span (TL_Definition {patt=patt'; expr=expr''})  *)
+      failwith "TODO: typecheck TL_Value_Definition"
+      (* mk span (TL_Value_Definition {patt=patt'; expr=expr''})  *)
   
-    | TL_Type_Definition {td_name; td_params=_; td_typ} ->
-      let t = Parse_type.parse env 0 td_typ.item in
+    | TL_Type_Definition {td_name; td_params=_; td_type} ->
+      let t = Parse_type.parse env 0 td_type.item in
       (* TODO: params *)
       Env.add_alias env td_name.item t;
       None

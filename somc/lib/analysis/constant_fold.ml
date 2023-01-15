@@ -54,11 +54,11 @@ let rec fold_expr e =
     item;
   }
 
-let rec fold_constants ast =
+let rec fold_constants (ast : ast) : ast =
   let go tl =
     let item = match tl.item with
-      | TL_Definition b ->
-        TL_Definition {b with vd_expr = fold_expr b.vd_expr}
+      | TL_Value_Definition b ->
+        TL_Value_Definition {b with vd_expr = fold_expr b.vd_expr}
       | TL_Module (n, ast) ->
         TL_Module (n, fold_constants ast)
       | _ as tl -> tl
