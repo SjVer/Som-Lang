@@ -164,9 +164,9 @@ let decide_on_file_and_path imp =
       if dir = "" then find_file file_basename ident.span
       else file_basename ^ Config.extension
     in
-    file_path, path'
+    file_path, path', true
   end else
-    full_path, path'
+    full_path, path', false
 
 let rec extract_submodule table mod_name = function
   | hd :: tl ->
@@ -187,7 +187,7 @@ let find_and_add_value_or_type src old_ident dest new_ident =
 
 let rec apply_import _mod_name table (imp, span) =
   (* find file and remainder of path *)
-  let file, path = decide_on_file_and_path imp in
+  let file, path, importing_file = decide_on_file_and_path imp in
   let imp_mod_name = Filename.(chop_extension (basename file)) in
   
   (* parse and get symbols from the file *)
@@ -225,9 +225,11 @@ let rec apply_import _mod_name table (imp, span) =
   in
 
   (* if we're importing a file the IK_Simple is already handled *)
-  let i_kind' = if path <> [] then imp.i_kind else {imp.i_kind with item = IK_Glob} in
-  let new_table = finish table' imp_table imp_mod_name path i_kind' in
-  merge_tables table new_table
+  if importing_file then
+    table' (* the tables are already merged *)
+  else
+    let new_table = finish table' imp_table imp_mod_name path imp.i_kind in
+    merge_tables table new_table
 
 and resolve mod_name (ast : ast) : ast_symbol_table =
   let table = get_symbols_in_ast ast in
