@@ -251,7 +251,7 @@ let rec infer_expr ?(level=0) env exp =
       failwith "unreachable"
 
     | EX_Literal l ->
-      let name n = TName (Ident.Cons (Ident.Ident "_std_typees", n)) in
+      let name n = TName (Cons ("_std_types", Ident n)) in
       let l', t = match l with
         | LI_Char c   -> LI_Char c,   name "Chr"
         | LI_Float f  -> LI_Float f,  TVague (ref Float)

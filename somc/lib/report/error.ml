@@ -49,7 +49,7 @@ let get_type_error_msg = function
   | Expected_function g     -> f "expected a function type but found type `%s`" g
   | Recursive_type          -> f "recursive type"
   | Use_of_unbound (t, w)   -> f "use of unbound %s `%s`" t w
-  | Has_no_symbol (m, w, s) -> f "module %s has no %s named '%s'" m w s
+  | Has_no_symbol (m, w, s) -> f "module `%s` has no %s named '%s'" m w s
   | Cannot_private (a, w)   -> f "cannot %s private symbol `%s`" a w
   | Cannot_import_from w    -> f "cannot import from non-module symbol `%s`" w
   | Could_not_infer         -> f "could not infer type"

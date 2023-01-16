@@ -1,6 +1,7 @@
 open Parse.Ast
 open Report.Error
 open Symboltable
+open Ident
 open Canonicalize
 
 (* 
@@ -22,26 +23,26 @@ open Canonicalize
 
 type ast_symbol_table = (value_definition, type_definition) symbol_table
 
-let get_ast_fn:
-  (string -> Span.t -> ast) ref =
-  ref (fun _ _ : ast -> assert false)
+let get_ast_symbol_table:
+  (string -> Span.t -> ast_symbol_table) ref =
+  ref (fun _ -> assert false)
 
 let print_ast_table (table : ast_symbol_table) =
   let open Symboltable in
   let valuefn {symbol = bind; usages = _} =
     Parse.PrintAst.p 2
-      ("TL_Value_Definition " ^ bind.vd_name.item)
+      ("<def value " ^ bind.vd_name.item ^ ">")
       bind.vd_name.span;
-    Parse.PrintAst.print_expr_node' 3 bind.vd_expr;
-    print_newline ()
+      Parse.PrintAst.print_expr_node' 3 bind.vd_expr;
+      print_newline ()
   in
   let typefn {symbol = bind; usages = _} =
     let rec join = function
-        | [] -> ""
-        | v :: vs -> "'" ^ v.item ^ " " ^ join vs
+      | [] -> ""
+      | v :: vs -> "'" ^ v.item ^ " " ^ join vs
     in let name = join bind.td_params ^ bind.td_name.item in
     Parse.PrintAst.p 2
-      ("TL_Type_Definition " ^ name)
+      ("<def type " ^ name ^ ">")
       bind.td_name.span;
     Parse.PrintAst.print_type_node' 3 bind.td_type;
     print_newline ()
@@ -56,7 +57,7 @@ let file_not_found_error path =
   |> Report.add_note (Printf.sprintf
     "try adding directory '%s%s' or\n\
     file '%s%s' to the search paths."
-    Filename.dir_sep path.item path.item Config.extension)
+    path.item Filename.dir_sep path.item Config.extension)
   |> Report.raise
 
 let cannot_import_from_dir_error dir span =
@@ -117,7 +118,7 @@ let find_dir_or_file path =
         try recurse_in_dir hd path
         with Not_found -> go tl
       end
-    | [] -> raise Not_found
+    | [] -> file_not_found_error (List.hd path) 
   in
   go search_dirs
 
@@ -138,69 +139,108 @@ let get_symbols_in_ast ast =
       let ident = Ident.Ident tdef.td_name.item in
       add_new_type t ident tdef
     | TL_Module (n, ast) ->
-      let ident = Ident.Ident n.item in
-      let mod_table = canonicalize_ast ident ast in
+      let mod_table = canon_ast n.item ast in
       merge_tables t mod_table
     | _ -> t
   in
   List.fold_left go Symboltable.empty ast
 
-let rec apply_import t (i, span) =
-  prerr_endline ("Import at line " ^ string_of_int i.i_kind.span.start.line);
-  (* find file and remainder of path *)
-  let file, path, mod_name = 
-    let kind, full_path, path' = find_dir_or_file i.i_path in
+let decide_on_file_and_path imp =
+  let kind, full_path, path' = find_dir_or_file imp.i_path in
 
-    (* if we found a directory, we must be importing a file *)
-    if kind = `Dir then begin
-      let dir = full_path in
-      let ident = match i.i_kind.item with
-        | IK_Simple ident -> ident
-        | _ ->
-          let span = (List.hd (List.rev i.i_path)).span in
-          cannot_import_from_dir_error dir span
-      in
-      let file_basename = Filename.concat dir ident.item in
-      let file_path =
-        (* if there was no dir we haven't checked
-        in which search dir the imported file belongs *)
-        if dir = "" then find_file file_basename ident.span
-        else file_basename ^ Config.extension
-      in
-      file_path, path', ident.item
-    end else
-      full_path, path', (List.hd (List.rev i.i_path)).item
+  (* if we found a directory, we must be importing a file *)
+  if kind = `Dir then begin
+    let dir = full_path in
+    let ident = match imp.i_kind.item with
+      | IK_Simple ident -> ident
+      | _ ->
+        let span = (List.hd (List.rev imp.i_path)).span in
+        cannot_import_from_dir_error dir span
+    in
+    let file_basename = Filename.concat dir ident.item in
+    let file_path =
+      (* if there was no dir we haven't checked
+      in which search dir the imported file belongs *)
+      if dir = "" then find_file file_basename ident.span
+      else file_basename ^ Config.extension
+    in
+    file_path, path'
+  end else
+    full_path, path'
+
+let rec extract_submodule table mod_name = function
+  | hd :: tl ->
+    if not (check_submodule table hd.item) then
+      let e = Type_error (Has_no_symbol (mod_name, "submodule", hd.item)) in
+      Report.make_error e (Some hd.span)
+      |> Report.raise
+    else
+      let table' = extract_prefixed table hd.item in
+      extract_submodule table' hd.item tl
+  | [] -> table, mod_name
+    
+let find_and_add_value_or_type src old_ident dest new_ident =
+  (* TODO: allow importing both *)
+  try add_value_entry dest new_ident (get_value src old_ident)
+  with Not_found ->
+    add_type_entry dest new_ident (get_type src old_ident)
+
+let rec apply_import _mod_name table (imp, span) =
+  (* find file and remainder of path *)
+  let file, path = decide_on_file_and_path imp in
+  let imp_mod_name = Filename.(chop_extension (basename file)) in
+  
+  (* parse and get symbols from the file *)
+  let raw_imp_table = !get_ast_symbol_table file span in 
+  let imp_table = canon_table imp_mod_name raw_imp_table in
+
+  (* merge tables to preserve all symbols *)
+  let table' = merge_tables table imp_table in
+  
+  (* allow nested imports *)
+  let rec finish destt srct mod_name path kind =
+    (* apply the path *)
+    let res_table, mod_name' = extract_submodule srct mod_name path in
+
+    (* apply the import kind *)
+    match kind.item with
+      | IK_Simple n -> begin
+          let old_ident = from_list (nmapi path @ [n.item]) in
+          let new_ident = Ident n.item in
+          try find_and_add_value_or_type res_table old_ident destt new_ident
+          with Not_found -> mod_has_no_symbol_error mod_name' "symbol" n
+        end
+      | IK_Glob ->
+        let res_table' = extract_prefixed res_table mod_name in
+        merge_tables destt res_table'
+      | IK_Rename (on, nn) -> begin
+          let old_ident = from_list (nmapi path @ [on.item]) in
+          let new_ident = Ident nn.item in
+          try find_and_add_value_or_type res_table old_ident destt new_ident
+          with Not_found -> mod_has_no_symbol_error mod_name' "symbol" on
+        end
+      | IK_Nested imps ->
+        let f srct' imp = finish destt srct' mod_name' imp.i_path imp.i_kind in
+        List.fold_left f res_table (nmapi imps)
   in
-  prerr_endline ("File: " ^ file);
-  prerr_endline ("Module name: " ^ mod_name);
-  
-  (* parse and resolve the file *)
-  let ast = !get_ast_fn file span in 
-  prerr_endline "Parsed:";
-  Parse.PrintAst.print_ast' 1 ast;
-  let imported_table = canonicalize_ast (Ident.Ident mod_name) ast in
-  print_ast_table imported_table;
-  
-  (* apply the path *)
-  prerr_endline ("Remaining Path: " ^ String.concat "::" (nmapi path));
-  
-  prerr_newline ();
-  t
+
+  (* if we're importing a file the IK_Simple is already handled *)
+  let i_kind' = if path <> [] then imp.i_kind else {imp.i_kind with item = IK_Glob} in
+  let new_table = finish table' imp_table imp_mod_name path i_kind' in
+  merge_tables table new_table
 
 and resolve mod_name (ast : ast) : ast_symbol_table =
-  let table = canonicalize_ast mod_name ast in
+  let table = get_symbols_in_ast ast in
   let imports =
     let rec go acc = function
       | {item = TL_Import i; span} :: tls -> go (acc @ [i, span]) tls
-      | _ :: tls -> go acc tls 
+      | _ :: tls -> go acc tls
       | [] -> acc
     in
     go [] ast
   in
   let try_apply_import t i =
-    try apply_import t i
-    with Report.Error e ->
-      Report.report e;
-      t
+    try apply_import mod_name t i
+    with Report.Error e -> Report.report e; t
   in
   List.fold_left try_apply_import table imports

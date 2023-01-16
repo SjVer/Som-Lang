@@ -4,7 +4,7 @@ open Ident
 
 let mk_g n i = {span = {n.span with ghost = true}; item = i}
 
-let canon_name m name = Cons (m, name)
+let canon_name m name = Cons (m, Ident name)
 let canon_ident m ident = Ident.prepend m ident
 let canon_ident' m inode = mk_g inode (canon_ident m inode.item)
 
@@ -52,9 +52,37 @@ let rec canon_toplevel m t tl =
       let tdef' = {tdef with td_type = canon_type m tdef.td_type} in
       add_new_type t ident tdef'
     | TL_Module (n, ast) ->
-      let ident = Ident n.item in
-      List.fold_left (canon_toplevel ident) t ast
+      let subtable = List.fold_left (canon_toplevel n.item) empty ast in
+      let value_fn i e map =
+        let vd_expr = canon_expr m e.symbol.vd_expr in
+        let symbol = {e.symbol with vd_expr} in
+        IMap.add (Cons (m, i)) {e with symbol} map
+      in
+      let type_fn i e map =
+        let td_type = canon_type m e.symbol.td_type in
+        let symbol = {e.symbol with td_type} in
+        IMap.add (Cons (m, i)) {e with symbol} map
+      in
+      let values = IMap.fold value_fn subtable.values IMap.empty in
+      let types = IMap.fold type_fn subtable.types IMap.empty in
+      merge_tables t {values; types}
     | _ -> t
 
-let canonicalize_ast m ast =
+let canon_ast m ast =
   List.fold_left (canon_toplevel m) Symboltable.empty ast
+
+let canon_table m table =
+  let value_fn k e map =
+    let vd_expr = canon_expr m e.symbol.vd_expr in
+    let symbol = {e.symbol with vd_expr} in
+    IMap.add (canon_ident m k) {e with symbol} map
+  in
+  let type_fn k e map =
+    let td_type = canon_type m e.symbol.td_type in
+    let symbol = {e.symbol with td_type} in
+    IMap.add (canon_ident m k) {e with symbol} map
+  in
+
+  let values = IMap.fold value_fn table.values IMap.empty in
+  let types = IMap.fold type_fn table.types IMap.empty in
+  {values; types}

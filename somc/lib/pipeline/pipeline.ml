@@ -30,7 +30,7 @@ module AnalyzeFile = Query.Make(struct
   type r = Analysis.ast_symbol_table
   let c (f, i) =
     let ast = ParseFile.call (f, i) in
-    let mod_name = Filename.chop_extension (Filename.basename f) in
+    let mod_name = Filename.(chop_extension (basename f)) in
     Analysis.resolve mod_name ast
 end)
 
@@ -54,7 +54,7 @@ end)
    have to solve dependency cycles *)
 let init () =
   Report.Util.read_file_fn := (fun f -> ReadFile.call (f, None));
-  Analysis.Name_resolution.get_ast_fn := fun f s ->
-    ParseFile.call (f, (Some s))
+  Analysis.Name_resolution.get_ast_symbol_table := fun f s ->
+    AnalyzeFile.call (f, Some s)
 
 let () = init ()

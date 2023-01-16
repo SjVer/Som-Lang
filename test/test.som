@@ -1,7 +1,4 @@
 use module
+from module use bar
 
--- type IntToInt is Int -> Int
-
--- let id x : IdFn = x
-
--- let main _ = id error
+let baz = bar

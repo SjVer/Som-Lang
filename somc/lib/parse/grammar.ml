@@ -44,6 +44,15 @@ let try_and_skip_until p parsefn until default =
     skip_until until p;
     mk p.previous.span default
 
+let consume_ident p =
+  if matsch (dummy `LOWERNAME) p then
+    mk_t (unpack_str p.previous.typ) p.previous
+  else
+    try error_at_current p (Expected "an identifier") []
+    with Failed ->
+      let t = mk_t "<parse error>" p.previous in
+      i (advance p) &> t
+
 (* =========================== toplevel =========================== *)
 
 let rec parse_file p : ast =
@@ -60,6 +69,7 @@ let rec parse_file p : ast =
 and toplevel p : toplevel node =
   let start_s = (current p).span in
   let tl = match current_t p with
+    | MOD -> toplevel_module p
     | USE -> toplevel_import_normal p
     | FROM -> toplevel_import_from p
     | LET -> toplevel_value_definition p
@@ -70,6 +80,14 @@ and toplevel p : toplevel node =
   mk s tl
 
 (* TODO: `use ... as ...` *)
+
+and toplevel_module p : toplevel =
+  i (advance p);
+  let name = consume_ident p in
+  i (consume LBRACE "\"{\"" p);
+  let tls = many p (fun p -> not (check RBRACE p)) toplevel in
+  i (consume RBRACE "\"}\"" p);
+  TL_Module (name, tls)
 
 and toplevel_import_normal p : toplevel =
   i (advance p);
@@ -96,16 +114,7 @@ and toplevel_import_from p : toplevel =
 
 and toplevel_value_definition p : toplevel =
   i (advance p);
-  (* name *)
-  let vd_name =
-    if matsch (dummy `LOWERNAME) p then
-      mk_t (unpack_str p.previous.typ) p.previous
-    else
-      try error_at_current p (Expected "an identifier") []
-      with Failed ->
-        let t = mk_t "<parse error>" p.previous in
-        i (advance p) &> t
-  in
+  let vd_name = consume_ident p in
   
   (* expression *)
   let (t, e) = strict_binding p expression EQUAL "=" in

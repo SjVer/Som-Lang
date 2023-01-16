@@ -1,5 +1,5 @@
-module Ident = Symboltable.Ident
 open Typing.Types
+open Symboltable.Ident
 
 (*
   Identifier mangling:
@@ -8,12 +8,11 @@ open Typing.Types
     foo::bar -> "foo..bar"
 *)
 
-let mangle_ident = String.map (fun c -> if c = '\'' then '.' else c)
+let mangle_str = String.map (fun c -> if c = '\'' then '.' else c)
 
-let rec mangle_path = function
-  | Ident.Ident i -> mangle_ident i
-  | Ident.Cons (p, i) ->
-    mangle_path p ^ ".." ^ mangle_ident i
+let rec mangle_ident = function
+  | Ident i -> mangle_str i
+  | Cons (hd, tl) -> mangle_str hd ^ ".." ^ mangle_ident tl
 
 (*
   Type mangling:
@@ -32,7 +31,7 @@ let mangle_prim_type = function
   | PVoid -> "v"
 
 let rec mangle_type = function
-  | TName p -> mangle_path p
+  | TName p -> mangle_ident p
   | TPrim p -> "P$" ^ mangle_prim_type p
   | TEff t -> "E$" ^ mangle_type t
   | TApp (a, t) -> "A$" ^ mangle_type a ^ "$" ^ mangle_type t ^ "$."
@@ -46,5 +45,5 @@ let rec mangle_type = function
     foo: Int -> Float   -> "_Sfoo$$F$Int$Flt$."
 *)
 
-let mangle_symbol path typ =
-  "_S$" ^ mangle_path path ^ "$$" ^ mangle_type typ
+let mangle_symbol ident typ =
+  "_S$" ^ mangle_ident ident ^ "$$" ^ mangle_type typ

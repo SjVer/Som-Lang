@@ -4,7 +4,7 @@
 - Replace typechecker input with symbol table instead of AST
 - Rework typechecker symbol handling
 <br>
-- Find better way to find module name (Pipeline.Analyzefile)
+- Fix issue where value used in submodule is canonicalized wrongly
 <br>
 - Switch to toplevel external decl instead of implicit
 <br>
