@@ -1,54 +1,13 @@
 open Parse.Ast
 open Report.Error
 open Symboltable
+open Scope
 open Ident
-open Canonicalize
-
-(* 
-  algorithm pseudocode:
-  
-  let resolve ast =
-      symbol_table table;
-      (import, symbol_table) imports;
-
-      for tl in ast:
-        if tl is import statement:
-          imports += tl.import, resolve imported_ast
-        else:
-          add_to_table_by_absolute_path tl
-      
-      for (im, im_table) in imports:
-        apply_import im im_table to table
-*)
-
-type ast_symbol_table = (value_definition, type_definition) symbol_table
 
 let get_ast_symbol_table:
-  (string -> Span.t -> ast_symbol_table) ref =
+  (string -> Ident.t -> Span.t -> ast_symbol_table) ref =
   ref (fun _ -> assert false)
 
-let print_ast_table (table : ast_symbol_table) =
-  let open Symboltable in
-  let valuefn {symbol = bind; usages = _} =
-    Parse.PrintAst.p 2
-      ("<def value " ^ bind.vd_name.item ^ ">")
-      bind.vd_name.span;
-      Parse.PrintAst.print_expr_node' 3 bind.vd_expr;
-      print_newline ()
-  in
-  let typefn {symbol = bind; usages = _} =
-    let rec join = function
-      | [] -> ""
-      | v :: vs -> "'" ^ v.item ^ " " ^ join vs
-    in let name = join bind.td_params ^ bind.td_name.item in
-    Parse.PrintAst.p 2
-      ("<def type " ^ name ^ ">")
-      bind.td_name.span;
-    Parse.PrintAst.print_type_node' 3 bind.td_type;
-    print_newline ()
-  in
-  print_table table valuefn typefn
-  
 (* error helper functions *)
 
 let file_not_found_error path =
@@ -130,21 +89,6 @@ let find_file full_path span =
 
 (* main functionality *)
 
-let get_symbols_in_ast ast =
-  let go t tl = match tl.item with
-    | TL_Value_Definition vdef ->
-      let ident = Ident.Ident vdef.vd_name.item in
-      add_new_value t ident vdef
-    | TL_Type_Definition tdef ->
-      let ident = Ident.Ident tdef.td_name.item in
-      add_new_type t ident tdef
-    | TL_Module (n, ast) ->
-      let mod_table = canon_ast n.item ast in
-      merge_tables t mod_table
-    | _ -> t
-  in
-  List.fold_left go Symboltable.empty ast
-
 let decide_on_file_and_path imp =
   let kind, full_path, path' = find_dir_or_file imp.i_path in
 
@@ -168,71 +112,85 @@ let decide_on_file_and_path imp =
   end else
     full_path, path', false
 
-let rec extract_submodule table mod_name = function
+let rec extract_submodule scope mod_name = function
   | hd :: tl ->
-    if not (check_submodule table hd.item) then
+    if not (check_submodule scope.table hd.item) then
       let e = Type_error (Has_no_symbol (mod_name, "submodule", hd.item)) in
       Report.make_error e (Some hd.span)
       |> Report.raise
     else
-      let table' = extract_prefixed table hd.item in
-      extract_submodule table' hd.item tl
-  | [] -> table, mod_name
+      let scope' = Scope.extract_prefixed scope hd.item in
+      extract_submodule scope' hd.item tl
+  | [] -> scope, mod_name
     
 let find_and_add_value_or_type src old_ident dest new_ident =
   (* TODO: allow importing both *)
-  try add_value_entry dest new_ident (get_value src old_ident)
+  (* TODO: just add a binding in the map instead of copying the entry *)
+  (* TODO: allow importing submodules *)
+  let go f entry = 
+    let table = f dest.table new_ident entry in
+    {dest with table}
+  in
+  try
+    go add_value_entry (get_value src.table old_ident)
   with Not_found ->
-    add_type_entry dest new_ident (get_type src old_ident)
+    go add_type_entry (get_type src.table old_ident)
 
-let rec apply_import _mod_name table (imp, span) =
+let apply_import scope (imp, span) =
   (* find file and remainder of path *)
   let file, path, importing_file = decide_on_file_and_path imp in
   let imp_mod_name = Filename.(chop_extension (basename file)) in
   
   (* parse and get symbols from the file *)
-  let raw_imp_table = !get_ast_symbol_table file span in 
-  let imp_table = canon_table imp_mod_name raw_imp_table in
+  let imp_mod_ident = Ident.append_opt scope.name (Ident imp_mod_name) in
+  let imp_table = !get_ast_symbol_table file imp_mod_ident span in
+  let imp_scope =
+    {
+      (Scope.empty (append_opt scope.name (Ident imp_mod_name)))
+      with table = imp_table
+    }
+  in
+  print imp_scope;
 
   (* merge tables to preserve all symbols *)
-  let table' = merge_tables table imp_table in
+  let scope' = Scope.add_table scope imp_table in
   
   (* allow nested imports *)
-  let rec finish destt srct mod_name path kind =
+  let rec finish dests srcs mod_name path kind : scope =
     (* apply the path *)
-    let res_table, mod_name' = extract_submodule srct mod_name path in
-
+    let srcs', mod_name' = extract_submodule srcs mod_name path in
+    print srcs';
+    
     (* apply the import kind *)
     match kind.item with
       | IK_Simple n -> begin
           let old_ident = from_list (nmapi path @ [n.item]) in
           let new_ident = Ident n.item in
-          try find_and_add_value_or_type res_table old_ident destt new_ident
+          try find_and_add_value_or_type srcs' old_ident dests new_ident
           with Not_found -> mod_has_no_symbol_error mod_name' "symbol" n
         end
       | IK_Glob ->
-        let res_table' = extract_prefixed res_table mod_name in
-        merge_tables destt res_table'
+        let imp_scope' = extract_prefixed imp_scope mod_name in
+        Scope.merge_scopes dests imp_scope'
       | IK_Rename (on, nn) -> begin
           let old_ident = from_list (nmapi path @ [on.item]) in
           let new_ident = Ident nn.item in
-          try find_and_add_value_or_type res_table old_ident destt new_ident
+          try find_and_add_value_or_type srcs' old_ident dests new_ident
           with Not_found -> mod_has_no_symbol_error mod_name' "symbol" on
         end
       | IK_Nested imps ->
-        let f srct' imp = finish destt srct' mod_name' imp.i_path imp.i_kind in
-        List.fold_left f res_table (nmapi imps)
+        let f scope'' imp = finish dests scope'' mod_name' imp.i_path imp.i_kind in
+        List.fold_left f srcs' (nmapi imps)
   in
 
   (* if we're importing a file the IK_Simple is already handled *)
   if importing_file then
-    table' (* the tables are already merged *)
+    scope' (* the tables are already merged *)
   else
-    let new_table = finish table' imp_table imp_mod_name path imp.i_kind in
-    merge_tables table new_table
+    finish scope' imp_scope imp_mod_name path imp.i_kind
 
-and resolve mod_name (ast : ast) : ast_symbol_table =
-  let table = get_symbols_in_ast ast in
+let gather_and_apply_imports scope ast =
+  (* gather imports *)
   let imports =
     let rec go acc = function
       | {item = TL_Import i; span} :: tls -> go (acc @ [i, span]) tls
@@ -241,8 +199,19 @@ and resolve mod_name (ast : ast) : ast_symbol_table =
     in
     go [] ast
   in
-  let try_apply_import t i =
-    try apply_import mod_name t i
-    with Report.Error e -> Report.report e; t
+
+  (* apply imports *)
+  let try_apply_import s i =
+    try apply_import s i
+    with Report.Error e -> Report.report e; s
   in
-  List.fold_left try_apply_import table imports
+  List.fold_left try_apply_import scope imports
+
+let resolve mod_ident is_imp ast : ast_symbol_table =
+  let scope =
+    if is_imp then Scope.empty mod_ident
+    else Scope.nameless_empty
+  in
+  let scope' = gather_and_apply_imports scope ast in
+  let scope'' = Canonicalize.canon_ast scope' ast in
+  scope''.table

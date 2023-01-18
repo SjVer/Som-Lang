@@ -6,7 +6,7 @@
       {
         "id": "ff0b28f1d022cd77",
         "type": "tabs",
-        "dimension": 60.29143897996357,
+        "dimension": 60.291438979963566,
         "children": [
           {
             "id": "190bb5baca9e7836",
@@ -37,7 +37,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ignore/TODO.md",
+                "file": "ignore/Name Resolution.md",
                 "mode": "source",
                 "source": false
               }
@@ -109,7 +109,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "ignore/TODO.md",
+                "file": "ignore/Name Resolution.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -126,7 +126,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "ignore/TODO.md",
+                "file": "ignore/Name Resolution.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -149,7 +149,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "ignore/TODO.md"
+                "file": "ignore/Name Resolution.md"
               }
             }
           }
@@ -172,9 +172,9 @@
   },
   "active": "0e18de6e3db6ac0b",
   "lastOpenFiles": [
+    "ignore/TODO.md",
     "ignore/Name Resolution.canvas",
     "ignore/Name Resolution.md",
-    "ignore/TODO.md",
     "Untitled.canvas",
     "Name Resolution.canvas"
   ]

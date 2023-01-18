@@ -1,3 +1,5 @@
+module Ident = Symboltable.Ident
+
 module ReadFile = Query.Make(struct
   type a = string * Span.t option
   type r = string
@@ -26,19 +28,27 @@ module ParseFile = Query.Make(struct
 end)
 
 module AnalyzeFile = Query.Make(struct
-  type a = string * Span.t option
+  type a = string * Ident.t option * Span.t option
   type r = Analysis.ast_symbol_table
-  let c (f, i) =
+  let c (f, m, i) =
+    (* if [m] ("module") is the ident of
+       the module that's importing this one.
+       if [m] is None we're not importing. *)
     let ast = ParseFile.call (f, i) in
-    let mod_name = Filename.(chop_extension (basename f)) in
-    Analysis.resolve mod_name ast
+    let mod_ident, is_imp = match m with
+      | Some mod_ident -> mod_ident, true
+      | None ->
+        let basename = Filename.(chop_extension (basename f)) in
+        Ident.Ident basename, false
+    in
+    Analysis.resolve mod_ident is_imp ast
 end)
 
 module TypecheckFile = Query.Make(struct
   type a = string
   type r = Typing.TAst.tast
   let c f =
-    let _table = AnalyzeFile.call (f, None) in
+    let _table = AnalyzeFile.call (f, None, None) in
     (* let table' = if (!Config.Cli.args).no_prelude
       then table
       else Analysis.add_implicit_prelude table
@@ -54,7 +64,7 @@ end)
    have to solve dependency cycles *)
 let init () =
   Report.Util.read_file_fn := (fun f -> ReadFile.call (f, None));
-  Analysis.Name_resolution.get_ast_symbol_table := fun f s ->
-    AnalyzeFile.call (f, Some s)
+  Analysis.Name_resolution.get_ast_symbol_table := fun f m s ->
+    AnalyzeFile.call (f, Some m, Some s)
 
 let () = init ()

@@ -152,7 +152,7 @@ let () =
     let ast = Pipeline.ParseFile.call ((!C.args).file, None) in
     Parse.PrintAst.print_ast ast
   else if args.print_rast then
-    let table = Pipeline.AnalyzeFile.call ((!C.args).file, None) in
+    let table = Pipeline.AnalyzeFile.call ((!C.args).file, None, None) in
     Analysis.print_ast_table table
   else if args.print_tast then
     Typing.PrintTAst.print_tast (

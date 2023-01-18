@@ -9,6 +9,9 @@ type 'a entry =
     usages: Span.t list;
   }
 
+(* NOTE: constructors can be stored as values
+   as their names can never collide (uppercase) *)
+
 type ('v, 't) t =
   {
     values: 'v entry IMap.t;
@@ -57,15 +60,6 @@ let merge_tables t1 t2 =
   let types = IMap.fold IMap.add t1.types t2.types in
   {values; types}
 
-let filter_prefix table prefix =
-  let f k _ = match k with
-    | Cons (hd, _) -> hd = prefix
-    | _ -> false
-  in
-  let values = IMap.filter f table.values in
-  let types = IMap.filter f table.types in
-  {values; types}
-
 let check_submodule table ident =
   let keys map = List.map fst (IMap.bindings map) in
   let idents = keys table.values @ keys table.types in
@@ -74,18 +68,6 @@ let check_submodule table ident =
     | _ -> false
   in
   List.exists f idents
-
-let extract_prefixed table prefix =
-  (* TODO: contents aren't handled *)
-  let table' = filter_prefix table prefix in
-  let f k e m = match k with
-    | Cons (hd, tl) when hd = prefix ->
-      IMap.add tl e m
-    | _ -> assert false
-  in
-  let values = IMap.fold f table'.values IMap.empty in
-  let types = IMap.fold f table'.types IMap.empty in
-  {values; types}
 
 let print_table table value_fn type_fn =
   print_endline "Values:";
