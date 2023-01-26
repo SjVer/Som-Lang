@@ -42,8 +42,7 @@ type t =
     name: Ident.t option;
     map: Ident.t IMap.t;
     table: ast_symbol_table;
-  }
-
+  } 
 type scope = t
 
 let empty name =
@@ -53,6 +52,8 @@ let empty name =
     table = Symboltable.empty;
   }
 
+(* TODO: remove namelessness and use
+   extract_prefixed somewhere? *)
 let nameless_empty =
   {
     name = None;
@@ -127,16 +128,24 @@ let merge_scopes s1 s2 =
     table = merge_tables s1.table s2.table;
   }
 
+let check_prefix s prefix =
+  let keys map = List.map fst (IMap.bindings map) in
+  let idents = keys s.map @ keys s.table.values @ keys s.table.types
+  and f = function
+    | Cons (hd, _) -> hd = prefix
+    | _ -> false
+  in
+  List.exists f idents
+
 let extract_prefixed s prefix =
   let filter k _ = match k with
-    | Cons (_, Cons (hd, _)) when hd = prefix -> true
+    | Cons (hd, _) when hd = prefix -> true
     | _ -> false
   and fold k e m = match k with
-    | Cons (_, Cons (hd, tl)) when hd = prefix -> IMap.add tl e m
+    | Cons (hd, tl) when hd = prefix -> IMap.add tl e m
     | _ -> assert false
   in
   let f m = IMap.fold fold (IMap.filter filter m) IMap.empty in
-
   {
     name = Some (Ident prefix);
     table =

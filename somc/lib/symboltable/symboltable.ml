@@ -56,14 +56,14 @@ let use_type table ident span =
   
 (* will overwrite entries in [t1] with [t2] *)
 let merge_tables t1 t2 =
-  let values = IMap.fold IMap.add t1.values t2.values in
-  let types = IMap.fold IMap.add t1.types t2.types in
+  let values = IMap.fold IMap.add t1.values t2.values
+  and types = IMap.fold IMap.add t1.types t2.types in
   {values; types}
 
 let check_submodule table ident =
   let keys map = List.map fst (IMap.bindings map) in
-  let idents = keys table.values @ keys table.types in
-  let f = function
+  let idents = keys table.values @ keys table.types
+  and f = function
     | Cons (_, Cons (hd, _)) -> hd = ident
     | _ -> false
   in

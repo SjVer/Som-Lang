@@ -1,6 +1,4 @@
 -- from module use bar
-use module::sub::bar
--- doesn't work?
 use module::sub::subsub::bar
 
 let baz = bar

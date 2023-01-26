@@ -114,12 +114,16 @@ let decide_on_file_and_path imp =
 
 let rec extract_submodule scope mod_name = function
   | hd :: tl ->
-    if not (check_submodule scope.table hd.item) then
+    (* print_endline ("CHECKING SCOPE FOR " ^ hd.item);
+    print scope; *)
+    if not (Scope.check_prefix scope hd.item) then
       let e = Type_error (Has_no_symbol (mod_name, "submodule", hd.item)) in
       Report.make_error e (Some hd.span)
       |> Report.raise
     else
       let scope' = Scope.extract_prefixed scope hd.item in
+      (* print_endline ("EXTRACTED SCOPE " ^ hd.item ^ " REST " ^ String.concat "::" (nmapi tl));
+      print scope'; *)
       extract_submodule scope' hd.item tl
   | [] -> scope, mod_name
     
@@ -150,6 +154,7 @@ let apply_import scope (imp, span) =
       with table = imp_table
     }
   in
+  print_endline "IMPORTED SCOPE";
   print imp_scope;
 
   (* merge tables to preserve all symbols *)
@@ -158,15 +163,17 @@ let apply_import scope (imp, span) =
   (* allow nested imports *)
   let rec finish dests srcs mod_name path kind : scope =
     (* apply the path *)
-    let srcs', mod_name' = extract_submodule srcs mod_name path in
-    print srcs';
+    let srcs = Scope.extract_prefixed srcs mod_name in
+    let srcs, mod_name' = extract_submodule srcs mod_name path in
+    print_endline "RESOLVED SCOPE";
+    print srcs;
     
     (* apply the import kind *)
     match kind.item with
       | IK_Simple n -> begin
           let old_ident = from_list (nmapi path @ [n.item]) in
           let new_ident = Ident n.item in
-          try find_and_add_value_or_type srcs' old_ident dests new_ident
+          try find_and_add_value_or_type srcs old_ident dests new_ident
           with Not_found -> mod_has_no_symbol_error mod_name' "symbol" n
         end
       | IK_Glob ->
@@ -175,12 +182,12 @@ let apply_import scope (imp, span) =
       | IK_Rename (on, nn) -> begin
           let old_ident = from_list (nmapi path @ [on.item]) in
           let new_ident = Ident nn.item in
-          try find_and_add_value_or_type srcs' old_ident dests new_ident
+          try find_and_add_value_or_type srcs old_ident dests new_ident
           with Not_found -> mod_has_no_symbol_error mod_name' "symbol" on
         end
       | IK_Nested imps ->
         let f scope'' imp = finish dests scope'' mod_name' imp.i_path imp.i_kind in
-        List.fold_left f srcs' (nmapi imps)
+        List.fold_left f srcs (nmapi imps)
   in
 
   (* if we're importing a file the IK_Simple is already handled *)
