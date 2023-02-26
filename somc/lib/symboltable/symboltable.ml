@@ -6,7 +6,7 @@ open Ident
 type 'a entry =
   {
     symbol: 'a;
-    usages: Span.t list;
+    mutable uses: Span.t list;
   }
 
 (* NOTE: constructors can be stored as values
@@ -35,24 +35,22 @@ let add_type_entry table ident entry =
   {table with types = IMap.add ident entry table.types}
 
 let add_new_value table ident symbol =
-  let entry = {symbol; usages = []} in
+  let entry = {symbol; uses = []} in
   {table with values = IMap.add ident entry table.values}
 
 let add_new_type table ident symbol =
-  let entry = {symbol; usages = []} in
+  let entry = {symbol; uses = []} in
   {table with types = IMap.add ident entry table.types}
 
 (* might raise Not_found *)
 let use_value table ident span =
   let entry = get_value table ident in
-  let entry' = {entry with usages = entry.usages @ [span]} in
-  {table with values = IMap.add ident entry' table.values}
+  entry.uses <- entry.uses @ [span]
 
 (* might raise Not_found *)
 let use_type table ident span =
   let entry = get_type table ident in
-  let entry' = {entry with usages = entry.usages @ [span]} in
-  {table with types = IMap.add ident entry' table.types}
+  entry.uses <- entry.uses @ [span]
   
 (* will overwrite entries in [t1] with [t2] *)
 let merge_tables t1 t2 =
@@ -75,7 +73,8 @@ let print_table table value_fn type_fn =
     print_endline "\t<none>"
   else
     IMap.iter begin fun i v ->
-      Printf.printf "\t%s:\n" (to_string i);
+      let u = List.length v.uses in
+      Printf.printf "\t%s: (%d uses)\n" (to_string i) u;
       value_fn v;
     end table.values;
     

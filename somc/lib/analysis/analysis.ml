@@ -1,6 +1,7 @@
 open Parse.Ast
 
 module Import = Import
+module IMap = Context.IMap
 
 type ast_symbol_table = Context.ast_symbol_table
 let print_ast_table = Context.print_ast_table
@@ -29,6 +30,6 @@ let add_implicit_prelude ast =
   List.map node tls @ ast
 
 let resolve mod_ident (ast : ast) : ast_symbol_table =
-  Constant_fold.fold_constants ast |>
-  Builtins.rename_builtins |>
-  Name_resolution.resolve mod_ident
+  Constant_fold.fold_constants ast
+  |> Builtins.rename_builtins
+  |> Name_resolution.resolve mod_ident

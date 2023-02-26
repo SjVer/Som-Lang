@@ -22,13 +22,15 @@ let rec resolve_expr ctx expr =
 
     | EX_Construct (i, es) -> begin try
         let i' = Context.lookup_qual_value_ident ctx i.item in
+        Symboltable.use_value ctx.table i' i.span;
         EX_Construct ({i with item = i'}, List.map go es)
       with Not_found ->
         use_of_unbound_error "constructor" i.item i.span;
         EX_Error
       end
     | EX_Identifier i -> begin try
-        let i' = Context.lookup_qual_value_ident ctx i.item in
+      let i' = Context.lookup_qual_value_ident ctx i.item in
+      Symboltable.use_value ctx.table i' i.span;
         EX_Identifier {i with item = i'}
       with Not_found ->
         use_of_unbound_error "value" i.item i.span;

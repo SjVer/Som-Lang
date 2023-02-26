@@ -131,6 +131,34 @@ let import_symbol src_ctx src_path dest_ctx dest_ident =
     let src_ident' = {item = Ident.to_string src_ident; span} in
     mod_has_no_symbol_error src_ctx.name "symbol" src_ident'
 
+let rec apply_import_kind dest_ctx mod_ctx kind =
+  match kind.item with
+    | IK_Module ->
+      (* preprend all bindings in the module *)
+      let f k d m = IMap.add (Ident.prepend mod_ctx.name k) d m in
+      let value_map = IMap.fold f mod_ctx.value_map dest_ctx.value_map in
+      let type_map = IMap.fold f mod_ctx.type_map dest_ctx.type_map in
+      {dest_ctx with value_map; type_map}
+
+    | IK_Simple p ->
+      (* use `a::b::c` import `c`, not `a::b::c` *)
+      let ident = Ident.Ident (List.hd (List.rev p)).item in
+      import_symbol mod_ctx p dest_ctx ident
+
+    | IK_Glob ->
+      (* copy over all bindings *)
+      let value_map = IMap.fold IMap.add mod_ctx.value_map dest_ctx.value_map in
+      let type_map = IMap.fold IMap.add mod_ctx.type_map dest_ctx.type_map in
+      {dest_ctx with value_map; type_map}
+
+    | IK_Rename (p, n) ->
+      let new_ident = Ident.Ident n.item in
+      import_symbol mod_ctx p dest_ctx new_ident
+      
+    | IK_Nested kinds ->
+      let f ctx' kind' = apply_import_kind ctx' mod_ctx kind' in
+      List.fold_left f dest_ctx kinds
+
 let apply_import ctx (imp, span) =
   (* find file and remainder of path *)
   let file, path, _importing_file = decide_on_file_and_path imp in
@@ -141,44 +169,16 @@ let apply_import ctx (imp, span) =
   let imp_table = !get_ast_symbol_table file imp_mod_ident span in
 
   (* merge tables AND bindings temporarily *)
-  let tmp_ctx = Context.add_table ctx imp_table in
+  let tmp_ctx = Context.add_table ctx imp_table true in
+  (* the final context will not need all the bindings *)
+  let ret_ctx = Context.add_table ctx imp_table false in
   
-  (* allow nested imports *)
-  let rec apply_import_kind dest_ctx mod_ctx kind =
-    match kind.item with
-      | IK_Module ->
-        (* preprend all bindings in the module *)
-        let f k d m = IMap.add (Ident.prepend mod_ctx.name k) d m in
-        let value_map = IMap.fold f mod_ctx.value_map dest_ctx.value_map in
-        let type_map = IMap.fold f mod_ctx.type_map dest_ctx.type_map in
-        {dest_ctx with value_map; type_map}
-
-      | IK_Simple p ->
-        (* use `a::b::c` import `c`, not `a::b::c` *)
-        let ident = Ident.Ident (List.hd (List.rev p)).item in
-        import_symbol mod_ctx p dest_ctx ident
-
-      | IK_Glob ->
-        (* copy over all bindings *)
-        let value_map = IMap.fold IMap.add mod_ctx.value_map dest_ctx.value_map in
-        let type_map = IMap.fold IMap.add mod_ctx.type_map dest_ctx.type_map in
-        {dest_ctx with value_map; type_map}
-
-      | IK_Rename (p, n) ->
-        let new_ident = Ident.Ident n.item in
-        import_symbol mod_ctx p dest_ctx new_ident
-        
-      | IK_Nested kinds ->
-        let f ctx' kind' = apply_import_kind ctx' mod_ctx kind' in
-        List.fold_left f dest_ctx kinds
-  in
-
   let mod_path =
     if path = [] then imp_mod_ident
     else Ident.append imp_mod_ident (Ident.from_list (nmapi path))
   in
   let mod_ctx = Context.extract_subcontext tmp_ctx mod_path in
-  apply_import_kind ctx mod_ctx imp.i_kind
+  apply_import_kind ret_ctx mod_ctx imp.i_kind
 
 let gather_and_apply_imports scope ast =
   (* gather imports *)

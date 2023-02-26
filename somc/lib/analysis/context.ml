@@ -7,14 +7,14 @@ type ast_symbol_table = (value_definition, type_definition) Symboltable.t
 
 let print_ast_table (table : ast_symbol_table) =
   let open Symboltable in
-  let valuefn {symbol = bind; usages = _} =
+  let valuefn {symbol = bind; uses = _} =
     Parse.PrintAst.p 2
       ("<def value " ^ bind.vd_name.item ^ ">")
       bind.vd_name.span;
       Parse.PrintAst.print_expr_node' 3 bind.vd_expr;
       print_newline ()
   in
-  let typefn {symbol = bind; usages = _} =
+  let typefn {symbol = bind; uses = _} =
     let rec join = function
       | [] -> ""
       | v :: vs -> "'" ^ v.item ^ " " ^ join vs
@@ -109,11 +109,17 @@ let bind_qual_type_ident ctx ident qual =
 
 (* ugly shit *)
 
-let add_table ctx table =
+let add_table ctx table bindings =
   let f k _ m = IMap.add k k m in
   let open Symboltable in
-  let value_map = IMap.fold f table.values ctx.value_map in
-  let type_map = IMap.fold f table.types ctx.type_map in
+  let value_map = if bindings then
+    IMap.fold f table.values ctx.value_map 
+    else ctx.value_map
+  in
+  let type_map = if bindings then
+    IMap.fold f table.types ctx.type_map
+    else ctx.type_map
+  in
   let table = merge_tables ctx.table table in
   {ctx with value_map; type_map; table}
 
