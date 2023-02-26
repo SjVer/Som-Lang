@@ -33,15 +33,15 @@ module AnalyzeFile = Query.Make(struct
   let c (f, m, i) =
     (* if [m] ("module") is the ident of
        the module that's importing this one.
-       if [m] is None we're not importing. *)
+       if [m] is None we're not importing.
+       the same counts for [i], an optional
+       span of the import statement. *)
     let ast = ParseFile.call (f, i) in
-    let mod_ident, is_imp = match m with
-      | Some mod_ident -> mod_ident, true
-      | None ->
-        let basename = Filename.(chop_extension (basename f)) in
-        Ident.Ident basename, false
+    let mod_ident = match m with
+      | Some mod_ident -> mod_ident
+      | None -> Ident.Ident Filename.(chop_extension (basename f))
     in
-    Analysis.resolve mod_ident is_imp ast
+    Analysis.resolve mod_ident ast
 end)
 
 module TypecheckFile = Query.Make(struct
@@ -64,7 +64,7 @@ end)
    have to solve dependency cycles *)
 let init () =
   Report.Util.read_file_fn := (fun f -> ReadFile.call (f, None));
-  Analysis.Name_resolution.get_ast_symbol_table := fun f m s ->
+  Analysis.Import.get_ast_symbol_table := fun f m s ->
     AnalyzeFile.call (f, Some m, Some s)
 
 let () = init ()

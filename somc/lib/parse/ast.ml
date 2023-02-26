@@ -37,12 +37,12 @@ and import =
     i_kind: import_kind node;
   } 
     
-(* TODO: use ... is importing a namespace only? *)
 and import_kind =
-  | IK_Simple of string node
+  | IK_Module
+  | IK_Simple of string node list
   | IK_Glob
-  | IK_Rename of string node * string node
-  | IK_Nested of import node list
+  | IK_Rename of string node list * string node
+  | IK_Nested of import_kind node list
   
 (* ====================== Pattern ====================== *)
 

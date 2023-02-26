@@ -1,3 +1,7 @@
-from module::sub::subsub use bar
+use module
 
-let baz = bar
+let foo2 = module::foo
+
+from module use sub::subsub::bar
+
+let bar2 = bar

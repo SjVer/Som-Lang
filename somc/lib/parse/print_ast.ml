@@ -140,18 +140,14 @@ and print_expr_node' i node =
 and print_import_kind_node' i node =
   let {span; item} = node in
   match item with
-    | IK_Simple n -> p i ("IK_Simple " ^ n.item) span
+    | IK_Module -> p i "IK_Module" span
+    | IK_Simple n -> p i ("IK_Simple " ^ show_path n) span
     | IK_Glob -> p i "IK_Glob" span
     | IK_Rename (s, d) ->
-      p i ("IK_Rename " ^ s.item ^ " as " ^ d.item) span
+      p i ("IK_Rename " ^ show_path s ^ " as " ^ d.item) span
     | IK_Nested is ->
       p i "IK_Nested" span;
-      let go {span; item = {i_path; i_kind}} =
-        let path' = if i_path <> [] then show_path i_path else "<no path>" in
-        p (i + 1) path' span;
-        print_import_kind_node' (i + 2) i_kind
-      in
-      List.iter go is
+      List.iter (print_import_kind_node' (i + 2)) is
 
 and print_toplevel_node' i node =
   let { span; item } = node in

@@ -18,16 +18,6 @@ let rec append ident suffix =
     | Ident s -> Cons (s, suffix)
     | Cons (s, l) -> Cons (s, append l suffix) 
 
-let prepend_opt prefix ident =
-  match ident with
-    | Some ident -> prepend prefix ident
-    | None -> prefix
-
-let append_opt ident suffix =
-  match ident with
-    | Some ident -> append ident suffix
-    | None -> suffix
-
 let rec from_list = function
   | [] -> invalid_arg "from_list"
   | i :: [] -> Ident i
@@ -38,3 +28,24 @@ let rec to_list = function
   | Cons (hd, tl) -> hd :: to_list tl
 
 let last i = List.hd (List.rev (to_list i))
+
+let has_prefix ident prefix =
+  let rec go i p =
+    match i, p with
+      | ihd :: itl, phd :: ptl when ihd = phd ->
+        go itl ptl
+      | _, _ :: _ -> false
+      | _, [] -> true
+  in
+  go (to_list ident) (to_list prefix)
+
+exception Empty_ident
+
+let rec remove_prefix ident prefix =
+  match ident, prefix with
+    | Cons (ihd, itl), Cons (phd, ptl) when ihd = phd ->
+      remove_prefix itl ptl
+    | Cons (ihd, itl), Ident p when ihd = p ->
+      itl
+    | Ident i, Ident p when i = p -> raise Empty_ident
+    | _ -> failwith "Ident.remove_prefix"

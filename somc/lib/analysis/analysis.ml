@@ -1,9 +1,9 @@
 open Parse.Ast
 
-module Name_resolution = Name_resolution
+module Import = Import
 
-type ast_symbol_table = Scope.ast_symbol_table
-let print_ast_table = Scope.print_ast_table
+type ast_symbol_table = Context.ast_symbol_table
+let print_ast_table = Context.print_ast_table
 
 let add_implicit_prelude ast =
   let open Span in
@@ -28,7 +28,7 @@ let add_implicit_prelude ast =
   in
   List.map node tls @ ast
 
-let resolve mod_ident is_import (ast : ast) : ast_symbol_table =
+let resolve mod_ident (ast : ast) : ast_symbol_table =
   Constant_fold.fold_constants ast |>
   Builtins.rename_builtins |>
-  Name_resolution.resolve mod_ident is_import
+  Name_resolution.resolve mod_ident

@@ -91,17 +91,12 @@ and toplevel_module p : toplevel =
 
 and toplevel_import_normal p : toplevel =
   i (advance p);
-  let i_path = finish_import_path p false in
-  let kind =
-    if matschs [dummy `LOWERNAME; dummy `UPPERNAME] p then
-      IK_Simple (mk_t (unpack_str p.previous.typ) p.previous)
-    else error_at_current p (Expected "an indentifier") []
-  in
-  TL_Import { i_path; i_kind = mk_t kind p.previous }
+  let i_path = finish_import_path p in
+  TL_Import { i_path; i_kind = mk_t IK_Module p.previous }
 
 and toplevel_import_from p : toplevel =
   i (advance p);
-  let i_path = finish_import_path p true in
+  let i_path = finish_import_path p in
   i (consume USE "\"use\"" p);
   let start_s = (current p).span in
   let kind =
@@ -150,27 +145,24 @@ and toplevel_type_definition p : toplevel =
 and finish_import_from p =
   let go p =
     (* single "sub-import" *)
-    let i_path = finish_import_path p false in
+    let path = longident_path p in
     let mk_t' p i = mk_t i p.previous in
     let ident =
       if matschs [dummy `LOWERNAME; dummy `UPPERNAME] p then
         mk_t' p (unpack_str p.previous.typ)
       else error_at_current p (Expected "an indentifier") []
     in
-    let i_kind = mk_t' p (IK_Simple ident) in
-    mk_t' p { i_path; i_kind } 
+    mk_t' p (IK_Simple (path @ [ident]))
   in
-  (* at least one, maybe more *)
+  (* at least one nested import, maybe more *)
   let first = go p in
   let other = many p (matsch COMMA) go in
   IK_Nested (first :: other)
 
-and finish_import_path p complete =
+and finish_import_path p =
   let path = longident_path p in
-  if complete then
-    let last = consume (dummy `LOWERNAME) "an identifier" p in
-    path @ [mk_t (unpack_str last.typ) last]
-  else path
+  let last = consume (dummy `LOWERNAME) "an identifier" p in
+  path @ [mk_t (unpack_str last.typ) last]
 
 (* ============================ binding =========================== *)
 
