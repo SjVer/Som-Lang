@@ -1,6 +1,7 @@
 ---
-  Module std::io
-  Standard module containing types and functions for (file) input/output.
+  Module std::ptr
+  Standard module containing the pointer type as well as functions for
+  performing operations on- and with pointers.
 
   This file is part of the Som standard library.
 
@@ -26,38 +27,25 @@
 ---
 
 -- !!.stdlib
+-- !!.unsafe
 -- !!.warn_redef "redefinition may break stdlib"
 
-from std::str use Str
+-- !!safe
+from std::option use Option
 
---- types ---
+-- !!safe
+type 'a Pointer is $i.u.s
 
-type IOMode of
-  read,
-  write,
-  append,
-  read_write
+ext _som_std_ptr_deref as deref ptr : 'a Pointer -> 'a
 
-type File of
-  path: Str
+ext _som_std_ptr_set as set ptr val : 'a Pointer -> 'a -> !Nll
 
---- files ---
+-- !!safe
+let is_null ptr : 'a Pointer -> Bln = ptr = 0
 
-let stdin  : File = #_som_std_io_stdin
-let stdout : File = #_som_std_io_stdout
-let stderr : File = #_som_std_io_stderr
+ext _som_std_ptr_malloc as malloc size : Sze -> !'a Pointer
 
---- functions ---
+-- !!safe
+let malloc_ptr () : !'a Pointer = malloc (!!size_of 'a)
 
--- opens the file with the given path and mode
-let openf path mode : _Str -> IOMode -> !File =
-  #_som_std_io_openf path mode
-
--- closes the given file
-let closef file : File -> !Nll = #_som_std_io_closef file
-
--- writes the given string to the given file
-let putsf file str : File -> _Str -> !Nll = #_som_std_io_putsf file str
-
--- prints the given string to stdout
-let puts str : _Str -> !Nll = putsf stdout str, putsf stdout "\n"
+ext _som_std_ptr_free as free ptr : 'a Pointer -> !Nll

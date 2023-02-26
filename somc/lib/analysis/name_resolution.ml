@@ -126,7 +126,7 @@ let rec extract_submodule scope mod_name = function
       print scope'; *)
       extract_submodule scope' hd.item tl
   | [] -> scope, mod_name
-    
+
 let find_and_add_value_or_type src old_ident dest new_ident =
   (* TODO: allow importing both *)
   (* TODO: just add a binding in the map instead of copying the entry *)

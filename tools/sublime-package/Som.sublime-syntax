@@ -8,8 +8,8 @@ fileTypes: [som]
 scope: source.som
 
 variables:
-  lname: '\b_*[a-z][A-Za-z_0-9]*\b'
-  uname: '\b_*[A-Z][A-Za-z_0-9]*''*'
+  lname: '\b_*[a-z][a-zA-Z0-9_]*\b'
+  uname: '\b_*[A-Z][a-zA-Z0-9_]*''*'
   pname: \'{{lname}}(?!\')
   lnamep: '{{lname}}''*'
 
@@ -79,7 +79,7 @@ contexts:
         - match: '{{pname}}'
           scope: storage.type.typevar.som
         - match: '{{uname}}'
-          scope: storage.type.som
+          scope: storage.type.som meta.symbol.type.som
           set:
             # alias
             - match: \bis\b
@@ -111,11 +111,26 @@ contexts:
     - match: \bext\b
       scope: keyword.declaration.function.som
       push:
+        - match: ({{lname}})\s*(as)\b
+          captures:
+            1: constant.language.som
+            2: keyword.declaration.function.som
+          set:
+            - match: ':'
+              scope: punctuation.separator.annotation.som
+              set: type
+            - include: pattern
+
         - match: '{{lname}}'
           scope:
-            entity.name.function.def-func.som
+            meta.symbol.function.som
             constant.language.som
-          pop: true
+          set:
+            - match: ':'
+              scope: punctuation.separator.annotation.som
+              set: type
+            - include: invalid
+
         - include: invalid
 
   definition:
@@ -288,10 +303,10 @@ contexts:
   # PATTERNS
 
   pattern:
-    - match: '(?<=\blet\b)\s*{{lnamep}}\s*(?=(:|=))'
-      scope: entity.name.variable.def-var.som
-    - match: '(?<=\blet\b)\s*{{lnamep}}'
-      scope: entity.name.function.def-func.som
+    - match: '((?<=\blet\b)|(?<=\bas\b))\s*{{lnamep}}\s*(?=(:|=))'
+      scope: entity.name.variable.som meta.symbol.variable.som
+    - match: '((?<=\blet\b)|(?<=\bas\b))\s*{{lnamep}}'
+      scope: entity.name.function.som meta.symbol.function.som
 
     - match: '{{lnamep}}'
       scope: variable.parameter.som
@@ -445,9 +460,6 @@ contexts:
     - match: '{{uname}}'
       scope: entity.name.type.variant.som
 
-    - match: \#{{lname}}
-      scope: constant.language.som
-
     - match: \#\!{{lname}}
       scope: constant.language.builtin.som
 
@@ -462,6 +474,8 @@ contexts:
           captures:
             1: punctuation.separator.sequence.som
             2: support.function.som
+
+        - include: optional-type # workaround
         - include: pop-otherwise
 
   # MISC

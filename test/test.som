@@ -1,4 +1,3 @@
--- from module use bar
-use module::sub::subsub::bar
+from module::sub::subsub use bar
 
 let baz = bar

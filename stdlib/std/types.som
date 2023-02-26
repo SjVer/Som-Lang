@@ -1,5 +1,5 @@
 ---
-	Module str::types
+	Module std::types
 	Standard module containing basic type aliases.
 
 	This file is part of the Som standard library.
@@ -36,6 +36,7 @@ type Byt is $i.u.8  -- byte
 type Chr is $i.u.8  -- character
 type Int is $i.s.32 -- integer
 type Lng is $i.s.64 -- long
+type Sze is $i.u.s  -- size
 type Hlf is $f.16   -- half
 type Flt is $f.32   -- float
 type Dbl is $f.64   -- double

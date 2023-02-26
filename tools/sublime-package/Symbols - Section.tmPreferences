@@ -2,7 +2,7 @@
 <plist version="1.0">
 <dict>
     <key>scope</key>
-    <string>source.som entity.name.namespace.som</string>
+    <string>source.som meta.symbol.section.som</string>
     <key>settings</key>
     <dict>
         <key>showInSymbolList</key>

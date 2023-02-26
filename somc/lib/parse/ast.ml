@@ -11,10 +11,10 @@ and 'a node =
 (* ====================== Toplevel ===================== *)
 
 and toplevel =
-| TL_Value_Definition of value_definition
-| TL_Type_Definition of type_definition
-| TL_Import of import
-| TL_Module of string node * ast
+  | TL_Value_Definition of value_definition
+  | TL_Type_Definition of type_definition
+  | TL_Import of import
+  | TL_Module of string node * ast
 
 and value_definition =
   {
@@ -37,6 +37,7 @@ and import =
     i_kind: import_kind node;
   } 
     
+(* TODO: use ... is importing a namespace only? *)
 and import_kind =
   | IK_Simple of string node
   | IK_Glob

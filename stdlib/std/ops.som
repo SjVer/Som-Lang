@@ -1,5 +1,6 @@
 ---
-  Module str::ops Standard module containing functions for basic operators.
+  Module std::ops
+  Standard module containing functions for basic operators.
 
   This file is part of the Som standard library.
 

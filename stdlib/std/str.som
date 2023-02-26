@@ -1,5 +1,5 @@
 ---
-  Module str::str
+  Module std::str
   Standard module containing the basic Str type as well as functions for
   performing operations on- and with strings.
 
@@ -29,15 +29,15 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
-type Str is $i.u.s -- pointer
+from std::ptr use Pointer
 
-let length str: Str -> Int = #_som_std_str_length str
-let concat str1 str2: Str -> Str -> Str = #_som_std_str_concat str1 str2
-let substr str start len: Str -> Str -> Str = #_som_std_str_substr str start len
-let split str delim: Str -> Str -> Str = #_som_std_str_split str delim
-let lstrip str delim: Str -> Str -> Str = #_som_std_str_lstrip str delim
-let rstrip str delim: Str -> Str -> Str = #_som_std_str_rstrip str delim
+type Str is Chr Pointer
+
+ext _som_std_str_length as length str           : Str -> Int
+ext _som_std_str_concat as concat str1 str2     : Str -> Str -> Str
+ext _som_std_str_substr as substr str start len : Str -> Str -> Str
+ext _som_std_str_split  as split  str delim     : Str -> Str -> Str
+ext _som_std_str_lstrip as lstrip str delim     : Str -> Str -> Str
+ext _som_std_str_rstrip as rstrip str delim     : Str -> Str -> Str
+
 let strip str delim: Str -> Str -> Str = lstrip (rstrip str delim) delim
-
-!!fmt_variadic 0
-let fmt f args: Str -> Args -> Str = #_som_std_str_fmt f args

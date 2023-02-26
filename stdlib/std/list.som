@@ -1,5 +1,5 @@
 ---
-  Module str::list
+  Module std::list
   Standard module containing the list types and functions for list operations.
 
   This file is part of the Som standard library.

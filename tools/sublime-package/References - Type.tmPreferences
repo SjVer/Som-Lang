@@ -2,12 +2,10 @@
 <plist version="1.0">
 <dict>
     <key>scope</key>
-    <string>source.som meta.symbol.function.som</string>
+    <string>source.som storage.type.som</string>
     <key>settings</key>
     <dict>
-        <key>showInSymbolList</key>
-        <integer>1</integer>
-        <key>showInIndexedSymbolList</key>
+        <key>showInIndexedReferenceList</key>
         <integer>1</integer>
     </dict>
 </dict>

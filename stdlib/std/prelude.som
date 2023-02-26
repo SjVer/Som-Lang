@@ -1,5 +1,5 @@
 ---
-	Module str::prelude
+	Module std::prelude
 	Standard module implicitly imported by default into all Som modules unless
 	explicitly disabled using the `no_prelude` or `no_stdlib` directive.
 
