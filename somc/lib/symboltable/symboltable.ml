@@ -1,10 +1,14 @@
 module Ident = Ident
 module IMap = Map.Make(Ident)
-
 open Ident
+
+let next_index =
+  let counter = ref 0 in
+  fun () -> incr counter; !counter
 
 type 'a entry =
   {
+    index: int;
     symbol: 'a;
     mutable uses: Span.t list;
   }
@@ -20,7 +24,7 @@ type ('v, 't) t =
 
 type ('v, 't) symbol_table = ('v, 't) t
 
-let empty = 
+let empty =
   {
     values = IMap.empty;
     types = IMap.empty;
@@ -35,11 +39,11 @@ let add_type_entry table ident entry =
   {table with types = IMap.add ident entry table.types}
 
 let add_new_value table ident symbol =
-  let entry = {symbol; uses = []} in
+  let entry = {index = next_index (); symbol; uses = []} in
   {table with values = IMap.add ident entry table.values}
 
 let add_new_type table ident symbol =
-  let entry = {symbol; uses = []} in
+  let entry = {index = next_index (); symbol; uses = []} in
   {table with types = IMap.add ident entry table.types}
 
 (* might raise Not_found *)
@@ -83,6 +87,7 @@ let print_table table value_fn type_fn =
     print_endline "\t<none>"
   else
     IMap.iter begin fun i v ->
-      Printf.printf "\t%s:\n" (to_string i);
+      let u = List.length v.uses in
+      Printf.printf "\t%s: (%d uses)\n" (to_string i) u;
       type_fn v;
     end table.types;

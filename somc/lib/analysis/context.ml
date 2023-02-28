@@ -6,23 +6,24 @@ module IMap = Symboltable.IMap
 type ast_symbol_table = (value_definition, type_definition) Symboltable.t
 
 let print_ast_table (table : ast_symbol_table) =
+  let fmt i w n = "("^string_of_int i^") <def "^w^" "^n^">" in
   let open Symboltable in
-  let valuefn {symbol = bind; uses = _} =
+  let valuefn {index = i; symbol = s; uses = _} =
     Parse.PrintAst.p 2
-      ("<def value " ^ bind.vd_name.item ^ ">")
-      bind.vd_name.span;
-      Parse.PrintAst.print_expr_node' 3 bind.vd_expr;
+      (fmt i "value" s.vd_name.item)
+      s.vd_name.span;
+      Parse.PrintAst.print_expr_node' 3 s.vd_expr;
       print_newline ()
   in
-  let typefn {symbol = bind; uses = _} =
+  let typefn {index = i; symbol = s; uses = _} =
     let rec join = function
       | [] -> ""
       | v :: vs -> "'" ^ v.item ^ " " ^ join vs
-    in let name = join bind.td_params ^ bind.td_name.item in
+    in
     Parse.PrintAst.p 2
-      ("<def type " ^ name ^ ">")
-      bind.td_name.span;
-    Parse.PrintAst.print_type_node' 3 bind.td_type;
+      (fmt i "type" (join s.td_params ^ s.td_name.item))
+      s.td_name.span;
+    Parse.PrintAst.print_type_node' 3 s.td_type;
     print_newline ()
   in
   print_table table valuefn typefn
@@ -98,6 +99,13 @@ let add_local_value ctx vdef =
   let table = Symboltable.add_new_value ctx.table qual_ident vdef in
   let value_map = IMap.add ident qual_ident ctx.value_map in
   {ctx with table; value_map}
+
+let add_local_type ctx tdef =
+  let ident = Ident.Ident tdef.td_name.item in
+  let qual_ident = qualify ctx ident in
+  let table = Symboltable.add_new_type ctx.table qual_ident tdef in
+  let type_map = IMap.add ident qual_ident ctx.type_map in
+  {ctx with table; type_map}
   
 let bind_qual_value_ident ctx ident qual =
   {ctx with value_map = IMap.add ident qual ctx.value_map}
@@ -122,6 +130,16 @@ let add_table ctx table bindings =
   in
   let table = merge_tables ctx.table table in
   {ctx with value_map; type_map; table}
+
+let add_subcontext_prefixed ctx subctx prefix =
+  let f k e m = IMap.add (Ident.prepend (Ident prefix) k) e m in
+  {
+    ctx with
+    subcontexts = ctx.subcontexts @ subctx.subcontexts @ [subctx.name];
+    value_map = IMap.fold f subctx.value_map ctx.value_map;
+    type_map = IMap.fold f subctx.type_map ctx.type_map;
+    table = Symboltable.merge_tables ctx.table subctx.table;
+  }
 
 (* only changes the bindings *)
 let extract_subcontext ctx prefix =

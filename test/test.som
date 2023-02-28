@@ -1,7 +1,19 @@
-use module
+-- use module
 
-let foo2 = module::foo
+-- let foo2 = module::foo
 
-from module use sub::subsub::bar
+-- from module use sub::subsub::bar
 
-let bar2 = bar
+-- let bar2 = bar
+
+type Foo is $v
+let foo = 1
+
+mod sub {
+  -- mod subsub {
+    type Bar is Foo
+    let bar = foo
+  -- }
+}
+
+let baz = sub::bar
