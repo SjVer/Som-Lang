@@ -49,7 +49,6 @@ let exit code =
 let raise t = raise (Error t)
 
 let report_compact r =
-  Util.maybe_newline ();
   let msg, color = Dispatch.msg_and_color false r.kind in
   let what = match r.kind with
     | `Error _ -> "error"

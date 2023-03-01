@@ -54,7 +54,7 @@ let parseargs () =
   let mute = flag
     ~set_long:"mute"
     ~set_short:'m'
-    ~description:"Mute all warnings"
+    ~description:"Mute all warnings and notes"
     false in
   let force_tty = flag
     ~set_long:"force-tty"

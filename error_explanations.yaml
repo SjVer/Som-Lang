@@ -14,3 +14,90 @@ lexing:
   Invalid_literal: >
     This error is raised when an integer, float or character
     literal contains invalid digits or an invalid character.
+
+  Invalid_builtin_type: >
+    This error is raised when an invalid builtin type is encountered,
+    such as "$wrong". Valid builtin types must one of the following:
+    "$i.(s|u).<int>", "$i.*", "$f.(64|32|16)", "f.*" or "$v".
+
+syntax:
+  Expected: >
+    This error is raised when a specific token was expected, but
+    a different token was encountered. For example: the keyword
+    "in" was expected, but the identifier "im" was found.
+
+  Unexpected: >
+    This error is raised when an unexpected token is encountered.
+    This means that there is an invalid keyword or symbol.
+
+  Unclosed: >
+    This error is raised when a bracket, parenthesis or brace has not
+    been closed. For example, when there's a "(", but no closing ")".
+
+  Other: >
+    This error indicates a miscellaneous syntax error.
+
+type:
+  Expected: >
+    This error is raised when a specific type was expected but
+    another type was found. This means that a value or function
+    is of the wrong type.
+  
+  Expected_function: >
+    This error is raised when a function type was expected, but
+    another non-function type was found. This error occurs when,
+    for example, it is attempted to call a non-function value.
+
+  Recursive_type: >
+    This error indicates a recursive type, which is not supported.
+
+  Use_of_unbound: >
+    This error is raised when a undefined type or variable is used.
+    Often this is caused by a simple typo.
+
+  Has_no_symbol: >
+    This error is raised when trying to import- or use a symbol
+    that does not exist from a module or file.
+
+  Cannot_private: >
+    This error is raised when it is attempted to import- or use
+    a private symbol from a module. Note that symbols starting
+    with an underscore are implicitly private to their module.
+
+  Cannot_import_from: >
+    This error is raised when it is attempted to import a symbol
+    from a value/symbol that isn't a module.
+
+  Could_not_infer: >
+    This error indicates that the type of a value could not be
+    inferred. Usually this can be solved with type annotations.
+
+other:
+  Could_not_open: >
+    This error is raised when a file could not be opened. Usually
+    this is because the file in question does not exist.
+
+  Cannot_import_dir: >
+    This error is raised when it is attempted to import a directory.
+    This is not supported.
+
+  Could_not_compile: >
+    This error is raised when compilation of a file failed due to
+    previous errors.
+
+  Failed_to_import: >
+    This error is raised when importing a file failed due to errors
+    originating from that file.
+
+  Cannot_explain: >
+    This error is raised when an invalid error code is passed with
+    the `--explain` command-line option.
+
+  Nonexistent_pass: >
+    This error is raised when a nonexistent pass is passed with
+    the `--pass` or `-p` command-line option.
+
+  Invalid_opt_level: >
+    This error is raised when an invalid optimization level is passed
+    with the `-O` command-line option.
+
