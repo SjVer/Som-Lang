@@ -1,0 +1,12 @@
+(rule
+ (targets malfunction_compat.ml)
+ (deps malfunction_compat.cppo.ml)
+ (action (run %{bin:cppo} %{deps} -V OCAML:%{ocaml_version} -o %{targets})))
+
+(library
+ (name malfunction)
+ (libraries
+  report
+  compiler-libs.optcomp str zarith findlib dynlink unix)
+ (wrapped false)
+ (modes native))
