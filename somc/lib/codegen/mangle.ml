@@ -1,5 +1,5 @@
 open Typing.Types
-open Symboltable.Ident
+open Symbols.Ident
 
 (*
   Identifier mangling:

@@ -1,5 +1,5 @@
 open Parse.Ast
-open Symboltable.Ident
+open Symbols.Ident
 
 let rec pow a = function
   | 0 -> 1

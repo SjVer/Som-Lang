@@ -1,4 +1,4 @@
-module Ident = Symboltable.Ident
+module Ident = Symbols.Ident
 
 type ast = toplevel node list
 
@@ -18,14 +18,14 @@ and toplevel =
 
 and value_definition =
   {
-    vd_name: string node;
+    vd_name: Ident.t node;
     vd_expr: expr node;
   }
 
 and type_definition =
   {
     td_params: string node list;
-    td_name: string node;
+    td_name: Ident.t node;
     td_type: typ node;
   }
   

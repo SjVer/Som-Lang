@@ -2,7 +2,7 @@ open Types
 open Tast
 open Report.Error
 
-module Ident = Symboltable.Ident
+module Ident = Symbols.Ident
 module Ast = Parse.Ast
 
 let error ?(fatal=false) e span =
@@ -172,7 +172,7 @@ let infer_patt ?(level=0) env patt =
 
 (** infer an expression *)
 let rec infer_expr ?(level=0) env exp =
-  let {span=s; item=exp} : Ast.expr Ast.node = exp in
+  let {span = s; item = exp} : Ast.expr Ast.node = exp in
   match exp with
     | EX_Grouping e ->
       let t = infer_expr ~level env e in
@@ -186,14 +186,17 @@ let rec infer_expr ?(level=0) env exp =
 
       let expr'' = set_ty (generalize level expr'.typ) expr' in
       let body' = infer_expr ~level env' body in
-      mk s body'.typ (EX_Binding ({patt=patt'; expr=expr''}, body'))
+
+      let binding = {vb_patt = patt'; vb_expr = expr''} in
+      mk s body'.typ (EX_Binding (binding, body'))
     
     | EX_Lambda {vb_patt; vb_expr} ->
       let env' = Env.copy env in
       let patt' = infer_patt ~level env' vb_patt in
       let expr' = infer_expr ~level env' vb_expr in
-      mk s (TFun (patt'.typ, expr'.typ))
-        (EX_Lambda {patt=patt'; expr=expr'})
+
+      let binding = {vb_patt = patt'; vb_expr = expr'} in
+      mk s (TFun (patt'.typ, expr'.typ)) (EX_Lambda binding)
     
     | EX_Sequence (e1, e2) ->
       let e1' = infer_expr ~level env e1 in

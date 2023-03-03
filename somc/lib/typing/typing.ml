@@ -22,22 +22,14 @@ let rec typecheck_tl_node env node =
       failwith "TODO: typecheck TL_Value_Definition"
       (* mk span (TL_Value_Definition {patt=patt'; expr=expr''})  *)
   
-    | TL_Type_Definition {td_name; td_params=_; td_type} ->
+    | TL_Type_Definition {td_name = _; td_params=_; td_type} ->
       let t = Parse_type.parse env 0 td_type.item in
       (* TODO: params *)
-      Env.add_alias env td_name.item t;
+      Env.add_alias env "TODO" t;
       None
 
     | TL_Import _ -> failwith "Import node survived analysis"
-
-    | TL_Module (n, tls) ->
-      (* TODO: only use an empty env if typechecking
-         a section that's actually a file? *)
-      let env' = Env.empty () in
-      let tls' = typecheck env' tls in
-      (* prerr_string (n.item ^ ": "); Env.show stderr env'; *)
-      Env.add_section env n.item env';
-      mk span (TL_Section (n, tls'))
+    | TL_Module _ -> failwith "Module node survived analysis"
 
 and typecheck env (ast : ast) =
   let rec go acc = function

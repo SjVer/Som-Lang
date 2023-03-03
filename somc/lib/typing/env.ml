@@ -1,4 +1,4 @@
-module Ident = Symboltable.Ident
+module Ident = Symbols.Ident
 module SMap = Map.Make(String)
 
 type t =

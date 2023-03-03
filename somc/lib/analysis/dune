@@ -1,4 +1,4 @@
 (library
  (name analysis)
- (libraries report symboltable parse)
+ (libraries report symbols parse)
 )

@@ -2,10 +2,8 @@ open Report.Error
 open Parse.Ast
 open Context
 
-type ast_symbol_table = Context.ast_symbol_table
-
-let get_ast_symbol_table:
-  (string -> Ident.t -> Span.t -> ast_symbol_table) ref =
+let open_and_parse_ast:
+  (string -> Ident.t -> Span.t -> ast) ref =
   ref (fun _ -> assert false)
 
 (* error helper functions *)
@@ -166,10 +164,11 @@ let apply_import ctx (imp, span) =
   
   (* parse and get symbols from the file *)
   let imp_mod_ident = Ident.append ctx.name (Ident imp_mod_name) in
-  let imp_table = !get_ast_symbol_table file imp_mod_ident span in
+  let imp_ast = !open_and_parse_ast file imp_mod_ident span in
+  ignore (path, imp_ast);
 
   (* merge tables AND bindings temporarily *)
-  let tmp_ctx = Context.add_table ctx imp_table true in
+  (* let tmp_ctx = Context.add_table ctx imp_table true in
   (* the final context will not need all the bindings *)
   let ret_ctx = Context.add_table ctx imp_table false in
   
@@ -178,7 +177,8 @@ let apply_import ctx (imp, span) =
     else Ident.append imp_mod_ident (Ident.from_list (nmapi path))
   in
   let mod_ctx = Context.extract_subcontext tmp_ctx mod_path in
-  apply_import_kind ret_ctx mod_ctx imp.i_kind
+  apply_import_kind ret_ctx mod_ctx imp.i_kind *)
+  ctx
 
 let gather_and_apply_imports scope ast =
   (* gather imports *)

@@ -109,7 +109,8 @@ and toplevel_import_from p : toplevel =
 
 and toplevel_value_definition p : toplevel =
   i (advance p);
-  let vd_name = consume_ident p in
+  let name = consume_ident p in
+  let vd_name = {name with item = Ident.Ident name.item} in
   
   (* expression *)
   let (t, e) = strict_binding p expression EQUAL "=" in
@@ -121,7 +122,7 @@ and toplevel_type_definition p : toplevel =
   let parsefn p = mk_t (unpack_str p.previous.typ) p.previous in
   let td_params = many p (matsch (dummy `PRIMENAME)) parsefn in
   (* name *)
-  let td_name =
+  let name =
     if matsch (dummy `UPPERNAME) p then
       mk_t (unpack_str p.previous.typ) p.previous
     else
@@ -130,6 +131,7 @@ and toplevel_type_definition p : toplevel =
         let t = mk_t "<parse error>" p.previous in
         i (advance p) &> t
   in
+  let td_name = {name with item = Ident.Ident name.item} in
   (* type *)
   let td_type =
     if matsch IS p then typ p

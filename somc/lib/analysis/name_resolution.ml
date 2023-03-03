@@ -22,7 +22,7 @@ let rec resolve_type ctx typ =
 
     | TY_Construct (t, i) -> begin try
         let i' = Context.lookup_qual_type_ident ctx i.item in
-        Symboltable.use_type ctx.table i' i.span;
+        Symbols.use (`Type i') i.span;
         TY_Construct (Option.map go t, {i with item = i'})
       with Not_found ->
         use_of_unbound_error "type" i.item i.span;
@@ -47,7 +47,7 @@ let rec resolve_expr ctx expr =
 
     | EX_Construct (i, es) -> begin try
         let i' = Context.lookup_qual_value_ident ctx i.item in
-        Symboltable.use_value ctx.table i' i.span;
+        Symbols.use (`Val i') i.span;
         EX_Construct ({i with item = i'}, List.map go es)
       with Not_found ->
         use_of_unbound_error "constructor" i.item i.span;
@@ -55,7 +55,7 @@ let rec resolve_expr ctx expr =
       end
     | EX_Identifier i -> begin try
         let i' = Context.lookup_qual_value_ident ctx i.item in
-        Symboltable.use_value ctx.table i' i.span;
+        Symbols.use (`Val i') i.span;
         EX_Identifier {i with item = i'}
       with Not_found ->
         use_of_unbound_error "value" i.item i.span;
@@ -70,8 +70,14 @@ let rec resolve_toplevel ctx tl =
   match tl.item with
     | TL_Value_Definition vdef ->
       (* not using a new context bc shadowing *)
-      let vdef' = {vdef with vd_expr = resolve_expr ctx vdef.vd_expr} in
-      Context.add_local_value ctx vdef'
+      let vdef' =
+        {
+          vd_name = Context.qualify ctx vdef.vd_name;
+          vd_expr = resolve_expr ctx vdef.vd_expr;
+        }
+      in
+      let ctx' = Context.add_local_value ctx vdef' in
+      ctx', TL_Value_Definition
     | TL_Type_Definition tdef ->
       let tdef' = {tdef with td_type = resolve_type ctx tdef.td_type} in
       Context.add_local_type ctx tdef'
@@ -87,17 +93,17 @@ let rec resolve_toplevel ctx tl =
 and resolve_ast ctx = function
   | [] -> ctx
   | tl :: ast ->
-    let ctx' = resolve_toplevel ctx tl in
-    resolve_ast ctx' ast
+    let ctx', tl' = resolve_toplevel ctx tl in
+    tl' :: resolve_ast ctx' ast
 
-let resolve mod_name ast : Context.ast_symbol_table =
+let resolve mod_name ast : ast =
   let ctx = Context.empty mod_name in
   let ctx' = Import.gather_and_apply_imports ctx ast in
-  (* print_endline ("FINISHED IMPORTING " ^ Ident.to_string ctx'.Context.name);
+  print_endline ("FINISHED IMPORTING " ^ Ident.to_string ctx'.Context.name);
   Context.print ctx';
-  print_newline (); *)
+  print_newline ();
   let ctx'' = resolve_ast ctx' ast in
-  (* print_endline ("FINISHED RESOLVING " ^ Ident.to_string ctx''.Context.name);
+  print_endline ("FINISHED RESOLVING " ^ Ident.to_string ctx''.Context.name);
   Context.print ctx'';
-  print_newline (); *)
-  ctx''.table
+  print_newline ();
+  ast

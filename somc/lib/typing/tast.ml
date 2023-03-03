@@ -1,3 +1,5 @@
+module Ident = Symbols.Ident
+
 type tast = toplevel node list
 
 and 'a node = 'a Parse.Ast.node
@@ -12,15 +14,22 @@ and 'a tnode =
 (* ====================== Toplevel ====================== *)
 
 and toplevel =
-  | TL_Declaration of string node * Types.t node
-  | TL_Value_Definition of value_binding
-  | TL_Section of string node * tast
+  | TL_Value_Definition of value_definition
+  | TL_Type_Definition of type_definition
 
-and value_binding =
+and value_definition =
   {
-    patt: pattern tnode;
-    expr: expr tnode;
+    vd_name: Ident.t node;
+    vd_expr: expr tnode;
   }
+
+and type_definition =
+  {
+    td_params: string node list;
+    td_name: Ident.t node;
+    td_type: Types.t node;
+  }
+  
 
 (* ====================== Pattern ======================= *)
 
@@ -37,9 +46,9 @@ and expr =
   | EX_Sequence of expr tnode * expr tnode
   | EX_Application of expr tnode * expr tnode list
   | EX_Tuple of expr tnode list
-  | EX_Construct of Symboltable.Ident.t tnode * expr tnode option
+  | EX_Construct of Symbols.Ident.t tnode * expr tnode option
   | EX_Literal of literal
-  | EX_Identifier of Symboltable.Ident.t tnode
+  | EX_Identifier of Symbols.Ident.t tnode
   | EX_External of string
   | EX_Error
 
@@ -49,3 +58,9 @@ and literal =
   | LI_Char of char
   | LI_String of string
   | LI_Nil
+
+and value_binding =
+  {
+    vb_patt: pattern tnode;
+    vb_expr: expr tnode;
+  }

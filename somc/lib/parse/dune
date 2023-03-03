@@ -1,6 +1,6 @@
 (library
   (name parse)
-  (libraries report symboltable span ANSITerminal)
+  (libraries report symbols span ANSITerminal)
   (preprocess (pps ppx_deriving.show ppx_deriving.eq))
 )
 

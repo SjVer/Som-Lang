@@ -1,4 +1,4 @@
-module Ident = Symboltable.Ident
+module Ident = Symbols.Ident
 
 let check_alias_exists env name span =
   try

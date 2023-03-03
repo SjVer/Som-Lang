@@ -1,5 +1,5 @@
 open Parse.Ast
-open Symboltable.Ident
+open Symbols.Ident
 
 let rename_ident node =
   let op str = from_list ["_std_ops"; str] in

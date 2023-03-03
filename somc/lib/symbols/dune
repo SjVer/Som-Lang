@@ -1,4 +1,4 @@
 (library
- (name symboltable)
+ (name symbols)
  (libraries report span)
 )

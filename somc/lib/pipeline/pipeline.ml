@@ -1,4 +1,4 @@
-module Ident = Symboltable.Ident
+module Ident = Symbols.Ident
 
 module ReadFile = Query.Make(struct
   type a = string * Span.t option
@@ -29,7 +29,7 @@ end)
 
 module AnalyzeFile = Query.Make(struct
   type a = string * Ident.t option * Span.t option
-  type r = Analysis.ast_symbol_table
+  type r = Parse.Ast.ast
   let c (f, m, i) =
     (* if [m] ("module") is the ident of
        the module that's importing this one.
@@ -64,7 +64,7 @@ end)
    have to solve dependency cycles *)
 let init () =
   Report.Util.read_file_fn := (fun f -> ReadFile.call (f, None));
-  Analysis.Import.get_ast_symbol_table := fun f m s ->
+  Analysis.Import.open_and_parse_ast := fun f m s ->
     AnalyzeFile.call (f, Some m, Some s)
 
 let () = init ()
