@@ -49,8 +49,8 @@ let offsets_from_span span = (span.start.offset, span.end_.offset)
 let concat_spans a b = {a with end_=b.end_}
 
 let is_in_stdlib s =
-  let inc_l = String.length Config.include_dir in
+  let inc_l = String.length Configs.include_dir in
 
   String.length s.file >= inc_l
     &&
-  String.sub s.file 0 inc_l = Config.include_dir
+  String.sub s.file 0 inc_l = Configs.include_dir

@@ -9,10 +9,10 @@ let print_ast_table = Context.print_ast_table
 let add_implicit_prelude ast =
   let open Span in
   let open Parse.Ast in
-  let open Config in
+  let open Configs in
 
-  let loc = Loc.{line=0; col=0; offset=0} in
-  let span = {file=prelude_file; start=loc; end_=loc; ghost=true} in
+  let loc = Loc.{line = 0; col = 0; offset = 0} in
+  let span = {file = prelude_file; start = loc; end_ = loc; ghost = true} in
   let node i = {span; item=i} in
 
   let _import =

@@ -11,12 +11,12 @@ let get_ast_symbol_table:
 (* error helper functions *)
 
 let file_not_found_error path =
-  let e = Failed_to_import (path.item ^ Config.extension) in
+  let e = Failed_to_import (path.item ^ Configs.extension) in
   Report.make_error (Other_error e) (Some path.span)
   |> Report.add_note (Printf.sprintf
     "try adding directory '%s%s' or\n\
     file '%s%s' to the search paths."
-    path.item Filename.dir_sep path.item Config.extension)
+    path.item Filename.dir_sep path.item Configs.extension)
   |> Report.raise
 
 let cannot_import_from_dir_error dir span =
@@ -27,7 +27,7 @@ let cannot_import_from_dir_error dir span =
       Printf.sprintf
         "try adding file '%s%s'\n\
         and exposing any sub-modules there."
-        dir Config.extension
+        dir Configs.extension
     else
       "This directory is part of the standard library.\n\
       Perhaps the import statement is mispelled?"
@@ -54,7 +54,7 @@ let check_import_private n =
 
 let check_full_path_type full_path =
   if Sys.(file_exists full_path && is_directory full_path) then `Dir
-  else if Sys.file_exists (full_path ^ Config.extension) then `File
+  else if Sys.file_exists (full_path ^ Configs.extension) then `File
   else raise Not_found
 
 let rec recurse_in_dir dir = function
@@ -62,15 +62,15 @@ let rec recurse_in_dir dir = function
       let full_path = Filename.concat dir hd.item in
       match check_full_path_type full_path with 
         | `Dir -> recurse_in_dir full_path tl
-        | `File -> `File, full_path ^ Config.extension, tl
+        | `File -> `File, full_path ^ Configs.extension, tl
     end
   | [] -> `Dir, dir, []
 
 let find_dir_or_file path =
   let search_dirs =
     "" (* CWD *)
-    :: !(Config.Cli.args).search_dirs
-    @ [Config.include_dir]
+    :: !(Configs.Cli.args).search_dirs
+    @ [Configs.include_dir]
   in
   let rec go = function
     | hd :: tl -> begin
@@ -104,7 +104,7 @@ let decide_on_file_and_path imp =
       (* if there was no dir we haven't checked
       in which search dir the imported file belongs *)
       if dir = "" then find_file file_basename ident.span
-      else file_basename ^ Config.extension
+      else file_basename ^ Configs.extension
     in
     file_path, path', true *)
     let span = (List.hd (List.rev imp.i_path)).span in

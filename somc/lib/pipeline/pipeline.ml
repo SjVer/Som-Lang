@@ -49,7 +49,7 @@ module TypecheckFile = Query.Make(struct
   type r = Typing.TAst.tast
   let c f =
     let _table = AnalyzeFile.call (f, None, None) in
-    (* let table' = if (!Config.Cli.args).no_prelude
+    (* let table' = if (!Configs.Cli.args).no_prelude
       then table
       else Analysis.add_implicit_prelude table
     in

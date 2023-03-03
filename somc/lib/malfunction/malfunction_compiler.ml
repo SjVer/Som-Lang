@@ -656,8 +656,9 @@ let setup_options () =
   assert (not (Warnings.is_active (Warnings.No_cmx_file "asdf")));
 
   (* Apply cli args *)
-  (* if (!Cli.args).Cli.verbose then begin *)
-  if true then begin
+  let open Configs.Cli in
+  if (!args).verbose then begin
+  (* if true then begin *)
     Clflags.dump_lambda := true;
     Clflags.dump_cmm := true;
     Clflags.inlining_report := true;

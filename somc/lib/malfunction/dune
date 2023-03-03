@@ -6,7 +6,7 @@
 (library
  (name malfunction)
  (libraries
-  report
+  configs
   compiler-libs.optcomp str zarith findlib dynlink unix)
  (wrapped false)
  (modes native))

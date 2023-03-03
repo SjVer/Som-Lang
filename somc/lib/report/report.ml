@@ -42,7 +42,7 @@ let add_related kind span r =
 let reports : t list ref = ref []
 
 let exit code =
-  if !Config.in_lsp_mode then
+  if !Configs.in_lsp_mode then
     raise (Exit code)
   else exit code
 
@@ -79,7 +79,7 @@ let report r =
   if Option.is_some r.span then
     reports := !reports @ [r];
 
-  if not !Config.in_lsp_mode then begin
-    if !(Config.Cli.args).compact then report_compact r
+  if not !Configs.in_lsp_mode then begin
+    if !(Configs.Cli.args).compact then report_compact r
     else report_normal r
   end

@@ -1,4 +1,4 @@
 (library
  (name report)
- (libraries config span ANSITerminal)
+ (libraries span ANSITerminal)
 )

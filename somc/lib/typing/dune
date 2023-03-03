@@ -1,4 +1,4 @@
 (library
   (name typing)
-  (libraries span symboltable parse config ANSITerminal)
+  (libraries span symboltable parse configs ANSITerminal)
 )

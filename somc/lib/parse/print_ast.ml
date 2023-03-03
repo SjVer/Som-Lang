@@ -174,7 +174,7 @@ and print_toplevel_node' i node =
     
 and print_ast' i nodes =
   let f nl i (tl: toplevel node) =
-    if Config.hide_stdlib_nodes && Span.is_in_stdlib tl.span
+    if Configs.hide_stdlib_nodes && Span.is_in_stdlib tl.span
     then ()
     else begin
       if nl then print_newline ();

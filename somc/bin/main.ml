@@ -1,4 +1,4 @@
-module C = Somc.Config.Cli
+module C = Somc.Configs.Cli
 open Clap
 
 (* helper functions *)
@@ -31,7 +31,7 @@ let explain_ecode code =
       print_newline ();
       print_endline expl;
       print_newline ();
-      print_endline Config.Cli.explain_help_message
+      print_endline Configs.Cli.explain_help_message
     | None -> ()
   end;
   exit 0

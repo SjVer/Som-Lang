@@ -1,6 +1,6 @@
 module Analysis = Analysis
 module Codegen = Codegen
-module Config = Config
+module Configs = Configs
 module Parse = Parse
 module Pipeline = Pipeline
 module Report = Report
