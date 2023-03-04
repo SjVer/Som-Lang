@@ -152,16 +152,16 @@ let () =
   if args.print_ast then
     let ast = Pipeline.ParseFile.call ((!C.args).file, None) in
     Parse.PrintAst.print_ast ast
+
   else if args.print_rast then
-    let ast = Pipeline.AnalyzeFile.call ((!C.args).file, None, None) in
+    let _, ast = Pipeline.AnalyzeFile.call ((!C.args).file, None, None) in
     Parse.PrintAst.print_ast ast
+
   else if args.print_tast then
-    Typing.PrintTAst.print_tast (
-      Pipeline.TypecheckFile.call
-        (!C.args).file)
+    let tast = Pipeline.TypecheckFile.call (!C.args).file in
+    Typing.PrintTAst.print_tast tast
+
   else
-    ignore (
-      Pipeline.TypecheckFile.call
-        (!C.args).file);
+    ignore (Pipeline.TypecheckFile.call (!C.args).file);
 
   exit 0

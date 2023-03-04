@@ -29,7 +29,7 @@ end)
 
 module AnalyzeFile = Query.Make(struct
   type a = string * Ident.t option * Span.t option
-  type r = Parse.Ast.ast
+  type r = Analysis.Context.t * Parse.Ast.ast
   let c (f, m, i) =
     (* if [m] ("module") is the ident of
        the module that's importing this one.
@@ -48,23 +48,26 @@ module TypecheckFile = Query.Make(struct
   type a = string
   type r = Typing.TAst.tast
   let c f =
-    let _table = AnalyzeFile.call (f, None, None) in
-    (* let table' = if (!Configs.Cli.args).no_prelude
-      then table
-      else Analysis.add_implicit_prelude table
+    let _, ast = AnalyzeFile.call (f, None, None) in
+    
+    (* we can just manually insert the ast from the prelude
+       in the parsed ast because it isn't really imported
+       so it doesn't need its imports to be resolved. *)
+    let ast' = if (!Configs.Cli.args).no_prelude
+      then ast
+      else Analysis.add_implicit_prelude ast
     in
+
     let env = Typing.Env.empty () in
-    let tast = Typing.typecheck env table' in
+    let tast = Typing.typecheck env ast' in
     tast
-    *)
-    []
 end)
 
 (* export functions bc otherwise i'd somehow
    have to solve dependency cycles *)
 let init () =
   Report.Util.read_file_fn := (fun f -> ReadFile.call (f, None));
-  Analysis.Import.open_and_parse_ast := fun f m s ->
+  Analysis.Import.get_ctx_and_ast := fun f m s ->
     AnalyzeFile.call (f, Some m, Some s)
 
 let () = init ()

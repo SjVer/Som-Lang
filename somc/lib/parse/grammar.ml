@@ -273,7 +273,13 @@ and infix_expression p prec : expr node =
     in
     go (infix_expression p (prec - 1))
   else
-    base_expression p
+    begin
+    let e = base_expression p in
+    print_endline "BASE:";
+    Print_ast.print_expr_node' 1 e;
+    e
+    end
+    (* base_expression p *)
 
 and base_expression p : expr node =
   (* first try construct *)
@@ -298,12 +304,27 @@ and base_expression p : expr node =
     else e
 
 and unary_expression must p : expr node =
-  if matschs (allowed_unary_operators ()) p then
+  (* TODO:
+      the following: `x + y`
+      is parsed as:
+        - expr -> ... -> infix_expr
+          - lhs:
+              base_expression -> application
+                - callee:
+                    unary_expression -> atom_expr = variable 'x'
+                - argument:
+                    unary_expression -> application '+ y'
+                                                     ^^^ bc '+' is unary op
+          - rhs:
+              <nothing left>
+
+   *)
+  (* if matschs (allowed_unary_operators ()) p then
     let op = mk_unary_operator p.previous in
     let e = unary_expression must p in
     let s = catnspans op e in
     mk_g s (EX_Application (op, [e]))
-  else
+  else *)
     atom_expression must p
 
 and atom_expression must p : expr node =

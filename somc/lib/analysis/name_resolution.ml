@@ -4,9 +4,9 @@ let use_of_unbound_error what ident span : unit =
   let open Report.Error in
   let ident' = Ident.to_string ident in
   let e = Type_error (Use_of_unbound (what, ident')) in
-  Report.report (Report.make_error e (Some span));
   (* TODO: error is not fatal now? *)
-  raise Not_found
+  (* raise Not_found *)
+  Report.report (Report.make_error e (Some span))
 
 let rec resolve_type ctx typ =
   let go = resolve_type ctx in
@@ -67,43 +67,60 @@ let rec resolve_expr ctx expr =
   {expr with item}
 
 let rec resolve_toplevel ctx tl =
+  let qualnode ctx n = {n with item = Context.qualify ctx n.item} in
+  let mk item = {tl with item} in
   match tl.item with
     | TL_Value_Definition vdef ->
       (* not using a new context bc shadowing *)
       let vdef' =
         {
-          vd_name = Context.qualify ctx vdef.vd_name;
+          vd_name = qualnode ctx vdef.vd_name;
           vd_expr = resolve_expr ctx vdef.vd_expr;
         }
       in
-      let ctx' = Context.add_local_value ctx vdef' in
-      ctx', TL_Value_Definition
+      let ctx' = Context.bind_value ctx vdef.vd_name.item vdef' in
+      ctx', [mk (TL_Value_Definition vdef')]
     | TL_Type_Definition tdef ->
-      let tdef' = {tdef with td_type = resolve_type ctx tdef.td_type} in
-      Context.add_local_type ctx tdef'
+      let tdef' =
+        {
+          td_name = qualnode ctx tdef.td_name;
+          td_params = tdef.td_params;
+          td_type = resolve_type ctx tdef.td_type;
+        }
+      in
+      let ctx' = Context.bind_type ctx tdef.td_name.item tdef' in
+      ctx', [mk (TL_Type_Definition tdef')]
     | TL_Module (n, ast) ->
       let open Context in
-      let ctx' = {ctx with name = qualify ctx (Ident n.item)} in
-      let ctx'' = resolve_ast ctx' ast in
-      (* TODO: `let foo; mod sub { ... }; use sub::foo` works *)
-      (* In other words, bindings from parent module get duplicated *)
-      Context.add_subcontext_prefixed ctx ctx'' n.item
-    | _ -> ctx
+      let subctx = {ctx with name = qualify ctx (Ident n.item)} in
+      let subctx', ast' = resolve_ast subctx ast in
+      let ctx' = Context.add_subcontext_prefixed ctx subctx' n.item in
+      ctx', ast'
+    | TL_Import _ -> ctx, []
 
-and resolve_ast ctx = function
-  | [] -> ctx
+and resolve_ast ctx : ast -> Context.t * ast = function
+  | [] -> ctx, []
   | tl :: ast ->
     let ctx', tl' = resolve_toplevel ctx tl in
-    tl' :: resolve_ast ctx' ast
+    let ctx'', ast' = resolve_ast ctx' ast in
+    ctx'', tl' @ ast'
 
-let resolve mod_name ast : ast =
+let resolve mod_name ast =
   let ctx = Context.empty mod_name in
-  let ctx' = Import.gather_and_apply_imports ctx ast in
-  print_endline ("FINISHED IMPORTING " ^ Ident.to_string ctx'.Context.name);
+
+  (* we keep all imported ast nodes seperate for now
+     so that they don't get messed up by `resolve_ast` *)
+  let ctx', imp_ast = Import.gather_and_apply_imports ctx ast in
+  (* print_endline ("FINISHED HANDLING IMPORTS " ^ Ident.to_string ctx'.Context.name);
   Context.print ctx';
-  print_newline ();
-  let ctx'' = resolve_ast ctx' ast in
-  print_endline ("FINISHED RESOLVING " ^ Ident.to_string ctx''.Context.name);
+  print_newline (); *)
+
+  (* we have the bindings of the imports in `ctx'` so we can
+     just pretend everything is in place and resolve this ast *)
+  let ctx'', ast' = resolve_ast ctx' ast in
+  (* print_endline ("FINISHED RESOLVING " ^ Ident.to_string ctx''.name);
   Context.print ctx'';
-  print_newline ();
-  ast
+  print_newline (); *)
+
+  (* finally we do prepend the imported ast with this ast *)
+  ctx'', imp_ast @ ast'

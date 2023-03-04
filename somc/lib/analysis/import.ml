@@ -2,8 +2,8 @@ open Report.Error
 open Parse.Ast
 open Context
 
-let open_and_parse_ast:
-  (string -> Ident.t -> Span.t -> ast) ref =
+let get_ctx_and_ast:
+  (string -> Ident.t -> Span.t -> Context.t * ast) ref =
   ref (fun _ -> assert false)
 
 (* error helper functions *)
@@ -157,30 +157,29 @@ let rec apply_import_kind dest_ctx mod_ctx kind =
       let f ctx' kind' = apply_import_kind ctx' mod_ctx kind' in
       List.fold_left f dest_ctx kinds
 
-let apply_import ctx (imp, span) =
+let apply_import ctx (imp, span) : Context.t * ast =
   (* find file and remainder of path *)
   let file, path, _importing_file = decide_on_file_and_path imp in
   let imp_mod_name = Filename.(chop_extension (basename file)) in
   
   (* parse and get symbols from the file *)
-  let imp_mod_ident = Ident.append ctx.name (Ident imp_mod_name) in
-  let imp_ast = !open_and_parse_ast file imp_mod_ident span in
-  ignore (path, imp_ast);
-
-  (* merge tables AND bindings temporarily *)
-  (* let tmp_ctx = Context.add_table ctx imp_table true in
-  (* the final context will not need all the bindings *)
-  let ret_ctx = Context.add_table ctx imp_table false in
+  let imp_mod_ident = Ident.Ident imp_mod_name in
+  let imp_ctx, imp_ast = !get_ctx_and_ast file imp_mod_ident span in
   
+  (* in order to preserve top-level bindings we prefix them first *)
+  let imp_ctx' = Context.prefix_bindings imp_ctx imp_mod_ident in
+
+  (* apply the path part in `use/from <imp_mod_ident>::<path>` *)
   let mod_path =
     if path = [] then imp_mod_ident
     else Ident.append imp_mod_ident (Ident.from_list (nmapi path))
   in
-  let mod_ctx = Context.extract_subcontext tmp_ctx mod_path in
-  apply_import_kind ret_ctx mod_ctx imp.i_kind *)
-  ctx
+  let mod_ctx = Context.extract_subcontext imp_ctx' mod_path in
 
-let gather_and_apply_imports scope ast =
+  (* apply the import kind *)
+  apply_import_kind ctx mod_ctx imp.i_kind, imp_ast
+
+let gather_and_apply_imports ctx ast =
   (* gather imports *)
   let imports =
     let rec go acc = function
@@ -192,8 +191,12 @@ let gather_and_apply_imports scope ast =
   in
 
   (* apply imports *)
-  let try_apply_import s i =
-    try apply_import s i
-    with Report.Error e -> Report.report e; s
+  let try_apply_import (ctx, ast) i : Context.t * ast =
+    try
+      let ctx', ast' = apply_import ctx i in
+      let is_dup tl = not (List.exists ((=) tl) ast) in
+      ctx', List.filter is_dup ast' @ ast
+    with Report.Error e -> Report.report e;
+      ctx, ast
   in
-  List.fold_left try_apply_import scope imports
+  List.fold_left try_apply_import (ctx, []) imports

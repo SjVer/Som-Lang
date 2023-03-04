@@ -31,9 +31,9 @@
 
 --- public imports ---
 
-use * from std::types
-use * from std::ops
-use Str from std::str
+from std::types use *
+from std::ops use *
+from std::str use Str
 
 --- private imports ---
 
@@ -42,10 +42,9 @@ use std::list as _std_list
 use std::ops as _std_ops
 use std::str as _std_str
 
-use
+from std::io use
 	putsf as _putsf,
 	stderr as _stderr
-from std::io
 
 --- functions ---
 

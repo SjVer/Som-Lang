@@ -1,6 +1,7 @@
 open Parse.Ast
 
 module Import = Import
+module Context = Context
 module IMap = Context.IMap
 
 let add_implicit_prelude ast =
@@ -9,24 +10,22 @@ let add_implicit_prelude ast =
   let open Configs in
 
   let loc = Loc.{line = 0; col = 0; offset = 0} in
-  let span = {file = prelude_file; start = loc; end_ = loc; ghost = true} in
-  let node i = {span; item=i} in
-
-  let _import =
+  let span =
     {
-      i_path = List.map node prelude_import_path;
-      i_kind = node IK_Glob;
+      file = prelude_file;
+      start = loc;
+      end_ = loc;
+      ghost = true;
     }
   in
+  let node i = {span; item = i} in
+  ignore node;
 
-  let tls =
-    (* try Import.resolve_import (ref []) import span
-    with Report.Error r -> Report.report r; [] *)
-    []
-  in
-  List.map node tls @ ast
+  let mod_ident = Ident.from_list prelude_ident in
+  let _, imp_ast = !Import.get_ctx_and_ast prelude_file mod_ident span in
+  imp_ast @ ast
 
-let resolve mod_ident (ast : ast) : ast =
+let resolve mod_ident (ast : ast) : Context.t * ast =
   Constant_fold.fold_constants ast
   |> Builtins.rename_builtins
   |> Name_resolution.resolve mod_ident
