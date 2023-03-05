@@ -46,7 +46,11 @@ let undefined_error ident =
   let n = Ident.to_string ident in
   let msg = "use of undefined `" ^ n ^ "`." in
   let e = Report.Error.(Type_error (Other msg)) in
-  Report.make_error e None |> Report.raise
+  Report.make_error e None
+  |> Report.add_note 
+    "this probably means that something \
+    has gone wrong with the standard library."
+  |> Report.raise
 
 let lookup_value env ident =
   try IMap.find ident env.values

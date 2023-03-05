@@ -91,22 +91,25 @@ let print_toplevel_node' i node =
       pt (i + 1) "<type>" td_type.item td_type.span
 
 let print_tast' i nodes =
-  let f nl i (tl: toplevel node) =
-    if Span.is_in_stdlib tl.span then ()
+  let first = ref true in
+
+  let f i (tl: toplevel node) =
+    if Configs.hide_stdlib_nodes && Span.is_in_stdlib tl.span
+    then ()
     else begin
-      (if nl then print_newline ());
+      if !first then first := false
+      else print_newline ();
       print_toplevel_node' i tl
     end
   in
 
-  let rec go nl = function
+  let rec go = function
     | [] -> ()
-    | [n] -> f nl i n
+    | [n] -> f i n
     | n :: ns ->
-      f nl i n;
-      go (not (Span.is_in_stdlib n.span)) ns
-
-  in go false nodes
+      f i n;
+      go ns
+  in go nodes
 
 (* expose functions *)
 

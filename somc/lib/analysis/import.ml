@@ -157,7 +157,7 @@ let rec apply_import_kind dest_ctx mod_ctx kind =
       let f ctx' kind' = apply_import_kind ctx' mod_ctx kind' in
       List.fold_left f dest_ctx kinds
 
-let apply_import ctx (imp, span) : Context.t * ast =
+let apply_import ctx imp span : Context.t * ast =
   (* find file and remainder of path *)
   let file, path, _importing_file = decide_on_file_and_path imp in
   let imp_mod_name = Filename.(chop_extension (basename file)) in
@@ -179,24 +179,34 @@ let apply_import ctx (imp, span) : Context.t * ast =
   (* apply the import kind *)
   apply_import_kind ctx mod_ctx imp.i_kind, imp_ast
 
-let gather_and_apply_imports ctx ast =
-  (* gather imports *)
-  let imports =
-    let rec go acc = function
-      | {item = TL_Import i; span} :: tls -> go (acc @ [i, span]) tls
-      | _ :: tls -> go acc tls
-      | [] -> acc
-    in
-    go [] ast
+(* returns [context, imported_ast, main_ast] *)
+let rec gather_and_apply_imports ctx ast =
+  let (@*) orig added =
+    let is_dup tl = not (List.exists ((=) tl) orig) in
+    orig @ List.filter is_dup added
   in
 
-  (* apply imports *)
-  let try_apply_import (ctx, ast) i : Context.t * ast =
-    try
-      let ctx', ast' = apply_import ctx i in
-      let is_dup tl = not (List.exists ((=) tl) ast) in
-      ctx', List.filter is_dup ast' @ ast
-    with Report.Error e -> Report.report e;
-      ctx, ast
+  let go (ctx, imp_ast, main_ast) tl =
+    match tl.item with
+      | TL_Import imp -> begin try
+          let ctx', new_imp_ast = apply_import ctx imp tl.span in
+          ctx', imp_ast @* new_imp_ast, main_ast
+        with Report.Error r ->
+          Report.report r;
+          ctx, imp_ast, main_ast
+        end
+
+      | TL_Module (n, mod_ast) ->
+        let open Context in
+        let mod_ctx = {ctx with name = qualify ctx (Ident n.item)} in
+        let mod_ctx, mod_imp_ast, mod_main_ast =
+          gather_and_apply_imports mod_ctx mod_ast
+        in
+        let ctx' = Context.add_subcontext_prefixed ctx mod_ctx n.item in
+        let tl' = {tl with item = TL_Module (n, mod_main_ast)} in
+        ctx', imp_ast @* mod_imp_ast, main_ast @ [tl']
+
+      | _ -> ctx, imp_ast, main_ast @ [tl]
   in
-  List.fold_left try_apply_import (ctx, []) imports
+
+  List.fold_left go (ctx, [], []) ast

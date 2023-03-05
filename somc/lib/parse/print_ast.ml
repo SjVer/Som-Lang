@@ -169,22 +169,25 @@ and print_toplevel_node' i node =
       print_ast' (i + 1) ast
     
 and print_ast' i nodes =
-  let f nl i (tl: toplevel node) =
+  let first = ref true in
+
+  let f i (tl: toplevel node) =
     if Configs.hide_stdlib_nodes && Span.is_in_stdlib tl.span
     then ()
     else begin
-      if nl then print_newline ();
+      if !first then first := false
+      else print_newline ();
       print_toplevel_node' i tl
     end
   in
 
-  let rec go nl = function
+  let rec go = function
     | [] -> ()
-    | [n] -> f nl i n
+    | [n] -> f i n
     | n :: ns ->
-      f nl i n;
-      go true ns
-  in go false nodes
+      f i n;
+      go ns
+  in go nodes
 
 (* expose functions *)
 

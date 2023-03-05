@@ -112,7 +112,7 @@ let rec resolve_toplevel ctx tl =
       let open Context in
       let subctx = {ctx with name = qualify ctx (Ident n.item)} in
       let subctx', ast' = resolve_ast subctx ast in
-      let ctx' = Context.add_subcontext_prefixed ctx subctx' n.item in
+      let ctx' = add_subcontext_prefixed ctx subctx' n.item in
       ctx', ast'
 
     | TL_Import _ -> ctx, []

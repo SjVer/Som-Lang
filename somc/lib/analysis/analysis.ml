@@ -31,11 +31,11 @@ let resolve mod_ident (ast : ast) : Context.t * ast =
 
   (* we keep all imported ast nodes seperate for now
      so that they don't get messed up by `resolve_ast` *)
-  let ctx, imp_ast = Import.gather_and_apply_imports ctx ast in
+  let ctx, imp_ast, main_ast = Import.gather_and_apply_imports ctx ast in
 
   (* we have the bindings of the imports in `ctx'` so we can
      just pretend everything is in place and resolve this ast *)
-  let ctx, ast = Resolve.resolve_ast ctx ast in
+  let ctx, main_ast = Resolve.resolve_ast ctx main_ast in
 
   (* finally we do prepend the imported ast with this ast *)
-  ctx, imp_ast @ ast
+  ctx, imp_ast @ main_ast

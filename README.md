@@ -8,16 +8,16 @@ As of right now it is a work in progress.
 
 ```haskell
 -- imports
-use puts from std::io
-use iter from std::list
-use show_int from std::int
+from std::io use puts
+from std::list use iter
+use std::int
 
 -- fizzbuzz function
 let fizzbuzz = switch
   | n if n % 15 = 0 then puts "FizzBuzz"
   | n if n % 5 = 0 then puts "Fizz"
   | n if n % 3 = 0 then puts "Buzz"
-  | n then puts (show_int n)
+  | n then puts (int::show n)
 
 -- main function
 let main _ =

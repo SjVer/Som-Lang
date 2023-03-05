@@ -47,9 +47,9 @@ let typecheck_ast env ast =
   let rec go env = function
     | [] -> env, []
     | tl :: ast ->
-      let env', ttl = typecheck_toplevel env tl in
-      let env'', tast = go env' ast in
-      env'', ttl @ tast
+      let env, ttl = typecheck_toplevel env tl in
+      let env, tast = go env ast in
+      env, ttl @ tast
   in
   let tast = snd (go env ast) in
   if !Report.has_reported then Report.exit ()

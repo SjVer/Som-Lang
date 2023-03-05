@@ -121,7 +121,9 @@ and infer_expr level env exp =
       let t = instantiate level (Hashtbl.find Env.externals n) in
       mk s t (EX_External n)
     
-    | EX_Magical _ -> failwith "TODO: infer_expr magical"
+    | EX_Magical _ ->
+      (* TODO: implement this *)
+      mk s TError EX_Error
 
     | EX_Error -> mk s TError EX_Error
 
