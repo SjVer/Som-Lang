@@ -73,7 +73,7 @@ let occurs_check_adjust_levels ?(do_raise=false) span id level =
     | TTup ts -> List.iter go ts
   in go
 
-let rec unify_names env span n1 n2 =
+let rec unify_names ?(do_raise=false) env span n1 n2 =
   n1 = n2 || begin
     try
       let t1 = Env.lookup_alias env n1 in
