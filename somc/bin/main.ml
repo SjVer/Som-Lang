@@ -15,26 +15,30 @@ let opt_typ = enum "" [
 (* explain given error code *)
 let explain_ecode code =
   let open Report in
+  let len = ref 40 in
   (* code, kind and name *)
   begin match Codes.error_name_from_code code with
     | Some (kind, name) ->
-      Printf.printf "%s error E%03d: %s\n" kind code name;
+      let msg = Printf.sprintf "%s error E%03d: %s\n" kind code name in
+      ANSITerminal.print_string [ANSITerminal.Bold] msg;
+      len := String.length msg;
     | None ->
       let open Error in
       Report.make_error (Other_error (Error.Cannot_explain code)) None
       |> Report.report;
-      exit 1
+      Stdlib.exit 1
   end;
   (* explanation *)
   begin match Codes.explanation_from_code code with
     | Some expl -> 
+      print_endline (String.make !len '=');
       print_newline ();
       print_endline expl;
       print_newline ();
       print_endline Configs.Cli.explain_help_message
     | None -> ()
   end;
-  exit 0
+  Stdlib.exit 0
       
 (* cli parsing & entrypoint *)
 
@@ -143,28 +147,43 @@ let parseargs () =
     passes;
   }
 
+let failed_to_compile f =
+  let open Report.Error in
+  let e = Other_error (Could_not_compile f) in
+  Report.make_simple (`Error e) None
+  |> Report.report
+
 (* entrypoint *)
 let () =
   parseargs ();
   Symbols.reset ();
   let args = !(C.args) in
 
-  if args.print_ast then
-    let ast = Pipeline.ParseFile.call ((!C.args).file, None) in
-    Report.Util.maybe_newline ();
-    Parse.PrintAst.print_ast ast
+  try
+    if args.print_ast then
+      let ast = Pipeline.ParseFile.call ((!C.args).file, None) in
+      Report.Util.maybe_newline ();
+      Parse.PrintAst.print_ast ast
 
-  else if args.print_rast then
-    let _, ast = Pipeline.AnalyzeFile.call ((!C.args).file, None, None) in
-    Report.Util.maybe_newline ();
-    Parse.PrintAst.print_ast ast
+    else if args.print_rast then
+      let _, ast = Pipeline.AnalyzeFile.call ((!C.args).file, None, None) in
+      Report.Util.maybe_newline ();
+      Parse.PrintAst.print_ast ast
 
-  else if args.print_tast then
-    let tast = Pipeline.TypecheckFile.call (!C.args).file in
-    Report.Util.maybe_newline ();
-    Typing.PrintTAst.print_tast tast
+    else if args.print_tast then
+      let tast = Pipeline.TypecheckFile.call (!C.args).file in
+      Report.Util.maybe_newline ();
+      Typing.PrintTAst.print_tast tast
 
-  else
-    ignore (Pipeline.TypecheckFile.call (!C.args).file);
+    else
+      ignore (Pipeline.TypecheckFile.call (!C.args).file);
 
-  exit 0
+    exit 0
+  with
+    | Report.Exit ->
+      failed_to_compile args.file;
+      exit 1
+    | Report.Error r ->
+      Report.report r;
+      failed_to_compile args.file;
+      exit 1

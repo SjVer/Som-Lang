@@ -1,4 +1,4 @@
-let f = Util.f
+let _f = Util.f
 
 (* comments after variants for gen_codes_ml.py *)
 
@@ -12,11 +12,11 @@ type lexing_error =
   | Invalid_builtin_type of string
 
 let get_lexing_error_msg = function
-  | Unexpected_character w  -> f "unexpected character '%s'" w
-  | Illegal_escape w        -> f "illegal escape sequence '\\%c'" w
-  | Unterminated_string     -> f "unterminated string"
-  | Invalid_literal w       -> f "invalid literal '%s'" w
-  | Invalid_builtin_type w  -> f "invalid builtin type '%s'" w
+  | Unexpected_character w  -> _f "unexpected character '%s'" w
+  | Illegal_escape w        -> _f "illegal escape sequence '\\%c'" w
+  | Unterminated_string     -> _f "unterminated string"
+  | Invalid_literal w       -> _f "invalid literal '%s'" w
+  | Invalid_builtin_type w  -> _f "invalid builtin type '%s'" w
 
 (* Syntax errors *)
 
@@ -27,9 +27,9 @@ type syntax_error =
   | Other of string (*+syntax error*)
   
 let get_syntax_error_msg = function
-  | Expected w            -> f "expected %s" w
-  | Unexpected            -> f "unexpected token"
-  | Unclosed w            -> f "unclosed '%s'" w
+  | Expected w            -> _f "expected %s" w
+  | Unexpected            -> _f "unexpected token"
+  | Unclosed w            -> _f "unclosed %s" w
   | Other w               -> w
   
 (* Type errors *)
@@ -43,16 +43,18 @@ type type_error =
   | Cannot_private of string * string (*-cannot use private symbol*)
   | Cannot_import_from of string (*+non-module symbol*)
   | Could_not_infer (*+type*)
+  | Other of string (*+type error*)
   
 let get_type_error_msg = function
-  | Expected (e, g)         -> f "expected type `%s` but found type `%s`" e g
-  | Expected_function g     -> f "expected a function type but found type `%s`" g
-  | Recursive_type          -> f "recursive type"
-  | Use_of_unbound (t, w)   -> f "use of unbound %s `%s`" t w
-  | Has_no_symbol (m, w, s) -> f "module `%s` has no %s named '%s'" m w s
-  | Cannot_private (a, w)   -> f "cannot %s private symbol `%s`" a w
-  | Cannot_import_from w    -> f "cannot import from non-module symbol `%s`" w
-  | Could_not_infer         -> f "could not infer type"
+  | Expected (e, g)         -> _f "expected type `%s` but found type `%s`" e g
+  | Expected_function g     -> _f "expected a function type but found type `%s`" g
+  | Recursive_type          -> _f "recursive type"
+  | Use_of_unbound (t, w)   -> _f "use of unbound %s `%s`" t w
+  | Has_no_symbol (m, w, s) -> _f "module `%s` has no %s named '%s'" m w s
+  | Cannot_private (a, w)   -> _f "cannot %s private symbol `%s`" a w
+  | Cannot_import_from w    -> _f "cannot import from non-module symbol `%s`" w
+  | Could_not_infer         -> _f "could not infer type"
+  | Other w                 -> w
 
 (* Other errors *)
 
@@ -66,13 +68,13 @@ type other_error =
   | Invalid_opt_level of string (*+optimization level*)
 
 let get_other_error_msg = function
-  | Could_not_open w    -> f "could not open file '%s'" w
-  | Cannot_import_dir w -> f "cannot import directory '%s'" w
-  | Could_not_compile w -> f "could not compile '%s' due to previous error" w
-  | Failed_to_import w  -> f "failed to import `%s`" w
-  | Cannot_explain w    -> f "cannot explain invalid error code E%03d" w
-  | Nonexistent_pass w  -> f "cannot run nonexistend LLVM pass '%s'" w
-  | Invalid_opt_level w -> f "invalid optimization level '%s'" w
+  | Could_not_open w    -> _f "could not open file '%s'" w
+  | Cannot_import_dir w -> _f "cannot import directory '%s'" w
+  | Could_not_compile w -> _f "could not compile '%s' due to previous error" w
+  | Failed_to_import w  -> _f "failed to import `%s`" w
+  | Cannot_explain w    -> _f "cannot explain invalid error code E%03d" w
+  | Nonexistent_pass w  -> _f "cannot run nonexistend LLVM pass '%s'" w
+  | Invalid_opt_level w -> _f "invalid optimization level '%s'" w
 
 (* Types *)
 

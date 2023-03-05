@@ -51,4 +51,6 @@ let typecheck_ast env ast =
       let env'', tast = go env' ast in
       env'', ttl @ tast
   in
-  snd (go env ast)
+  let tast = snd (go env ast) in
+  if !Report.has_reported then Report.exit ()
+  else tast

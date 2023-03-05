@@ -3,40 +3,27 @@ module PrintAst = Print_ast
 
 open Report.Error
 
-let print_tokens =
-  let open Token in
-  List.iter (fun t ->
-    print_string (Span.show_span t.span);
-    print_string ": ";
-    print_endline (show_token_typ t.typ)
-  )
-
 let parse file source import_span =
+  let parsing_failed () =
+    if Option.is_some import_span then begin
+      Report.make_error
+        (Other_error (Failed_to_import file))
+        import_span
+      |> Report.report
+    end
+  in
+
   let lexbuf = Lexing.from_string source in
+  lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname = file};
+  let tokens = Lexer.get_tokens lexbuf in
 
-  try
-    lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname = file};
-    let tokens = Lexer.get_tokens lexbuf in
-    (* print_tokens tokens; *)
-
-    Grammar.parse_file Parser.{
+  let parser =
+    Parser.{
       tokens = tokens;
       previous = List.hd tokens;
     }
+  in
 
-  with Report.Error e ->
-    Report.report e;
-    begin match import_span with
-      | Some _ ->
-        Report.make_error
-          (Other_error (Failed_to_import file))
-          import_span
-        |> Report.report;
-        []
-      | None ->
-        Report.make_error
-          (Other_error (Could_not_compile file))
-          None
-        |> Report.report;
-        Report.exit 1
-    end
+  let ast = Grammar.parse_file parser in
+  if !Parser.Handling.had_error then parsing_failed ();
+  ast

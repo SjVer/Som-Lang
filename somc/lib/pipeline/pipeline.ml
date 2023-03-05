@@ -16,7 +16,7 @@ module ReadFile = Query.Make(struct
       let open Error in
       make_error (Other_error (Could_not_open file)) s
       |> report;
-      Report.exit 0
+      Stdlib.exit 1
 end)
 
 module ParseFile = Query.Make(struct

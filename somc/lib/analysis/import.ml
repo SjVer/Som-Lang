@@ -27,8 +27,8 @@ let cannot_import_from_dir_error dir span =
         and exposing any sub-modules there."
         dir Configs.extension
     else
-      "This directory is part of the standard library.\n\
-      Perhaps the import statement is mispelled?"
+      "this directory is part of the standard library.\n\
+      perhaps the import statement is mispelled?"
   in
   Report.add_note note report |> Report.raise
 

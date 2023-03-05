@@ -1,7 +1,6 @@
 open Types
 open Tast
 open Unify
-open Report.Error
 
 module Ident = Symbols.Ident
 module Ast = Parse.Ast
@@ -81,13 +80,8 @@ and infer_expr level env exp =
       let e' = infer_expr level env e in
       begin
         try unify ~do_raise:true env s t' e'.typ
-        with Report.Error _ ->
-          let t'' = show t' false in
-          let e'' = show e'.typ false in
-          Report.make_error
-            (Type_error (Expected (t'', e'')))
-            (Some s)
-          |> Report.add_note "Type expected by type constraint."
+        with Report.Error r ->
+          Report.add_note "type expected by type constraint." r
           |> Report.report
       end;
       set_ty t' e'

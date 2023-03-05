@@ -4,6 +4,8 @@ module Util = Util
 
 open ANSITerminal
 
+let has_reported = ref false
+
 let enable_force_tty () = isatty := fun _ -> true
 
 type kind =
@@ -20,7 +22,7 @@ type t =
     related: (kind * Span.t) list;
   }
 
-exception Exit of int
+exception Exit
 exception Error of t
 
 (* constructors *)
@@ -41,10 +43,7 @@ let add_related kind span r =
 
 let reports : t list ref = ref []
 
-let exit code =
-  if !Configs.in_lsp_mode then
-    raise (Exit code)
-  else exit code
+let exit () = raise Exit
 
 let raise t = raise (Error t)
 
@@ -76,10 +75,12 @@ let report_normal r =
   List.iter Dispatch.r_note r.notes
 
 let report r =
+  has_reported := true;
+  
   if Option.is_some r.span then
     reports := !reports @ [r];
 
   if not !Configs.in_lsp_mode then begin
     if !(Configs.Cli.args).compact then report_compact r
-    else report_normal r
+    else report_normal r;
   end

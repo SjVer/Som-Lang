@@ -14,7 +14,11 @@ module Handling = struct
 
   exception Failed
 
-  let fail () = raise Failed
+  let had_error = ref false
+
+  let fail () =
+    had_error := true;
+    raise Failed
 
   let error_at span err notes =
     Report.make (`Error (Syntax_error err)) (Some span) notes []
@@ -22,7 +26,13 @@ module Handling = struct
     fail ()
 
   let error_at_current p err notes =
-    error_at (List.hd p.tokens).span err notes   
+    error_at (List.hd p.tokens).span err notes
+
+  let unclosed l lspan r rspan =
+    Report.make_error (Syntax_error (Unclosed l)) (Some lspan)
+    |> Report.add_related (`Error (Syntax_error (Expected r))) rspan
+    |> Report.report;
+    fail ()
 
 end
       

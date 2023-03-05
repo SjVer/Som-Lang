@@ -71,6 +71,9 @@ type:
   Could_not_infer: >
     This error indicates that the type of a value could not be
     inferred. Usually this can be solved with type annotations.
+  
+  Other: >
+    This error indicates a miscellaneous type error.
 
 other:
   Could_not_open: >

@@ -82,7 +82,7 @@ let get_pass name =
       |> add_note "for a list of supported passes go to\n\
                   https://documentation.isnt.written.yet."
       |> report;
-      Report.exit 1
+      Report.exit ()
     | fn :: fns -> match fn name with
       | Some pass -> pass
       | None -> try_get fns

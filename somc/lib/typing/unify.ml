@@ -73,51 +73,64 @@ let occurs_check_adjust_levels ?(do_raise=false) span id level =
     | TTup ts -> List.iter go ts
   in go
 
-let rec unify_names ?(do_raise=false) env span n1 n2 =
-  n1 = n2 || begin
-    try
-      let t1 = Env.lookup_alias env n1 in
-      let t2 = Env.lookup_alias env n2 in
-      try
-        unify ~do_raise:true env span t1 t2;
-        true
-      with Report.Error r ->
-        (* add notes to the report *)
-        let msg n t = Printf.sprintf
-          "Type `%s` is an alias for `%s`."
-          (Symbols.Ident.to_string n)
-          (Types.show t false)
-        in
-        let r' =
-          Report.add_note (msg n1 t1) r
-          |> Report.add_note (msg n2 t2)
-        in
-        if do_raise then Report.raise r'
-        else (Report.report r'; false) 
-    with Not_found -> false
-  end
+let rec can_unify_vague_ty env kind = function
+  (* we unify vague types with primitives or other vague types *)
+  | TName n -> can_unify_vague_ty env kind (Env.lookup_alias env n)
+  | TPrim (PInt _) when kind = Int -> true
+  | TPrim (PFloat _) when kind = Float -> true
+  | TVague {contents = (Int | Float) as k} -> k = kind
+  | TVague {contents = Link t}
+  | TVar {contents = Solved t} -> can_unify_vague_ty env kind t
+  | _ -> false
+
+let rec unify_name ?(do_raise=false) env span ty1 ty2 =
+  let add_alias_note n t =
+    Printf.sprintf
+      "type `%s` is an alias for `%s`."
+      (Symbols.Ident.to_string n)
+      (Types.show t false)
+    |> Report.add_note
+  in
+  let error =
+    if do_raise then Report.raise
+    else Report.report
+  in 
+  match (ty1, ty2) with
+    | TName n1, TName n2 ->
+      if n1 = n2 then ()
+      else
+        let t1 = Env.lookup_alias env n1 in
+        let t2 = Env.lookup_alias env n2 in
+        begin
+          try unify ~do_raise:true env span t1 t2
+          with Report.Error r -> r
+            |> add_alias_note n1 t1
+            |> add_alias_note n2 t2
+            |> error
+        end
+
+    | TName n, ty | ty, TName n ->
+      let nty = Env.lookup_alias env n in
+      begin
+        try unify ~do_raise:true env span nty ty
+        with Report.Error r -> r
+          |> add_alias_note n nty
+          |> error
+      end
+
+    | _ -> invalid_arg "unify_name"
 
 and unify ?(do_raise=false) env span ty1 ty2 =
-  let rec can_unify_vague_ty kind = function
-    (* we unify vague types with primitives or other vague types *)
-    | TName n -> can_unify_vague_ty kind (Env.lookup_alias env n)
-    | TPrim (PInt _) when kind = Int -> true
-    | TPrim (PFloat _) when kind = Float -> true
-    | TVague {contents = (Int | Float) as k} -> k = kind
-    | TVague {contents = Link t}
-    | TVar {contents = Solved t} -> can_unify_vague_ty kind t
-    | _ -> false
-  in
-
   if ty1 == ty2 then ()
   else match [@warning "-57"] (ty1, ty2) with
-    | TName n1, TName n2 when unify_names n1 n2 -> ()
+    | TName _, _ | _, TName _ ->
+      unify_name ~do_raise env span ty1 ty2
 
     | TPrim p1, TPrim p2 when p1 = p2 -> ()
 
     | TVague ({contents = Int | Float} as k), ty
     | ty, TVague ({contents = Int | Float} as k)
-      when can_unify_vague_ty !k ty -> k := Link ty
+      when can_unify_vague_ty env !k ty -> k := Link ty
 
     | TVague {contents = Link ty1}, ty2
     | ty1, TVague {contents = Link ty2} ->

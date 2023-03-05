@@ -8,7 +8,7 @@ let check_alias_exists env name span =
     let e = Type_error (Use_of_unbound ("type alias", name)) in
     Report.make_error e (Some span)
     |> Report.report;
-    exit 1
+    Report.exit ()
 
 let parse env l =
   let gnames = Hashtbl.create 10 in

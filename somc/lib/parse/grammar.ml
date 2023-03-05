@@ -59,7 +59,7 @@ let rec parse_file p : ast =
   let toplevel' p =
     try Some (toplevel p)
     with Failed ->
-      skip_until [LET; TYPE; MOD; USE] p;
+      skip_until [LET; TYPE; MOD; USE; FROM] p;
       None
   in
   let tls = many p not_at_end toplevel' in
@@ -335,14 +335,16 @@ and atom_expression must p : expr node =
     | LPAREN -> begin
         let start_s = (advance p).span in
         let e = expression p in
-        if not (matsch RPAREN p) then fail ();
+        if not (matsch RPAREN p) then
+          unclosed "'('" start_s "the closing ')' here" (current p).span;
 
         let s = catspans start_s p.previous.span in
         let e' = if groups then EX_Grouping e else e.item in
         mk s e'
       end
 
-    (* TODO *)
+    (* TODO: lists and whatnot *)
+
     | _ ->
       if must then error_at_current p (Expected "an expression") []
       else backtrack ()

@@ -90,7 +90,7 @@ let print_toplevel_node' i node =
       p i ("TL_Type_Definition " ^ Ident.to_string td_name.item) span;
       pt (i + 1) "<type>" td_type.item td_type.span
 
-let print_tast i nodes =
+let print_tast' i nodes =
   let f nl i (tl: toplevel node) =
     if Span.is_in_stdlib tl.span then ()
     else begin
@@ -111,5 +111,7 @@ let print_tast i nodes =
 (* expose functions *)
 
 let print_expr_node = print_expr_node' 0
+
 let print_toplevel_node = print_toplevel_node' 0
-let print_tast = print_tast 0
+
+let print_tast = print_tast' 0

@@ -42,17 +42,19 @@ let empty =
 
 (* finding *)
 
+let undefined_error ident =
+  let n = Ident.to_string ident in
+  let msg = "use of undefined `" ^ n ^ "`." in
+  let e = Report.Error.(Type_error (Other msg)) in
+  Report.make_error e None |> Report.raise
+
 let lookup_value env ident =
   try IMap.find ident env.values
-  with Not_found ->
-    let n = Ident.to_string ident in
-    failwith ("Value " ^ n ^ " not in env")
+  with Not_found -> undefined_error ident
 
 let lookup_alias env ident =
   try IMap.find ident env.aliases
-  with Not_found ->
-    let n = Ident.to_string ident in
-    failwith ("Alias " ^ n ^ " not in env")
+  with Not_found -> undefined_error ident
 
 (* adding *)
 

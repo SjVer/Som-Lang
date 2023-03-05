@@ -4,8 +4,4 @@
 -- from module use sub::subsub::bar
 -- let bar2 = bar
 
-type I8 is $i.s.8
-type I32 is $i.s.32
-
-let i : $i.s.8 = 123 : I8
--- let i8_i32 = (i : I8) ; (i : I32) 
+let double x = 2 * x

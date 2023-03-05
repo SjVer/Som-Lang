@@ -98,7 +98,7 @@ let show ty debug =
       wrap prim (a' ^ " -> " ^ go false r)
     | TTup ts ->
       let ts' = List.map (go true) ts in
-      wrap prim (String.concat "; " ts')
+      wrap prim (String.concat " ; " ts')
     | TNever -> if debug then "<never>" else ""
     | TError -> if debug then "<error>" else "_"
 
