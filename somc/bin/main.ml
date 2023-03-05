@@ -151,14 +151,17 @@ let () =
 
   if args.print_ast then
     let ast = Pipeline.ParseFile.call ((!C.args).file, None) in
+    Report.Util.maybe_newline ();
     Parse.PrintAst.print_ast ast
 
   else if args.print_rast then
     let _, ast = Pipeline.AnalyzeFile.call ((!C.args).file, None, None) in
+    Report.Util.maybe_newline ();
     Parse.PrintAst.print_ast ast
 
   else if args.print_tast then
     let tast = Pipeline.TypecheckFile.call (!C.args).file in
+    Report.Util.maybe_newline ();
     Typing.PrintTAst.print_tast tast
 
   else

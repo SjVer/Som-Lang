@@ -321,6 +321,7 @@ contexts:
   expression:
     - include: keyword
     - include: operator
+    - include: constraint
     - include: lambda
     - include: grouping
     - include: record
@@ -365,6 +366,11 @@ contexts:
 
     - match: \~|(?<!!)!(?!!)
       scope: keyword.operator.unary.som
+
+  constraint:
+    - match: ':'
+      scope: punctuation.separator.annotation.som
+      push: type
 
   lambda:
     - match: \\

@@ -58,8 +58,8 @@ module TypecheckFile = Query.Make(struct
       else Analysis.add_implicit_prelude ast
     in
 
-    let env = Typing.Env.empty () in
-    let tast = Typing.typecheck env ast' in
+    let env = Typing.Env.empty in
+    let tast = Typing.typecheck_ast env ast' in
     tast
 end)
 

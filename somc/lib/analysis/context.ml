@@ -27,10 +27,12 @@ let print ctx =
   if ctx.subcontexts = [] then print_endline "\t<none>";
   print_newline ();
 
-  let f k (q, i) = Printf.printf "\t%s -> %s (#%d)\n"
-    (Ident.to_string k)
-    (Ident.to_string q)
-    i
+  let f k (q, i) =
+    if Configs.hide_stdlib_nodes && i < 0 then ()
+    else Printf.printf "\t%s -> %s (#%d)\n"
+      (Ident.to_string k)
+      (Ident.to_string q)
+      i
   in
 
   print_endline "Value bindings: ";
@@ -70,16 +72,16 @@ let lookup_qual_type_ident ctx ident =
 
 (* adding *)
 
-let bind_value ctx ident vdef =
-  let entry = vdef.vd_name.item, next_id () in
+let bind_value ctx ident qual_ident =
+  let entry = qual_ident, next_id () in
   let value_map = IMap.add ident entry ctx.value_map in
   {ctx with value_map}
 
-let bind_type ctx ident tdef =
-  let entry = tdef.td_name.item, next_id () in
+let bind_type ctx ident qual_ident =
+  let entry = qual_ident, next_id () in
   let type_map = IMap.add ident entry ctx.type_map in
   {ctx with type_map}
-  
+
 let bind_qual_value_ident ctx ident qual =
   let entry = qual, next_id () in
   {ctx with value_map = IMap.add ident entry ctx.value_map}
@@ -87,9 +89,6 @@ let bind_qual_value_ident ctx ident qual =
 let bind_qual_type_ident ctx ident qual =
   let entry = qual, next_id () in
   {ctx with type_map = IMap.add ident entry ctx.type_map}
-
-(* let add_subcontext ctx ident =
-  {ctx with subcontexts = ctx.subcontexts @ [ident]} *)
 
 (* ugly shit *)
 

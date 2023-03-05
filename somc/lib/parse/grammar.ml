@@ -118,9 +118,11 @@ and toplevel_value_definition p : toplevel =
 
 and toplevel_type_definition p : toplevel =
   i (advance p);
+
   (* params *)
   let parsefn p = mk_t (unpack_str p.previous.typ) p.previous in
-  let td_params = many p (matsch (dummy `PRIMENAME)) parsefn in
+  let params = many p (matsch (dummy `PRIMENAME)) parsefn in
+
   (* name *)
   let name =
     if matsch (dummy `UPPERNAME) p then
@@ -132,15 +134,22 @@ and toplevel_type_definition p : toplevel =
         i (advance p) &> t
   in
   let td_name = {name with item = Ident.Ident name.item} in
+
   (* type *)
-  let td_type =
+  let typ =
     if matsch IS p then typ p
     else begin
       i (consume OF "\"is\" or \"of\"" p);
       failwith "TODO: parse complex type definition"
     end
   in
-  TL_Type_Definition {td_params; td_name; td_type}
+
+  (* wrap type in TY_Forall if there's parameters *)
+  let td_type =
+    if params = [] then typ
+    else mk_g typ.span (TY_Forall (params, typ))
+  in
+  TL_Type_Definition {td_name; td_type}
 
 (* ============================ imports =========================== *)
 
@@ -273,22 +282,25 @@ and infix_expression p prec : expr node =
     in
     go (infix_expression p (prec - 1))
   else
-    begin
-    let e = base_expression p in
-    print_endline "BASE:";
-    Print_ast.print_expr_node' 1 e;
-    e
-    end
-    (* base_expression p *)
+    unary_expression p
 
-and base_expression p : expr node =
+and unary_expression p : expr node =
+  if matschs (allowed_unary_operators ()) p then
+    let op = mk_unary_operator p.previous in
+    let e = unary_expression p in
+    let s = catnspans op e in
+    mk_g s (EX_Application (op, [e]))
+  else
+    application_expression p
+
+and application_expression p : expr node =
   (* first try construct *)
   try try_parse p begin fun p ->
     let ident = upper_longident p false in
     let es =
       try
-        let e = try_parse p (unary_expression false) in
-        let es = many p (matsch SEMICOLON) (unary_expression true) in
+        let e = try_parse p (atom_expression false) in
+        let es = many p (matsch SEMICOLON) (atom_expression true) in
         e :: es
       with Backtrack -> []
     in
@@ -296,36 +308,12 @@ and base_expression p : expr node =
 
   end with Backtrack ->
     (* otherwise maybe application *)
-    let e = unary_expression true p in
-    let es = many_try p (unary_expression false) in
+    let e = atom_expression true p in
+    let es = many_try p (atom_expression false) in
     if es <> [] then
       let s = catnspans e (List.hd es) in
       mk s (EX_Application (e, es))
     else e
-
-and unary_expression must p : expr node =
-  (* TODO:
-      the following: `x + y`
-      is parsed as:
-        - expr -> ... -> infix_expr
-          - lhs:
-              base_expression -> application
-                - callee:
-                    unary_expression -> atom_expr = variable 'x'
-                - argument:
-                    unary_expression -> application '+ y'
-                                                     ^^^ bc '+' is unary op
-          - rhs:
-              <nothing left>
-
-   *)
-  (* if matschs (allowed_unary_operators ()) p then
-    let op = mk_unary_operator p.previous in
-    let e = unary_expression must p in
-    let s = catnspans op e in
-    mk_g s (EX_Application (op, [e]))
-  else *)
-    atom_expression must p
 
 and atom_expression must p : expr node =
   let mk' i = mk_t i (advance p) in

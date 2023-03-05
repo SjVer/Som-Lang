@@ -1,67 +1,33 @@
-open Parse.Ast
 open Symbols.Ident
+open Context
 
-let rename_ident node =
+let bind_builtins ctx =
   let op str = from_list ["_std_ops"; str] in
-  let renamed, item = match node.item with
-    | Ident "::" -> true, from_list ["_std_list"; "Cons"]
-    | Ident "[]" -> true, from_list ["_std_list"; "Nil"]
-    | Ident "^"  -> true, op "pow"
-    | Ident "*"  -> true, op "mul"
-    | Ident "/"  -> true, op "div"
-    | Ident "%"  -> true, op "mod"
-    | Ident "+"  -> true, op "add"
-    | Ident "-"  -> true, op "sub"
-    | Ident ">"  -> true, op "gr"
-    | Ident ">=" -> true, op "greq"
-    | Ident "<"  -> true, op "ls"
-    | Ident "<=" -> true, op "lseq"
-    | Ident "="  -> true, op "eq"
-    | Ident "/=" -> true, op "neq"
-    | Ident "&&" -> true, op "and"
-    | Ident "^^" -> true, op "xor"
-    | Ident "||" -> true, op "or"
-    | _ as i -> false, i
+  let next_id =
+    let i = ref 0 in
+    fun () -> decr i; !i
   in
-  let ghost = node.span.ghost || renamed in
-  {
-    span = {node.span with ghost};
-    item;
-  }
+  let value i q c =
+    let entry = q, next_id () in
+    let value_map = IMap.add (Ident i) entry c.value_map in
+    {ctx with value_map}
+  in
 
-let rec rename_expr e =
-  let item = match e.item with
-    | EX_Grouping e -> EX_Grouping (rename_expr e)
-    | EX_Binding (b, e) ->
-      let b' = {b with vb_expr = rename_expr b.vb_expr} in
-      let e' = rename_expr e in
-      EX_Binding (b', e')
-    | EX_Lambda {vb_patt; vb_expr} ->
-      let b' = {vb_patt;  vb_expr = rename_expr vb_expr} in
-      EX_Lambda b'
-    | EX_Sequence (e1, e2) ->
-      EX_Sequence (rename_expr e1, rename_expr e2)
-    | EX_Constraint (e, t) -> EX_Constraint (rename_expr e, t)
-    | EX_Application (f, es) ->
-      let es' = List.map rename_expr es in
-      EX_Application (rename_expr f, es')
-    | EX_Tuple es -> EX_Tuple (List.map rename_expr es)
-    | EX_Construct (i, es) ->
-      EX_Construct (rename_ident i, List.map rename_expr es)
-    | EX_Identifier i -> EX_Identifier (rename_ident i)
-    | _ -> e.item
-  in
-  {e with item}
-
-let rec rename_builtins (ast : ast) : ast =
-  let go tl =
-    let item = match tl.item with
-      | TL_Value_Definition {vd_name; vd_expr} ->
-        TL_Value_Definition {vd_name; vd_expr = rename_expr vd_expr}
-      | TL_Module (n, ast) ->
-        TL_Module (n, rename_builtins ast)
-      | _ as tl -> tl
-    in
-    {tl with item}
-  in
-  List.map go ast
+  ctx
+  |> value "::" (from_list ["_std_list"; "Cons"])
+  |> value "[]" (from_list ["_std_list"; "Nil"])
+  |> value "^"  (op "pow")
+  |> value "*"  (op "mul")
+  |> value "/"  (op "div")
+  |> value "%"  (op "mod")
+  |> value "+"  (op "add")
+  |> value "-"  (op "sub")
+  |> value ">"  (op "gr")
+  |> value ">=" (op "greq")
+  |> value "<"  (op "ls")
+  |> value "<=" (op "lseq")
+  |> value "="  (op "eq")
+  |> value "/=" (op "neq")
+  |> value "&&" (op "and")
+  |> value "^^" (op "xor")
+  |> value "||" (op "or")

@@ -64,10 +64,9 @@ and print_expr_node' i node =
       pt i "EX_Tuple" typ span;
       List.iter (print_expr_node' (i + 1)) es
     
-    | EX_Construct (n, e) ->
+    | EX_Construct (n, es) ->
       pt i ("EX_Construct " ^ Ident.to_string n.item) typ span;
-      if Option.is_some e
-      then print_expr_node' (i + 1) (Option.get e)
+      List.iter (print_expr_node' (i + 1)) es
     
     | EX_Literal l ->
       pt i ("EX_Literal " ^ show_literal l) typ span
@@ -83,17 +82,13 @@ and print_expr_node' i node =
 let print_toplevel_node' i node =
   let {span; item} : toplevel node = node in
   match item with
-    | TL_Value_Definition { vd_name; vd_expr } ->
+    | TL_Value_Definition {vd_name; vd_expr} ->
       p i ("TL_Value_Definition " ^ Ident.to_string vd_name.item) span;
       print_expr_node' (i + 1) vd_expr
 
-    | TL_Type_Definition d ->
-      let rec join = function
-        | [] -> ""
-        | v :: vs -> "'" ^ v.Parse.Ast.item ^ " " ^ join vs
-      in let name = join d.td_params ^ Ident.to_string d.td_name.item in
-      p i ("TL_Type_Definition " ^ name) span;
-      pt (i + 1) "<type>" d.td_type.item d.td_type.span
+    | TL_Type_Definition {td_name; td_type} ->
+      p i ("TL_Type_Definition " ^ Ident.to_string td_name.item) span;
+      pt (i + 1) "<type>" td_type.item td_type.span
 
 let print_tast i nodes =
   let f nl i (tl: toplevel node) =

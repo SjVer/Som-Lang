@@ -152,17 +152,13 @@ and print_import_kind_node' i node =
 and print_toplevel_node' i node =
   let { span; item } = node in
   match item with
-    | TL_Value_Definition { vd_name; vd_expr } ->
+    | TL_Value_Definition {vd_name; vd_expr} ->
       p i ("TL_Value_Definition " ^ Ident.to_string vd_name.item) span;
       print_expr_node' (i + 1) vd_expr
 
-    | TL_Type_Definition d ->
-      let rec join = function
-        | [] -> ""
-        | v :: vs -> "'" ^ v.item ^ " " ^ join vs
-      in let name = join d.td_params ^ Ident.to_string d.td_name.item in
-      p i ("TL_Type_Definition " ^ name) span;
-      print_type_node' (i + 1) d.td_type
+    | TL_Type_Definition {td_name; td_type} ->
+      p i ("TL_Type_Definition " ^ Ident.to_string td_name.item) span;
+      print_type_node' (i + 1) td_type
 
     | TL_Import { i_path; i_kind} ->
       p i ("TL_Import " ^ show_path i_path) span;

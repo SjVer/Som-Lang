@@ -4,17 +4,8 @@
 -- from module use sub::subsub::bar
 -- let bar2 = bar
 
+type I8 is $i.s.8
+type I32 is $i.s.32
 
--- type Foo is $v
--- let foo = 1
-
--- mod sub {
---   -- mod subsub {
---     type Bar is Foo
---     let bar = foo
---   -- }
--- }
-
--- let baz = sub::bar
-
-let foo x y = x + y
+let i : $i.s.8 = 123 : I8
+-- let i8_i32 = (i : I8) ; (i : I32) 

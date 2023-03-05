@@ -33,15 +33,27 @@ let rec resolve_type ctx typ =
   in
   {typ with item}
 
+let bind_pattern ctx = function
+  | PA_Variable n -> Context.bind_value ctx (Ident n) (Ident n)
+  | PA_Wildcard -> ctx
+
 let rec resolve_expr ctx expr =
   let go = resolve_expr ctx in
   let item = match expr.item with
     | EX_Grouping e -> EX_Grouping (go e)
-    (* TODO: canon patt? *)
-    | EX_Binding (b, e) -> EX_Binding ({b with vb_expr = go b.vb_expr}, go e)
-    | EX_Lambda b -> EX_Lambda {b with vb_expr = go b.vb_expr}
+
+    | EX_Binding (b, e) ->
+      let vb_expr = go b.vb_expr in
+      let ctx' = bind_pattern ctx b.vb_patt.item in
+      EX_Binding ({b with vb_expr}, resolve_expr ctx' e)
+
+    | EX_Lambda b ->
+      let ctx' = bind_pattern ctx b.vb_patt.item in
+      let vb_expr = resolve_expr ctx' b.vb_expr in
+      EX_Lambda {b with vb_expr}
+
     | EX_Sequence (e1, e2) -> EX_Sequence (go e1, go e2)
-    (* | EX_Constraint (e, t) -> EX_Constraint (go e, canon_type ctx t) *)
+    | EX_Constraint (e, t) -> EX_Constraint (go e, resolve_type ctx t)
     | EX_Application (e, es) -> EX_Application (go e, List.map go es)
     | EX_Tuple es -> EX_Tuple (List.map go es)
 
@@ -71,31 +83,38 @@ let rec resolve_toplevel ctx tl =
   let mk item = {tl with item} in
   match tl.item with
     | TL_Value_Definition vdef ->
-      (* not using a new context bc shadowing *)
       let vdef' =
         {
           vd_name = qualnode ctx vdef.vd_name;
           vd_expr = resolve_expr ctx vdef.vd_expr;
         }
       in
-      let ctx' = Context.bind_value ctx vdef.vd_name.item vdef' in
+      let ctx' = Context.bind_value ctx
+        vdef.vd_name.item
+        vdef'.vd_name.item
+      in
       ctx', [mk (TL_Value_Definition vdef')]
+
     | TL_Type_Definition tdef ->
       let tdef' =
         {
           td_name = qualnode ctx tdef.td_name;
-          td_params = tdef.td_params;
           td_type = resolve_type ctx tdef.td_type;
         }
       in
-      let ctx' = Context.bind_type ctx tdef.td_name.item tdef' in
+      let ctx' = Context.bind_type ctx
+        tdef.td_name.item
+        tdef'.td_name.item
+      in
       ctx', [mk (TL_Type_Definition tdef')]
+
     | TL_Module (n, ast) ->
       let open Context in
       let subctx = {ctx with name = qualify ctx (Ident n.item)} in
       let subctx', ast' = resolve_ast subctx ast in
       let ctx' = Context.add_subcontext_prefixed ctx subctx' n.item in
       ctx', ast'
+
     | TL_Import _ -> ctx, []
 
 and resolve_ast ctx : ast -> Context.t * ast = function
@@ -104,23 +123,3 @@ and resolve_ast ctx : ast -> Context.t * ast = function
     let ctx', tl' = resolve_toplevel ctx tl in
     let ctx'', ast' = resolve_ast ctx' ast in
     ctx'', tl' @ ast'
-
-let resolve mod_name ast =
-  let ctx = Context.empty mod_name in
-
-  (* we keep all imported ast nodes seperate for now
-     so that they don't get messed up by `resolve_ast` *)
-  let ctx', imp_ast = Import.gather_and_apply_imports ctx ast in
-  (* print_endline ("FINISHED HANDLING IMPORTS " ^ Ident.to_string ctx'.Context.name);
-  Context.print ctx';
-  print_newline (); *)
-
-  (* we have the bindings of the imports in `ctx'` so we can
-     just pretend everything is in place and resolve this ast *)
-  let ctx'', ast' = resolve_ast ctx' ast in
-  (* print_endline ("FINISHED RESOLVING " ^ Ident.to_string ctx''.name);
-  Context.print ctx'';
-  print_newline (); *)
-
-  (* finally we do prepend the imported ast with this ast *)
-  ctx'', imp_ast @ ast'

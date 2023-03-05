@@ -25,7 +25,6 @@ and value_definition =
 
 and type_definition =
   {
-    td_params: string node list;
     td_name: Ident.t node;
     td_type: Types.t node;
   }
@@ -46,7 +45,7 @@ and expr =
   | EX_Sequence of expr tnode * expr tnode
   | EX_Application of expr tnode * expr tnode list
   | EX_Tuple of expr tnode list
-  | EX_Construct of Symbols.Ident.t tnode * expr tnode option
+  | EX_Construct of Symbols.Ident.t tnode * expr tnode list
   | EX_Literal of literal
   | EX_Identifier of Symbols.Ident.t tnode
   | EX_External of string

@@ -2,7 +2,7 @@ module Ident = Symbols.Ident
 
 let check_alias_exists env name span =
   try
-    ignore (Env.get_alias env (Ident.Ident name) span)
+    ignore (Env.lookup_alias env (Ident.Ident name))
   with Not_found ->
     let open Report.Error in
     let e = Type_error (Use_of_unbound ("type alias", name)) in

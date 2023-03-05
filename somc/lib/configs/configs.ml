@@ -6,8 +6,6 @@ let _path = List.fold_left Filename.concat ""
 
 let force_tty = true
 
-let print_std_trees = true
-
 let extension = ".som"
 let include_dir =
   if Sys.unix then
@@ -24,4 +22,4 @@ let prelude_file = _path (include_dir :: prelude_ident) ^ ".som"
 
 let in_lsp_mode = ref false
 
-let hide_stdlib_nodes = false
+let hide_stdlib_nodes = true

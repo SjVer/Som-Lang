@@ -24,7 +24,6 @@ and value_definition =
 
 and type_definition =
   {
-    td_params: string node list;
     td_name: Ident.t node;
     td_type: typ node;
   }
