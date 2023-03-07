@@ -3,6 +3,20 @@ open Report.Error
 
 let error do_raise e span =
   let r = Report.make_error (Type_error e) span in
+  let is_about_prim_type =
+    let go str = String.contains str '$' in
+    match e with
+      | Expected (t1, t2) -> go t1 || go t2
+      | Expected_function t -> go t
+      | _ -> false
+  in
+  let r =
+    if is_about_prim_type then
+      Report.add_note
+        "types starting with '$' are primitive types.\n\
+        for more info see <TODO>." r
+    else r
+  in
   if do_raise then Report.raise r
   else Report.report r
 
@@ -10,23 +24,23 @@ let error do_raise e span =
     type variables with generic ones, and
     vague types with generic vague ones *)
 let rec generalize level = function
-  | TVar ({contents = Unbound (id, other_level)} as ty)
+  | TVar ({contents = VRUnbound (id, other_level)} as ty)
     when other_level > level ->
-      ty := Generic id;
+      ty := VRGeneric id;
       TVar ty
-  | TVague ({contents = Int | Float} as k) ->
-    k := Vague !k;
+  | TVague ({contents = VGInt | VGFloat} as k) ->
+    k := VGGeneric !k;
     TVague k
 
-  | TVar {contents = Solved ty} -> generalize level ty
+  | TVar {contents = VRSolved ty} -> generalize level ty
 
   | TEff t -> TEff (generalize level t)
   | TFun (p, r) -> TFun (generalize level p, generalize level r)
   | TApp (a, t) -> TApp (generalize level a, generalize level t)
   | TTup ts -> TTup (List.map (generalize level) ts)
   
-  | TVar {contents = Generic _}
-  | TVar {contents = Unbound _}
+  | TVar {contents = VRGeneric _}
+  | TVar {contents = VRUnbound _}
   | TName _ | TPrim _ | TVague _
   | TError | TNever as ty -> ty
 
@@ -36,16 +50,16 @@ let rec generalize level = function
 let instantiate level ty =
   let id_var_map = Hashtbl.create 20 in
   let rec go ty = match ty with
-    | TVar {contents = Solved ty} -> go ty
-    | TVar {contents = Generic id} -> begin
+    | TVar {contents = VRSolved ty} -> go ty
+    | TVar {contents = VRGeneric id} -> begin
         try Hashtbl.find id_var_map id
         with Not_found ->
           let var = new_var level in
           Hashtbl.add id_var_map id var;
           var
       end
-    | TVar {contents = Unbound _} -> ty
-    | TVague {contents = Vague k} -> TVague (ref k)
+    | TVar {contents = VRUnbound _} -> ty
+    | TVague {contents = VGGeneric k} -> TVague (ref k)
     | TEff t -> TEff (go t)
     | TApp (a, t) -> TApp (go a, go t)
     | TFun (p, r) -> TFun (go p, go r)
@@ -59,13 +73,13 @@ let instantiate level ty =
 let occurs_check_adjust_levels ?(do_raise=false) span id level =
   let rec go = function
     | TName _ | TPrim _ | TVague _ | TError | TNever -> ()
-    | TVar {contents = Solved ty} -> go ty
-    | TVar {contents = Generic _} -> ()
-    | TVar ({contents = Unbound (other_id, other_level)} as other) ->
+    | TVar {contents = VRSolved ty} -> go ty
+    | TVar {contents = VRGeneric _} -> ()
+    | TVar ({contents = VRUnbound (other_id, other_level)} as other) ->
       if other_id = id then
         error do_raise Recursive_type (Some span);
       if other_level > level
-        then other := Unbound (other_id, other_level)
+        then other := VRUnbound (other_id, other_level)
         else ()
     | TEff t -> go t
     | TApp (a, t) -> go a; go t
@@ -76,11 +90,11 @@ let occurs_check_adjust_levels ?(do_raise=false) span id level =
 let rec can_unify_vague_ty env kind = function
   (* we unify vague types with primitives or other vague types *)
   | TName n -> can_unify_vague_ty env kind (Env.lookup_alias env n)
-  | TPrim (PInt _) when kind = Int -> true
-  | TPrim (PFloat _) when kind = Float -> true
-  | TVague {contents = (Int | Float) as k} -> k = kind
-  | TVague {contents = Link t}
-  | TVar {contents = Solved t} -> can_unify_vague_ty env kind t
+  | TPrim (PInt _) when kind = VGInt -> true
+  | TPrim (PFloat _) when kind = VGFloat -> true
+  | TVague {contents = (VGInt | VGFloat) as k} -> k = kind
+  | TVague {contents = VGSolved t}
+  | TVar {contents = VRSolved t} -> can_unify_vague_ty env kind t
   | _ -> false
 
 let rec unify_name ?(do_raise=false) env span ty1 ty2 =
@@ -112,7 +126,17 @@ let rec unify_name ?(do_raise=false) env span ty1 ty2 =
     | TName n, ty | ty, TName n ->
       let nty = Env.lookup_alias env n in
       begin
-        try unify ~do_raise:true env span nty ty
+        try
+          unify ~do_raise:true env span nty ty;
+          (* make sure that e.g. [unify Int $i.*] links the
+             ['a] to [Int] and not to [Int]'s 'contents'.*)
+          begin match ty with
+            | TVague ({contents = VGSolved _} as k) ->
+              k := (VGSolved (TName n))
+            | TVar ({contents = VRSolved _} as v) ->
+              v := (VRSolved (TName n))
+            | _ -> ()
+          end
         with Report.Error r -> r
           |> add_alias_note n nty
           |> error
@@ -128,12 +152,13 @@ and unify ?(do_raise=false) env span ty1 ty2 =
 
     | TPrim p1, TPrim p2 when p1 = p2 -> ()
 
-    | TVague ({contents = Int | Float} as k), ty
-    | ty, TVague ({contents = Int | Float} as k)
-      when can_unify_vague_ty env !k ty -> k := Link ty
+    | TVague ({contents = VGInt | VGFloat} as k), ty
+    | ty, TVague ({contents = VGInt | VGFloat} as k)
+      when can_unify_vague_ty env !k ty ->
+        k := VGSolved ty
 
-    | TVague {contents = Link ty1}, ty2
-    | ty1, TVague {contents = Link ty2} ->
+    | TVague {contents = VGSolved ty1}, ty2
+    | ty1, TVague {contents = VGSolved ty2} ->
       unify env span ty1 ty2
 
     | TError, _ | _, TError
@@ -147,14 +172,14 @@ and unify ?(do_raise=false) env span ty1 ty2 =
       unify env span a1 a2;
       unify env span t1 t2
 
-    | TVar {contents = Solved ty1}, ty2
-    | ty1, TVar {contents = Solved ty2} ->
+    | TVar {contents = VRSolved ty1}, ty2
+    | ty1, TVar {contents = VRSolved ty2} ->
       unify env span ty1 ty2
 
-    | TVar ({contents = Unbound (id, level)} as tvar), ty
-    | ty, TVar ({contents = Unbound (id, level)} as tvar) ->
+    | TVar ({contents = VRUnbound (id, level)} as tvar), ty
+    | ty, TVar ({contents = VRUnbound (id, level)} as tvar) ->
       occurs_check_adjust_levels ~do_raise span id level ty;
-      tvar := Solved ty
+      tvar := VRSolved ty
 
     | TTup ts1, TTup ts2 -> List.iter2 (unify env span) ts1 ts2
 
@@ -166,11 +191,11 @@ and unify ?(do_raise=false) env span ty1 ty2 =
 (** asserts that the given type is a function type *)
 let rec match_fun_ty span = function
   | TFun (p, r) -> p, r
-  | TVar {contents = Solved ty} -> match_fun_ty span ty
-  | TVar ({contents = Unbound (_, level)} as tvar) ->
+  | TVar {contents = VRSolved ty} -> match_fun_ty span ty
+  | TVar ({contents = VRUnbound (_, level)} as tvar) ->
     let param_ty = new_var level in
     let return_ty = new_var level in
-    tvar := Solved (TFun (param_ty, return_ty));
+    tvar := VRSolved (TFun (param_ty, return_ty));
     param_ty, return_ty
   | TError -> TError, TError
   | t ->

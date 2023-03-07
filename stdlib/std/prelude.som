@@ -52,9 +52,8 @@ from std::io use
 let return v : 'a -> !'a = v
 
 -- terminates the calling process immediately with the given status
-let exit status : Int -> Nll =
-	#_som_std_prelude_exit status,
-	!!unreachable
+!!no_return
+ext _som_std_prelude_exit as exit status : Int -> Nll
 
 let assert cond msg : Bln -> Str -> Nll =
 	if cond then

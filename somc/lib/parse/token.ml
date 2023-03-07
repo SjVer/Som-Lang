@@ -2,10 +2,11 @@ open Ast
 
 type token_typ =
   (* keywords *)
+  | LET   | IN
+  | TYPE  | IS     | OF
+  | EXT
   | USE   | FROM   | AS
   | MOD
-  | TYPE  | IS     | OF
-  | LET   | IN
   | IF    | THEN   | ELSE
   | FOR   | AT     | DO
   | MATCH | SWITCH
@@ -48,7 +49,6 @@ type token_typ =
   | LOWERNAME of string
   | PRIMENAME of string
   | DIRECTNAME of string
-  | EXTERNNAME of string
   | MAGICNAME of string
   | INTEGER of int
   | FLOAT of float
@@ -67,7 +67,6 @@ let without_arg = function
   | LOWERNAME _ -> `LOWERNAME
   | PRIMENAME _ -> `PRIMENAME
   | DIRECTNAME _ -> `DIRECTNAME
-  | EXTERNNAME _ -> `EXTERNNAME
   | MAGICNAME _ -> `MAGICNAME
   | INTEGER _ -> `INTEGER
   | FLOAT _ -> `FLOAT
@@ -79,23 +78,22 @@ let without_arg = function
 
 let unpack_str = function
   | UPPERNAME s | LOWERNAME s
-  | EXTERNNAME s | MAGICNAME s
-  | DIRECTNAME s
+  | MAGICNAME s | DIRECTNAME s
   | PRIMENAME s -> s
   | t -> failwith ("unpack_str " ^ show_token_typ t)
 
 let unpack_lit = function
-  | INTEGER i -> LI_Int i
-  | FLOAT f -> LI_Float f
-  | CHARACTER c -> LI_Char c
-  | STRING s -> LI_String s
-  | EMPTYPARENS -> LI_Nil
+  | INTEGER i -> LIInt i
+  | FLOAT f -> LIFloat f
+  | CHARACTER c -> LIChar c
+  | STRING s -> LIString s
+  | EMPTYPARENS -> LINil
   | _ -> failwith "unpack_lit"
 
 let unpack_typ = function
-  | BUILTINITY a -> PT_Int a
-  | BUILTINFTY a -> PT_Float a
-  | BUILTINVTY -> PT_Void
+  | BUILTINITY a -> PTInt a
+  | BUILTINFTY a -> PTFloat a
+  | BUILTINVTY -> PTVoid
   | t -> failwith ("unpack_typ " ^ show_token_typ t)
 
 let tokens_eq a b = without_arg a = without_arg b
@@ -105,7 +103,6 @@ let dummy = function
   | `LOWERNAME -> LOWERNAME ""
   | `PRIMENAME -> PRIMENAME ""
   | `DIRECTNAME -> DIRECTNAME ""
-  | `EXTERNNAME -> EXTERNNAME ""
   | `MAGICNAME -> MAGICNAME ""
   | `INTEGER -> INTEGER 0
   | `FLOAT -> FLOAT 0.0

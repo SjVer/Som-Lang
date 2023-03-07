@@ -9,40 +9,40 @@ let rec pow a = function
 let fold_app f es =
   let exception Cant_fold in
   try match f.item, nmapi es with
-    | EX_Identifier {span=_; item=Ident i},
-      EX_Literal a :: EX_Literal b :: [] -> begin
+    | EXIdentifier {span=_; item=Ident i},
+      EXLiteral a :: EXLiteral b :: [] -> begin
         let res = match i, a, b with
-          | "+", LI_Int a, LI_Int b -> LI_Int (a + b)
-          | "+", LI_Float a, LI_Float b -> LI_Float (a +. b)
-          | "-", LI_Int a, LI_Int b -> LI_Int (a - b)
-          | "-", LI_Float a, LI_Float b -> LI_Float (a -. b)
-          | "*", LI_Int a, LI_Int b -> LI_Int (a * b)
-          | "*", LI_Float a, LI_Float b -> LI_Float (a *. b)
-          | "/", LI_Int a, LI_Int b -> LI_Int (a / b)
-          | "/", LI_Float a, LI_Float b -> LI_Float (a /. b)
-          | "^", LI_Int a, LI_Int b -> LI_Int (pow a b)
-          | "%", LI_Int a, LI_Int b -> LI_Int (a mod b)
+          | "+", LIInt a, LIInt b -> LIInt (a + b)
+          | "+", LIFloat a, LIFloat b -> LIFloat (a +. b)
+          | "-", LIInt a, LIInt b -> LIInt (a - b)
+          | "-", LIFloat a, LIFloat b -> LIFloat (a -. b)
+          | "*", LIInt a, LIInt b -> LIInt (a * b)
+          | "*", LIFloat a, LIFloat b -> LIFloat (a *. b)
+          | "/", LIInt a, LIInt b -> LIInt (a / b)
+          | "/", LIFloat a, LIFloat b -> LIFloat (a /. b)
+          | "^", LIInt a, LIInt b -> LIInt (pow a b)
+          | "%", LIInt a, LIInt b -> LIInt (a mod b)
           | _ -> raise Cant_fold
         in
-        true, EX_Literal res
+        true, EXLiteral res
       end
-    | EX_Identifier {span=_; item=Ident i},
-      EX_Literal a :: [] -> begin
+    | EXIdentifier {span=_; item=Ident i},
+      EXLiteral a :: [] -> begin
         let res = match i, a with
-          | "~+", LI_Int a -> LI_Int (abs a)
-          | "~+", LI_Float a -> LI_Float (abs_float a)
-          | "~-", LI_Int a -> LI_Int (- a)
-          | "~-", LI_Float a -> LI_Float (-. a)
+          | "~+", LIInt a -> LIInt (abs a)
+          | "~+", LIFloat a -> LIFloat (abs_float a)
+          | "~-", LIInt a -> LIInt (- a)
+          | "~-", LIFloat a -> LIFloat (-. a)
           | _ -> raise Cant_fold
         in
-        true, EX_Literal res
+        true, EXLiteral res
       end
     | _ -> raise Cant_fold
-  with Cant_fold -> false, EX_Application (f, es)
+  with Cant_fold -> false, EXApplication (f, es)
 
 let rec fold_expr e =
   let folded, item = match e.item with
-    | EX_Application (f, es) ->
+    | EXApplication (f, es) ->
       let f' = fold_expr f in
       let es' = List.map fold_expr es in
       fold_app f' es'
@@ -57,10 +57,10 @@ let rec fold_expr e =
 let rec fold_constants (ast : ast) : ast =
   let go tl =
     let item = match tl.item with
-      | TL_Value_Definition b ->
-        TL_Value_Definition {b with vd_expr = fold_expr b.vd_expr}
-      | TL_Module (n, ast) ->
-        TL_Module (n, fold_constants ast)
+      | TLValueDef b ->
+        TLValueDef {b with vd_expr = fold_expr b.vd_expr}
+      | TLModule (n, ast) ->
+        TLModule (n, fold_constants ast)
       | _ as tl -> tl
     in
     {tl with item}

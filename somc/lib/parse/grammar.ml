@@ -6,7 +6,7 @@ open Ast
 
 (* =========================== helpers ============================ *)
 
-(* if true produce stuff like EX_Grouping *)
+(* if true produce stuff like EXGrouping *)
 let groups = false
 
 let mk span item = {span; item}
@@ -59,7 +59,7 @@ let rec parse_file p : ast =
   let toplevel' p =
     try Some (toplevel p)
     with Failed ->
-      skip_until [LET; TYPE; MOD; USE; FROM] p;
+      skip_until [LET; TYPE; EXT; MOD; USE; FROM] p;
       None
   in
   let tls = many p not_at_end toplevel' in
@@ -74,6 +74,7 @@ and toplevel p : toplevel node =
     | FROM -> toplevel_import_from p
     | LET -> toplevel_value_definition p
     | TYPE -> toplevel_type_definition p
+    | EXT -> toplevel_extern_definition p
     | _ -> error_at_current p (Expected "a toplevel statement") []
   in
   let s = catspans start_s p.previous.span in
@@ -81,20 +82,20 @@ and toplevel p : toplevel node =
 
 (* TODO: `use ... as ...` *)
 
-and toplevel_module p : toplevel =
+and toplevel_module p =
   i (advance p);
   let name = consume_ident p in
   i (consume LBRACE "\"{\"" p);
   let tls = many p (fun p -> not (check RBRACE p)) toplevel in
   i (consume RBRACE "\"}\"" p);
-  TL_Module (name, tls)
+  TLModule (name, tls)
 
-and toplevel_import_normal p : toplevel =
+and toplevel_import_normal p =
   i (advance p);
   let i_path = finish_import_path p in
-  TL_Import { i_path; i_kind = mk_t IK_Module p.previous }
+  TLImport { i_path; i_kind = mk_t IK_Module p.previous }
 
-and toplevel_import_from p : toplevel =
+and toplevel_import_from p =
   i (advance p);
   let i_path = finish_import_path p in
   i (consume USE "\"use\"" p);
@@ -105,18 +106,18 @@ and toplevel_import_from p : toplevel =
     else finish_import_from p
   in
   let s = catspans start_s p.previous.span in
-  TL_Import { i_path; i_kind = mk s kind}
+  TLImport { i_path; i_kind = mk s kind}
 
-and toplevel_value_definition p : toplevel =
+and toplevel_value_definition p =
   i (advance p);
   let name = consume_ident p in
   let vd_name = {name with item = Ident.Ident name.item} in
   
   (* expression *)
   let (t, e) = strict_binding p expression EQUAL "=" in
-  TL_Value_Definition {vd_name; vd_expr = wrap_type_constraint t e}
+  TLValueDef {vd_name; vd_expr = wrap_type_constraint t e}
 
-and toplevel_type_definition p : toplevel =
+and toplevel_type_definition p =
   i (advance p);
 
   (* params *)
@@ -144,12 +145,36 @@ and toplevel_type_definition p : toplevel =
     end
   in
 
-  (* wrap type in TY_Forall if there's parameters *)
+  (* wrap type in TYForall if there's parameters *)
   let td_type =
     if params = [] then typ
-    else mk_g typ.span (TY_Forall (params, typ))
+    else mk_g typ.span (TYForall (params, typ))
   in
-  TL_Type_Definition {td_name; td_type}
+  TLTypeDef {td_name; td_type}
+
+and toplevel_extern_definition p =
+  i (advance p);
+
+  let ed_native_name = consume_ident p in
+
+  (* different name is optional *)
+  let ed_name =
+    let f i = nmap i (fun i -> Ident.Ident i) in 
+    if matsch AS p then f (consume_ident p)
+    else f ed_native_name
+  in
+
+  (* we don't do anything with the arguments *)
+  while not (check COLON p) do
+    try_and_skip_until p pattern [COLON] PAWildcard
+    |> ignore
+  done;
+  
+  (* type annotation is not optional *)
+  i (consume COLON "\":\"" p);
+  let ed_type = typ p in
+
+  TLExternDef {ed_native_name; ed_name; ed_type}
 
 (* ============================ imports =========================== *)
 
@@ -178,7 +203,7 @@ and finish_import_path p =
 (* ============================ binding =========================== *)
 
 and binding (p : parser) exprfn sep sepstr : value_binding =
-  let vb_patt = try_and_skip_until p pattern [sep; COLON] PA_Wildcard in
+  let vb_patt = try_and_skip_until p pattern [sep; COLON] PAWildcard in
   let (t, e) = strict_binding p exprfn sep sepstr in
   {vb_patt; vb_expr = wrap_type_constraint t e}
 
@@ -196,16 +221,16 @@ and strict_binding p exprfn sep sepstr =
     t, e
   end else
     (* another pattern *)
-    let vb_patt = try_and_skip_until p pattern [sep; COLON] PA_Wildcard in
+    let vb_patt = try_and_skip_until p pattern [sep; COLON] PAWildcard in
     let (t, vb_expr) = strict_binding p exprfn sep sepstr in
     let s = catnspans vb_patt vb_expr in
-    t, mk_g s (EX_Lambda {vb_patt; vb_expr})
+    t, mk_g s (EXLambda {vb_patt; vb_expr})
 
 and wrap_type_constraint t e =
   match t with
     | Some t -> {
         span = {e.span with ghost = true};
-        item = EX_Constraint (e, t);
+        item = EXConstraint (e, t);
       }
     | None -> e
 
@@ -219,8 +244,8 @@ and atom_pattern p : pattern node =
   let curr = current p in
   let mk' i = mk curr.span i in
   
-  if matsch (dummy `LOWERNAME) p then mk' (PA_Variable (unpack_str curr.typ))
-  else if matsch UNDERSCORE p then mk' PA_Wildcard
+  if matsch (dummy `LOWERNAME) p then mk' (PAVariable (unpack_str curr.typ))
+  else if matsch UNDERSCORE p then mk' PAWildcard
   else error_at_current p (Expected "a pattern") []
 
 (* =========================== expression ========================= *)
@@ -234,12 +259,12 @@ and let_expression p : expr node =
     i (consume IN "\"in\"" p);
     let body = let_expression p in
     let s = catspans let_s body.span in 
-    mk s (EX_Binding (bind, body))
+    mk s (EXBinding (bind, body))
   end
   else sequence_expression p
 
 and sequence_expression p : expr node =
-  let mk_seq e1 e2 s = mk s (EX_Sequence (e1, e2)) in
+  let mk_seq e1 e2 s = mk s (EXSequence (e1, e2)) in
   left_assoc p lambda_expression COMMA mk_seq
 
 and lambda_expression p : expr node =
@@ -247,7 +272,7 @@ and lambda_expression p : expr node =
     let start_s = p.previous.span in
     let bind = binding p tuple_expression ARROW "->" in
     let s = catspans start_s bind.vb_expr.span in
-    mk s (EX_Lambda bind)
+    mk s (EXLambda bind)
   end else tuple_expression p
 
 and tuple_expression p : expr node =
@@ -256,7 +281,7 @@ and tuple_expression p : expr node =
 
   if es <> [] then
     let s = catnspans e (List.hd es) in
-    mk s (EX_Tuple (e :: es))
+    mk s (EXTuple (e :: es))
   else e
 
 and t_constr_expression p : expr node =
@@ -264,7 +289,7 @@ and t_constr_expression p : expr node =
   if matsch COLON p then
     let t = typ p in
     let s = catnspans e t in
-    mk s (EX_Constraint (e, t))
+    mk s (EXConstraint (e, t))
   else
     e
 
@@ -276,7 +301,7 @@ and infix_expression p prec : expr node =
         let op = mk_infix_operator p.previous in
         let rhs = infix_expression p (prec - 1) in
         let s = catnspans lhs rhs in
-        go (mk_g s (EX_Application (op, [lhs; rhs])))
+        go (mk_g s (EXApplication (op, [lhs; rhs])))
       else
         lhs
     in
@@ -289,7 +314,7 @@ and unary_expression p : expr node =
     let op = mk_unary_operator p.previous in
     let e = unary_expression p in
     let s = catnspans op e in
-    mk_g s (EX_Application (op, [e]))
+    mk_g s (EXApplication (op, [e]))
   else
     application_expression p
 
@@ -304,7 +329,7 @@ and application_expression p : expr node =
         e :: es
       with Backtrack -> []
     in
-    mk ident.span (EX_Construct (ident, es))
+    mk ident.span (EXConstruct (ident, es))
 
   end with Backtrack ->
     (* otherwise maybe application *)
@@ -312,25 +337,23 @@ and application_expression p : expr node =
     let es = many_try p (atom_expression false) in
     if es <> [] then
       let s = catnspans e (List.hd es) in
-      mk s (EX_Application (e, es))
+      mk s (EXApplication (e, es))
     else e
 
 and atom_expression must p : expr node =
   let mk' i = mk_t i (advance p) in
   match current_t p with
-    | INTEGER i -> mk' (EX_Literal (LI_Int i))
-    | FLOAT f -> mk' (EX_Literal (LI_Float f))
-    | CHARACTER c -> mk' (EX_Literal (LI_Char c))
-    | STRING s -> mk' (EX_Literal (LI_String s))
-    | EMPTYPARENS -> mk' (EX_Literal LI_Nil)
+    | INTEGER i -> mk' (EXLiteral (LIInt i))
+    | FLOAT f -> mk' (EXLiteral (LIFloat f))
+    | CHARACTER c -> mk' (EXLiteral (LIChar c))
+    | STRING s -> mk' (EXLiteral (LIString s))
+    | EMPTYPARENS -> mk' (EXLiteral LINil)
     
-    | t when tokens_eq t (dummy `EXTERNNAME) ->
-      mk' (EX_External (unpack_str t))
     | t when tokens_eq t (dummy `MAGICNAME) ->
-      mk' (EX_Magical (unpack_str t))
+      mk' (EXMagical (unpack_str t))
     | t when tokens_eq t (dummy `LOWERNAME) ->
       let i = lower_longident p true in
-      mk i.span (EX_Identifier i)
+      mk i.span (EXIdentifier i)
 
     | LPAREN -> begin
         let start_s = (advance p).span in
@@ -339,7 +362,7 @@ and atom_expression must p : expr node =
           unclosed "'('" start_s "the closing ')' here" (current p).span;
 
         let s = catspans start_s p.previous.span in
-        let e' = if groups then EX_Grouping e else e.item in
+        let e' = if groups then EXGrouping e else e.item in
         mk s e'
       end
 
@@ -374,7 +397,7 @@ and mk_infix_operator t : expr node =
     in go (List.flatten infix_operators)
   in
   let op = mk t.span (Ident.Ident name) in
-  mk t.span (EX_Identifier op)
+  mk t.span (EXIdentifier op)
 
 and unary_operators = [BANG, "~!"; PLUS, "~+"; MINUS, "~-"]
 
@@ -386,7 +409,7 @@ and mk_unary_operator t : expr node =
     with Not_found -> failwith "mk_unary_operator"
   in
   let op = mk t.span (Ident.Ident name) in
-  mk t.span (EX_Identifier op)
+  mk t.span (EXIdentifier op)
 
 (* ============================= types ============================ *)
 
@@ -399,12 +422,12 @@ and forall_type p : typ node =
     let args = many p (matsch (dummy `PRIMENAME)) parsefn in
     if not (matsch DOT p) then backtrack ();
     let ty = forall_type p in
-    mk (catspans start_s ty.span) (TY_Forall (args, ty))
+    mk (catspans start_s ty.span) (TYForall (args, ty))
   end with Backtrack ->
     function_type p
 
 and function_type p : typ node =
-  let mk_fn lhs rhs s = mk s (TY_Function (lhs, rhs)) in
+  let mk_fn lhs rhs s = mk s (TYFunction (lhs, rhs)) in
   left_assoc p tuple_type ARROW mk_fn
 
 and tuple_type p : typ node =
@@ -413,7 +436,7 @@ and tuple_type p : typ node =
 
   if ts <> [] then
     let s = catnspans t (List.hd ts) in
-    mk s (TY_Tuple (t :: ts))
+    mk s (TYTuple (t :: ts))
   else t
 
 (* TODO: constructed types *)
@@ -423,20 +446,20 @@ and effect_type p : typ node =
     let b_span = p.previous.span in
     let t = effect_type p in
     let s = catspans b_span t.span in
-    mk s (TY_Effect t)
+    mk s (TYEffect t)
   else
     atom_type p
 
 and atom_type p : typ node =
   if matschs [dummy `BUILTINITY; dummy `BUILTINFTY; BUILTINVTY] p then
-    mk p.previous.span (TY_Primitive (unpack_typ p.previous.typ))
+    mk p.previous.span (TYPrimitive (unpack_typ p.previous.typ))
 
   else if matsch (dummy `PRIMENAME) p then
-    mk p.previous.span (TY_Variable (unpack_str p.previous.typ))
+    mk p.previous.span (TYVariable (unpack_str p.previous.typ))
 
   else try try_parse p begin fun p ->
     let i = upper_longident p false in
-    mk i.span (TY_Construct (None, i))
+    mk i.span (TYConstruct (None, i))
   end with Backtrack ->
     error_at_current p (Expected "a type") []
 

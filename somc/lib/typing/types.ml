@@ -15,10 +15,10 @@ type t =
   | TError
 
 and vague =
-  | Int
-  | Float
-  | Link of t
-  | Vague of vague
+  | VGInt
+  | VGFloat
+  | VGSolved of t
+  | VGGeneric of vague
 
 and prim =
   | PInt of bool * int
@@ -26,12 +26,12 @@ and prim =
   | PVoid
 
 and var =
-  | Unbound of int * int (** [id] and [depth] *)
-  | Solved of t
-  | Generic of int (** [id] *)
+  | VRUnbound of int * int (** [id] and [depth] *)
+  | VRSolved of t
+  | VRGeneric of int (** [id] *)
 
-let new_var depth = TVar (ref (Unbound (next_id (), depth)))
-let new_gen_var () = TVar (ref (Generic (next_id ())))
+let new_var depth = TVar (ref (VRUnbound (next_id (), depth)))
+let new_gen_var () = TVar (ref (VRGeneric (next_id ())))
 
 let show_prim =
   let f = Printf.sprintf in
@@ -81,16 +81,16 @@ let show ty debug =
     | TName p -> Symbols.Ident.to_string p
     | TPrim p -> show_prim p
     | TVague k -> begin match !k with
-        | Int -> if debug then "<int>" else "$i.*"
-        | Float -> if debug then "<float>" else "$f.*"
-        | Vague k ->
+        | VGInt -> if debug then "<int>" else "$i.*"
+        | VGFloat -> if debug then "<float>" else "$f.*"
+        | VGGeneric k ->
           let k_str = go true (TVague (ref k)) in
           if debug then "#" ^ k_str else k_str
-        | Link t -> go prim t
+        | VGSolved t -> go prim t
       end
-    | TVar {contents=Unbound (id, _)} -> show_var `U unames id
-    | TVar {contents=Solved ty} -> go prim ty
-    | TVar {contents=Generic id} -> show_var `G gnames id
+    | TVar {contents=VRUnbound (id, _)} -> show_var `U unames id
+    | TVar {contents=VRSolved ty} -> go prim ty
+    | TVar {contents=VRGeneric id} -> show_var `G gnames id
     | TApp (t1, t2) -> wrap prim (go false t1 ^ " " ^ go true t2)
     | TEff t -> "!" ^ go true t
     | TFun (a, r) ->

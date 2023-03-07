@@ -44,12 +44,21 @@ let empty =
 
 let undefined_error ident =
   let n = Ident.to_string ident in
-  let msg = "use of undefined `" ^ n ^ "`." in
+  let msg = "use of undefined `" ^ n ^ "`" in
+  let note =
+    let might_be_std =
+      Ident.has_prefix ident (Ident "_std_ops") ||
+      Ident.has_prefix ident (Ident "_std_list")
+    in
+    if might_be_std then
+      "this probably means that something has \n\
+      gone wrong with the standard library."
+    else "this is probably an internal error."
+  in
   let e = Report.Error.(Type_error (Other msg)) in
+  
   Report.make_error e None
-  |> Report.add_note 
-    "this probably means that something \
-    has gone wrong with the standard library."
+  |> Report.add_note note
   |> Report.raise
 
 let lookup_value env ident =

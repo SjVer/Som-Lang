@@ -14,8 +14,9 @@ and 'a tnode =
 (* ====================== Toplevel ====================== *)
 
 and toplevel =
-  | TL_Value_Definition of value_definition
-  | TL_Type_Definition of type_definition
+  | TLValueDef of value_definition
+  | TLTypeDef of type_definition
+  | TLExternDef of extern_definition
 
 and value_definition =
   {
@@ -28,35 +29,42 @@ and type_definition =
     td_name: Ident.t node;
     td_type: Types.t node;
   }
+
+and extern_definition =
+  {
+    ed_native_name: string node;
+    ed_name: Ident.t node;
+    ed_type: Types.t node;
+  }
   
 
 (* ====================== Pattern ======================= *)
 
 and pattern =
-  | PA_Variable of string
-  | PA_Wildcard
+  | PAVariable of string
+  | PAWildcard
 
 (* ===================== Expression ===================== *)
 
 and expr =
-  | EX_Grouping of expr tnode
-  | EX_Binding of value_binding * expr tnode
-  | EX_Lambda of value_binding
-  | EX_Sequence of expr tnode * expr tnode
-  | EX_Application of expr tnode * expr tnode list
-  | EX_Tuple of expr tnode list
-  | EX_Construct of Symbols.Ident.t tnode * expr tnode list
-  | EX_Literal of literal
-  | EX_Identifier of Symbols.Ident.t tnode
-  | EX_External of string
-  | EX_Error
+  | EXGrouping of expr tnode
+  | EXBinding of value_binding * expr tnode
+  | EXLambda of value_binding
+  | EXSequence of expr tnode * expr tnode
+  | EXApplication of expr tnode * expr tnode list
+  | EXTuple of expr tnode list
+  | EXConstruct of Symbols.Ident.t tnode * expr tnode list
+  | EXLiteral of literal
+  | EXIdentifier of Symbols.Ident.t tnode
+  | EXMagical of Magicals.t
+  | EXError
 
 and literal =
-  | LI_Int of int
-  | LI_Float of float
-  | LI_Char of char
-  | LI_String of string
-  | LI_Nil
+  | LIInt of int
+  | LIFloat of float
+  | LIChar of char
+  | LIString of string
+  | LINil
 
 and value_binding =
   {

@@ -16,79 +16,83 @@ let pt i str typ span =
 (** show functions *)
 
 let show_literal = function
-  | LI_Int i -> "Int " ^ string_of_int i
-  | LI_Float f -> "Float " ^ string_of_float f
-  | LI_Char c -> "Char '" ^ String.make 1 c ^ "'"
-  | LI_String s -> "String \"" ^ String.escaped s ^ "\""
-  | LI_Nil -> "Nil"
+  | LIInt i -> "Int " ^ string_of_int i
+  | LIFloat f -> "Float " ^ string_of_float f
+  | LIChar c -> "Char '" ^ String.make 1 c ^ "'"
+  | LIString s -> "String \"" ^ String.escaped s ^ "\""
+  | LINil -> "Nil"
 
 (* print functions *)
 
 let rec print_patt_node' i node =
   let {span; item; typ} = node in
   match item with
-    | PA_Variable n ->
-      pt i ("PA_Variable " ^ n) typ span;
-    | PA_Wildcard ->
-      pt i "PA_Wildcard" typ span
+    | PAVariable n ->
+      pt i ("PAVariable " ^ n) typ span;
+    | PAWildcard ->
+      pt i "PAWildcard" typ span
 
 and print_expr_node' i node =
   let {span; item; typ} = node in
   match item with
-    | EX_Grouping e -> 
-      pt i "EX_Grouping" typ span;
+    | EXGrouping e -> 
+      pt i "EXGrouping" typ span;
       print_expr_node' (i + 1) e
     
-    | EX_Binding (bind, e) ->
-      pt i "EX_Binding" typ span;
+    | EXBinding (bind, e) ->
+      pt i "EXBinding" typ span;
       print_patt_node' (i + 1) bind.vb_patt;
       print_expr_node' (i + 1) bind.vb_expr;
       print_expr_node' (i + 1) e
   
-    | EX_Lambda {vb_patt; vb_expr} ->
-      pt i "EX_Lambda" typ span;
+    | EXLambda {vb_patt; vb_expr} ->
+      pt i "EXLambda" typ span;
       print_patt_node' (i + 1) vb_patt;
       print_expr_node' (i + 1) vb_expr
   
-    | EX_Sequence (e1, e2) ->
-      pt i "EX_Sequence" typ span;
+    | EXSequence (e1, e2) ->
+      pt i "EXSequence" typ span;
       print_expr_node' (i + 1) e1;
       print_expr_node' (i + 1) e2
     
-    | EX_Application (a, es) ->
-      pt i "EX_Application" typ span;
+    | EXApplication (a, es) ->
+      pt i "EXApplication" typ span;
       print_expr_node' (i + 1) a;
       List.iter (print_expr_node' (i + 1)) es
     
-    | EX_Tuple es ->
-      pt i "EX_Tuple" typ span;
+    | EXTuple es ->
+      pt i "EXTuple" typ span;
       List.iter (print_expr_node' (i + 1)) es
     
-    | EX_Construct (n, es) ->
-      pt i ("EX_Construct " ^ Ident.to_string n.item) typ span;
+    | EXConstruct (n, es) ->
+      pt i ("EXConstruct " ^ Ident.to_string n.item) typ span;
       List.iter (print_expr_node' (i + 1)) es
     
-    | EX_Literal l ->
-      pt i ("EX_Literal " ^ show_literal l) typ span
+    | EXLiteral l ->
+      pt i ("EXLiteral " ^ show_literal l) typ span
     
-    | EX_Identifier {span=_; item=id; typ=_} ->
-      pt i ("EX_Identifier " ^ Ident.to_string id) typ span
+    | EXIdentifier {span=_; item=id; typ=_} ->
+      pt i ("EXIdentifier " ^ Ident.to_string id) typ span
 
-    | EX_External n ->
-      pt i ("EX_External " ^ n) typ span
+    | EXMagical m ->
+      pt i ("EXMagical " ^ Magicals.to_string m) typ span
 
-    | EX_Error -> pt i "EX_Error" typ span
+    | EXError -> pt i "EXError" typ span
 
 let print_toplevel_node' i node =
   let {span; item} : toplevel node = node in
   match item with
-    | TL_Value_Definition {vd_name; vd_expr} ->
-      p i ("TL_Value_Definition " ^ Ident.to_string vd_name.item) span;
+    | TLValueDef {vd_name; vd_expr} ->
+      p i ("TLValueDef " ^ Ident.to_string vd_name.item) span;
       print_expr_node' (i + 1) vd_expr
 
-    | TL_Type_Definition {td_name; td_type} ->
-      p i ("TL_Type_Definition " ^ Ident.to_string td_name.item) span;
+    | TLTypeDef {td_name; td_type} ->
+      p i ("TLTypeDef " ^ Ident.to_string td_name.item) span;
       pt (i + 1) "<type>" td_type.item td_type.span
+
+    | TLExternDef {ed_native_name; ed_name; ed_type} ->
+      p i ("TLExternDef " ^ Ident.to_string ed_name.item) span;
+      pt (i + 1) ed_native_name.item ed_type.item ed_type.span
 
 let print_tast' i nodes =
   let first = ref true in

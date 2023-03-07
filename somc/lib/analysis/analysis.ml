@@ -26,8 +26,10 @@ let add_implicit_prelude ast =
   imp_ast @ ast
 
 let resolve mod_ident (ast : ast) : Context.t * ast =
+  let ctx = Context.empty mod_ident in
+
   let ast = Constant_fold.fold_constants ast in
-  let ctx =  Builtins.bind_builtins (Context.empty mod_ident) in
+  let ast = Builtins.rename_builtins ast in
 
   (* we keep all imported ast nodes seperate for now
      so that they don't get messed up by `resolve_ast` *)

@@ -466,7 +466,7 @@ contexts:
     - match: '{{uname}}'
       scope: entity.name.type.variant.som
 
-    - match: \#\!{{lname}}
+    - match: \#{{lname}}
       scope: constant.language.builtin.som
 
   # DIRECTIVES

@@ -4,8 +4,4 @@
 -- from module use sub::subsub::bar
 -- let bar2 = bar
 
-mod _std_ops {
-  from std::ops use *
-}
-
-let double x = 2 * x
+let x = #add 1 2.2

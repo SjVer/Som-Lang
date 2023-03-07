@@ -11,22 +11,22 @@ let use_of_unbound_error what ident span : unit =
 let rec resolve_type ctx typ =
   let go = resolve_type ctx in
   let item = match typ.item with
-    (* | TY_Variant vs ->
+    (* | TYVariant vs ->
       let vs' = List.map (fun (n, ts) -> (canon_name' n, ts)) vs in
-      TY_Variant vs' *)
-    | TY_Grouping t -> TY_Grouping (go t)
-    | TY_Forall (ps, t) -> TY_Forall (ps, go t)
-    | TY_Effect t -> TY_Effect (go t) 
-    | TY_Function (t1, t2) -> TY_Function (go t1, go t2)
-    | TY_Tuple ts -> TY_Tuple (List.map (go) ts)
+      TYVariant vs' *)
+    | TYGrouping t -> TYGrouping (go t)
+    | TYForall (ps, t) -> TYForall (ps, go t)
+    | TYEffect t -> TYEffect (go t) 
+    | TYFunction (t1, t2) -> TYFunction (go t1, go t2)
+    | TYTuple ts -> TYTuple (List.map (go) ts)
 
-    | TY_Construct (t, i) -> begin try
+    | TYConstruct (t, i) -> begin try
         let i' = Context.lookup_qual_type_ident ctx i.item in
         Symbols.use (`Type i') i.span;
-        TY_Construct (Option.map go t, {i with item = i'})
+        TYConstruct (Option.map go t, {i with item = i'})
       with Not_found ->
         use_of_unbound_error "type" i.item i.span;
-        TY_Any
+        TYAny
       end
 
     | item -> item
@@ -34,44 +34,44 @@ let rec resolve_type ctx typ =
   {typ with item}
 
 let bind_pattern ctx = function
-  | PA_Variable n -> Context.bind_value ctx (Ident n) (Ident n)
-  | PA_Wildcard -> ctx
+  | PAVariable n -> Context.bind_value ctx (Ident n) (Ident n)
+  | PAWildcard -> ctx
 
 let rec resolve_expr ctx expr =
   let go = resolve_expr ctx in
   let item = match expr.item with
-    | EX_Grouping e -> EX_Grouping (go e)
+    | EXGrouping e -> EXGrouping (go e)
 
-    | EX_Binding (b, e) ->
+    | EXBinding (b, e) ->
       let vb_expr = go b.vb_expr in
       let ctx' = bind_pattern ctx b.vb_patt.item in
-      EX_Binding ({b with vb_expr}, resolve_expr ctx' e)
+      EXBinding ({b with vb_expr}, resolve_expr ctx' e)
 
-    | EX_Lambda b ->
+    | EXLambda b ->
       let ctx' = bind_pattern ctx b.vb_patt.item in
       let vb_expr = resolve_expr ctx' b.vb_expr in
-      EX_Lambda {b with vb_expr}
+      EXLambda {b with vb_expr}
 
-    | EX_Sequence (e1, e2) -> EX_Sequence (go e1, go e2)
-    | EX_Constraint (e, t) -> EX_Constraint (go e, resolve_type ctx t)
-    | EX_Application (e, es) -> EX_Application (go e, List.map go es)
-    | EX_Tuple es -> EX_Tuple (List.map go es)
+    | EXSequence (e1, e2) -> EXSequence (go e1, go e2)
+    | EXConstraint (e, t) -> EXConstraint (go e, resolve_type ctx t)
+    | EXApplication (e, es) -> EXApplication (go e, List.map go es)
+    | EXTuple es -> EXTuple (List.map go es)
 
-    | EX_Construct (i, es) -> begin try
+    | EXConstruct (i, es) -> begin try
         let i' = Context.lookup_qual_value_ident ctx i.item in
         Symbols.use (`Val i') i.span;
-        EX_Construct ({i with item = i'}, List.map go es)
+        EXConstruct ({i with item = i'}, List.map go es)
       with Not_found ->
         use_of_unbound_error "constructor" i.item i.span;
-        EX_Error
+        EXError
       end
-    | EX_Identifier i -> begin try
+    | EXIdentifier i -> begin try
         let i' = Context.lookup_qual_value_ident ctx i.item in
         Symbols.use (`Val i') i.span;
-        EX_Identifier {i with item = i'}
+        EXIdentifier {i with item = i'}
       with Not_found ->
         use_of_unbound_error "value" i.item i.span;
-        EX_Error
+        EXError
       end
 
     | item -> item
@@ -82,7 +82,7 @@ let rec resolve_toplevel ctx tl =
   let qualnode ctx n = {n with item = Context.qualify ctx n.item} in
   let mk item = {tl with item} in
   match tl.item with
-    | TL_Value_Definition vdef ->
+    | TLValueDef vdef ->
       let vdef' =
         {
           vd_name = qualnode ctx vdef.vd_name;
@@ -93,9 +93,9 @@ let rec resolve_toplevel ctx tl =
         vdef.vd_name.item
         vdef'.vd_name.item
       in
-      ctx', [mk (TL_Value_Definition vdef')]
+      ctx', [mk (TLValueDef vdef')]
 
-    | TL_Type_Definition tdef ->
+    | TLTypeDef tdef ->
       let tdef' =
         {
           td_name = qualnode ctx tdef.td_name;
@@ -106,16 +106,33 @@ let rec resolve_toplevel ctx tl =
         tdef.td_name.item
         tdef'.td_name.item
       in
-      ctx', [mk (TL_Type_Definition tdef')]
+      ctx', [mk (TLTypeDef tdef')]
 
-    | TL_Module (n, ast) ->
+    | TLExternDef edef ->
+      (* TODO: fix this if we know how *)
+      let map_name i = Ident.Ident ("%" ^ i) in
+      let edef' =
+        {
+          ed_native_name = edef.ed_native_name;
+          (* ed_name = qualnode ctx edef.ed_name; *)
+          ed_name = nmap edef.ed_native_name map_name;
+          ed_type = resolve_type ctx edef.ed_type;
+        }
+      in
+      let ctx' = Context.bind_value ctx
+        edef.ed_name.item
+        edef'.ed_name.item
+      in
+      ctx', [mk (TLExternDef edef')]
+
+    | TLModule (n, ast) ->
       let open Context in
       let subctx = {ctx with name = qualify ctx (Ident n.item)} in
       let subctx', ast' = resolve_ast subctx ast in
       let ctx' = add_subcontext_prefixed ctx subctx' n.item in
       ctx', ast'
 
-    | TL_Import _ -> ctx, []
+    | TLImport _ -> ctx, []
 
 and resolve_ast ctx : ast -> Context.t * ast = function
   | [] -> ctx, []

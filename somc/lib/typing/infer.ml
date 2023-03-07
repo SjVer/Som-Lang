@@ -15,12 +15,12 @@ let set_ty typ n = {n with typ}
 
 let infer_patt level env (patt : Ast.pattern node) =
   let env', item', typ = match patt.item with
-    | PA_Variable v ->
+    | PAVariable v ->
       let v_typ = new_var level in
       let env' = Env.add_value env (Ident v) v_typ in
-      env', PA_Variable v, v_typ
-    | PA_Wildcard ->
-      env, PA_Wildcard, new_var level
+      env', PAVariable v, v_typ
+    | PAWildcard ->
+      env, PAWildcard, new_var level
   in
   env', mk patt.span typ item'
 
@@ -46,11 +46,11 @@ let rec infer_and_unify_appl level env span fty = function
 and infer_expr level env exp =
   let {span = s; item = exp} : Ast.expr Ast.node = exp in
   match exp with
-    | EX_Grouping e ->
+    | EXGrouping e ->
       let t = infer_expr level env e in
-      mk s t.typ (EX_Grouping t) 
+      mk s t.typ (EXGrouping t) 
     
-    | EX_Binding (bind, body) ->
+    | EXBinding (bind, body) ->
       (* the bound expr stands apart from the pattern its bound to *)
       let expr' = infer_expr (level + 1) env bind.vb_expr in
       (* the bound expr and its pattern should have the same type *)
@@ -61,21 +61,21 @@ and infer_expr level env exp =
       let expr'' = set_ty (generalize level expr'.typ) expr' in
       (* construct the updated binding *)
       let bind' = {vb_patt = patt'; vb_expr = expr''} in
-      mk s body'.typ (EX_Binding (bind', body'))
+      mk s body'.typ (EXBinding (bind', body'))
     
-    | EX_Lambda bind ->
+    | EXLambda bind ->
       let env', patt' = infer_patt level env bind.vb_patt in
       let expr' = infer_expr level env' bind.vb_expr in
       (* construct the updated binding *)
       let binding = {vb_patt = patt'; vb_expr = expr'} in
-      mk s (TFun (patt'.typ, expr'.typ)) (EX_Lambda binding)
+      mk s (TFun (patt'.typ, expr'.typ)) (EXLambda binding)
     
-    | EX_Sequence (e1, e2) ->
+    | EXSequence (e1, e2) ->
       let e1' = infer_expr level env e1 in
       let e2' = infer_expr level env e2 in
-      mk s e2'.typ (EX_Sequence (e1', e2'))
+      mk s e2'.typ (EXSequence (e1', e2'))
 
-    | EX_Constraint (e, t) ->
+    | EXConstraint (e, t) ->
       let t' = Parse_type.parse env level t.item in
       let e' = infer_expr level env e in
       begin
@@ -86,46 +86,48 @@ and infer_expr level env exp =
       end;
       set_ty t' e'
 
-    | EX_Application (f, es) ->
+    | EXApplication (f, es) ->
       assert (es <> []);
       let f' = infer_expr level env f in
       let out_ty, es' = infer_and_unify_appl level env f'.span f'.typ es in
-      mk s out_ty (EX_Application (f', es'))
+      mk s out_ty (EXApplication (f', es'))
 
-    | EX_Tuple es ->
+    | EXTuple es ->
       let es' = List.map (infer_expr level env) es in
       let ts = List.map (fun e -> e.typ) es' in
-      mk s (TTup ts) (EX_Tuple es')
+      mk s (TTup ts) (EXTuple es')
 
-    | EX_Construct (i, es) ->
+    | EXConstruct (i, es) ->
       let constr_typ = instantiate level (Env.lookup_value env i.item) in
       let out_ty, es' = infer_and_unify_appl level env i.span constr_typ es in
-      mk s out_ty (EX_Construct (mk i.span constr_typ i.item, es'))
+      mk s out_ty (EXConstruct (mk i.span constr_typ i.item, es'))
 
-    | EX_Literal l ->
+    | EXLiteral l ->
       (* TODO: look these up instead? *)
       let name n = TName (Cons ("_std_types", Ident n)) in
       let l', t = match l with
-        | LI_Char c   -> LI_Char c,   name "Chr"
-        | LI_Float f  -> LI_Float f,  TVague (ref Float)
-        | LI_Int i    -> LI_Int i,    TVague (ref Int) 
-        | LI_Nil      -> LI_Nil,      name "Nll"
-        | LI_String s -> LI_String s, name "Str"
-      in mk s t (EX_Literal l')
+        | LIChar c   -> LIChar c,   name "Chr"
+        | LIFloat f  -> LIFloat f,  TVague (ref VGFloat)
+        | LIInt i    -> LIInt i,    TVague (ref VGInt) 
+        | LINil      -> LINil,      name "Nll"
+        | LIString s -> LIString s, name "Str"
+      in mk s t (EXLiteral l')
     
-    | EX_Identifier {span; item} ->
+    | EXIdentifier {span; item} ->
       let t = instantiate level (Env.lookup_value env item) in
-      mk s t (EX_Identifier (mk span t item)) 
+      mk s t (EXIdentifier (mk span t item)) 
 
-    | EX_External n ->
-      let t = instantiate level (Hashtbl.find Env.externals n) in
-      mk s t (EX_External n)
-    
-    | EX_Magical _ ->
-      (* TODO: implement this *)
-      mk s TError EX_Error
+    | EXMagical n ->
+      begin try
+        let m = Magicals.find n in
+        let t = Magicals.type_of m in
+        mk s t (EXMagical m)
+      with Not_found ->
+        error false (Use_of_invalid_magical n) (Some s); 
+        mk s TError EXError
+      end
 
-    | EX_Error -> mk s TError EX_Error
+    | EXError -> mk s TError EXError
 
 (* helper functions *)
 
@@ -135,7 +137,7 @@ let infer_expr env e =
     with Report.Error err ->
       Report.report err;
       let span = {e.span with Span.ghost=true} in
-      mk span (new_var 0) EX_Error
+      mk span (new_var 0) EXError
   in
   (* e' *)
   set_ty (generalize (-1) e'.typ) e'

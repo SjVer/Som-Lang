@@ -55,6 +55,10 @@ type:
     This error is raised when a undefined type or variable is used.
     Often this is caused by a simple typo.
 
+  Use_of_invalid_magical: >
+    This error is raised when it is attempted to use an invalid
+    magical operator, such as "#wrong".
+
   Has_no_symbol: >
     This error is raised when trying to import- or use a symbol
     that does not exist from a module or file.

@@ -28,6 +28,7 @@ let kw_from_str = function
   | "as" -> AS
   | "mod" -> MOD
   | "type" -> TYPE
+  | "ext" -> EXT
   | "is" -> IS 
   | "of" -> OF 
   | "let" -> LET 
@@ -82,8 +83,7 @@ rule lex = parse
   | "---" { block_comment lexbuf; lex lexbuf }
   | "--" { simple_comment lexbuf; lex lexbuf }
 
-  | "#!" (lower_name as ident) { MAGICNAME ident }
-  | "#" (lower_name as ident) { EXTERNNAME ident }
+  | "#" (lower_name as ident) { MAGICNAME ident }
   | "!!" (lower_name as ident) { DIRECTNAME ident }
 
   | "/=" { NOTEQUAL }

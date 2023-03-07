@@ -30,27 +30,25 @@
 
 --- arithmetic ops ---
 
-let add = #!add -- (+)
-let sub = #!sub -- (-)
-let mul = #!mul -- (*)
-let div = #!div -- (/)
-let rem = #!rem -- (%)
-let abs = #!abs -- (~+)
-let neg = #!neg -- (~-)
+let add = #add -- (+)
+let sub = #sub -- (-)
+let mul = #mul -- (*)
+let div = #div -- (/)
+let rem = #rem -- (%)
+let abs = #abs -- (~+)
+let neg = #neg -- (~-)
 
 --- logical ops ---
 
-let and = #!and -- (&&)
-let xor = #!xor
-let or  = #!or  -- (||)
-let not = #!not -- (~!)
+let and = #and -- (&&)
+let or  = #or  -- (||)
+let not = #not -- (~!)
 
 --- comparison ops ---
 
-let eq   = #!eq -- (=)
-let gr   = #!gr -- (>)
-let ls   = #!ls -- (<)
-
-let neq  x y = not (eq x y)         -- (/=)
-let greq x y = or (gr x y) (eq x y) -- (>=)
-let lseq x y = or (ls x y) (eq x y) -- (<=)
+let eq   = #eq -- (=)
+let gr   = #gt -- (>)
+let ls   = #lt -- (<)
+let neq  = #neq  -- (/=)
+let gteq = #gteq -- (>=)
+let lteq = #lteq -- (<=)

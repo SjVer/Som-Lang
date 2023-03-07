@@ -16,7 +16,7 @@ ANY_TO_CODE_BODY_FMT = "  | {uppername}_error e -> code_from_{name}_error e\n"
 FROM_CODE_DECL_FMT = "\nlet error_name_from_code = function\n"
 FROM_CODE_BODY_FMT = "  | {index} -> Some (\"{kind}\", \"{name}\")\n"
 FROM_CODE_TAIL_FMT = "  | _ -> None\n"
-GET_CODE_OPT_FN = """
+GET_CODE_OPTFN = """
 let get_code_opt = function
   | Other_error _ -> None
   | e -> Some (code_from_error e)
@@ -120,7 +120,7 @@ def generate_file(enums: List[Enum], expls: Dict[str, Dict[str, str]]):
             )
     txt += FROM_CODE_TAIL_FMT
     
-    txt += GET_CODE_OPT_FN
+    txt += GET_CODE_OPTFN
 
     # let explanation_from_code
     txt += EXPL_FROM_CODE_DECL_FMT
