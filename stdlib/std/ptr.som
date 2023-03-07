@@ -27,25 +27,21 @@
 ---
 
 -- !!.stdlib
--- !!.unsafe
 -- !!.warn_redef "redefinition may break stdlib"
 
--- !!safe
-from std::option use Option
+type 'a Ptr is $i.u.s
 
--- !!safe
-type 'a Pointer is $i.u.s
+-- !!unsafe
+ext _som_std_ptr_deref as deref ptr : 'a Ptr -> 'a
 
-ext _som_std_ptr_deref as deref ptr : 'a Pointer -> 'a
+-- !!unsafe
+ext _som_std_ptr_set as set ptr val : 'a Ptr -> 'a -> !Nll
 
-ext _som_std_ptr_set as set ptr val : 'a Pointer -> 'a -> !Nll
+let is_null ptr : 'a Ptr -> Bln = ptr = 0
 
--- !!safe
-let is_null ptr : 'a Pointer -> Bln = ptr = 0
+-- !!unsafe
+ext _som_std_ptr_malloc as malloc size : Sze -> !'a Ptr
 
-ext _som_std_ptr_malloc as malloc size : Sze -> !'a Pointer
+let malloc_ptr () : !'a Ptr = malloc (!!size_of 'a)
 
--- !!safe
-let malloc_ptr () : !'a Pointer = malloc (!!size_of 'a)
-
-ext _som_std_ptr_free as free ptr : 'a Pointer -> !Nll
+ext _som_std_ptr_free as free ptr : 'a Ptr -> !Nll

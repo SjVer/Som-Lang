@@ -11,9 +11,11 @@ typedef unsigned char som_Byt;
 typedef unsigned char som_Chr;
 typedef signed int    som_Int;
 typedef signed long   som_Lng;
+typedef ssize_t       som_Sze;
 typedef float         som_Hlf;
 typedef float         som_Flt;
 typedef double        som_Dbl;
 typedef void          som_Nll;
 
 typedef char*         som_Str;
+typedef void*         som_Ptr;
