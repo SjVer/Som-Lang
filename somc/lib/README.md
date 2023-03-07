@@ -2,15 +2,19 @@
 
 ## analysis/
 
-Responsible for name resolution.
+Responsible for import-, name- and builtin resolution and constant folding.
 
 ## codegen/
 
-Responsible for translating ??? into LLVM IR and generating the final binary.
+Contains the Lambda to LLVM translation and backend.
 
 ## config/
 
-Contains configurations
+Contains static- and user-defined (command-line) configurations.
+
+## malfunction/
+
+Contains the Lambda to Malfunction translation and backend.
 
 ## parse/
 
@@ -28,6 +32,10 @@ It also handles anything error-code related.
 ## span/
 
 Contains the `span` and `loc` types and code related to those types.
+
+## symbols/
+
+Contains the definitions for symbols, identifiers, etc...
 
 ## typing/
 
