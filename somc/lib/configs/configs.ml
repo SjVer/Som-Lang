@@ -23,3 +23,5 @@ let prelude_file = _path (include_dir :: prelude_ident) ^ ".som"
 let in_lsp_mode = ref false
 
 let hide_stdlib_nodes = false
+
+let tast_print_debug = true

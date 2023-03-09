@@ -122,7 +122,7 @@ and toplevel_type_definition p =
 
   (* params *)
   let parsefn p = mk_t (unpack_str p.previous.typ) p.previous in
-  let params = many p (matsch (dummy `PRIMENAME)) parsefn in
+  let td_params = many p (matsch (dummy `PRIMENAME)) parsefn in
 
   (* name *)
   let name =
@@ -137,20 +137,20 @@ and toplevel_type_definition p =
   let td_name = {name with item = Ident.Ident name.item} in
 
   (* type *)
-  let typ =
-    if matsch IS p then typ p
+  let td_type =
+    if matsch IS p then
+      let t = typ p in
+      mk t.span (CTSimple t)
     else begin
       i (consume OF "\"is\" or \"of\"" p);
-      failwith "TODO: parse complex type definition"
+      let start_s = (current p).span in
+      let typ = finish_complex_type p in
+      mk (catspans start_s p.previous.span) typ
     end
   in
 
   (* wrap type in TYForall if there's parameters *)
-  let td_type =
-    if params = [] then typ
-    else mk_g typ.span (TYForall (params, typ))
-  in
-  TLTypeDef {td_name; td_type}
+  TLTypeDef {td_params; td_name; td_type}
 
 and toplevel_extern_definition p =
   i (advance p);
@@ -176,7 +176,7 @@ and toplevel_extern_definition p =
 
   TLExternDef {ed_native_name; ed_name; ed_type}
 
-(* ============================ imports =========================== *)
+(* ======================= toplevel helpers ====================== *)
 
 and finish_import_from p =
   let go p =
@@ -199,6 +199,30 @@ and finish_import_path p =
   let path = longident_path p in
   let last = consume (dummy `LOWERNAME) "an identifier" p in
   path @ [mk_t (unpack_str last.typ) last]
+
+and finish_complex_type p =
+  if matsch PIPE p || check (dummy `UPPERNAME) p then
+    CTVariant (finish_variant_type p)
+  else
+    failwith "TODO: parse other complex types" 
+
+and finish_variant_type p =
+  (* first (optional) '|' already consumed *)
+  let ident =
+    let tok = consume (dummy `UPPERNAME) "an uppercase identifier" p in
+    mk tok.span (Ident.Ident (unpack_str tok.typ))
+  in
+  let args =
+    try
+      let t = (constructed_type false) p in
+      let ts = many p (matsch SEMICOLON) (constructed_type true) in
+      t :: ts
+    with Backtrack -> []
+  in
+
+  if matsch PIPE p then
+    (ident, args) :: finish_variant_type p
+  else [ident, args]
 
 (* ============================ binding =========================== *)
 
@@ -250,9 +274,9 @@ and atom_pattern p : pattern node =
 
 (* =========================== expression ========================= *)
 
-and expression p : expr node = let_expression p
+and expression p = let_expression p
 
-and let_expression p : expr node =
+and let_expression p =
   if matsch LET p then begin
     let let_s = p.previous.span in
     let bind = binding p let_expression EQUAL "=" in
@@ -263,11 +287,11 @@ and let_expression p : expr node =
   end
   else sequence_expression p
 
-and sequence_expression p : expr node =
+and sequence_expression p =
   let mk_seq e1 e2 s = mk s (EXSequence (e1, e2)) in
   left_assoc p lambda_expression COMMA mk_seq
 
-and lambda_expression p : expr node =
+and lambda_expression p =
   if matsch BACKSLASH p then begin
     let start_s = p.previous.span in
     let bind = binding p tuple_expression ARROW "->" in
@@ -275,7 +299,7 @@ and lambda_expression p : expr node =
     mk s (EXLambda bind)
   end else tuple_expression p
 
-and tuple_expression p : expr node =
+and tuple_expression p =
   let e = t_constr_expression p in
   let es = many p (matsch SEMICOLON) t_constr_expression in
 
@@ -284,7 +308,7 @@ and tuple_expression p : expr node =
     mk s (EXTuple (e :: es))
   else e
 
-and t_constr_expression p : expr node =
+and t_constr_expression p =
   let e = infix_expression p max_precedence in
   if matsch COLON p then
     let t = typ p in
@@ -293,7 +317,7 @@ and t_constr_expression p : expr node =
   else
     e
 
-and infix_expression p prec : expr node =
+and infix_expression p prec =
   if prec >= 0 then
     (* TODO: allow right associativity? *)
     let rec go lhs = 
@@ -309,7 +333,7 @@ and infix_expression p prec : expr node =
   else
     unary_expression p
 
-and unary_expression p : expr node =
+and unary_expression p =
   if matschs (allowed_unary_operators ()) p then
     let op = mk_unary_operator p.previous in
     let e = unary_expression p in
@@ -318,7 +342,7 @@ and unary_expression p : expr node =
   else
     application_expression p
 
-and application_expression p : expr node =
+and application_expression p =
   (* first try construct *)
   try try_parse p begin fun p ->
     let ident = upper_longident p false in
@@ -336,11 +360,11 @@ and application_expression p : expr node =
     let e = atom_expression true p in
     let es = many_try p (atom_expression false) in
     if es <> [] then
-      let s = catnspans e (List.hd es) in
+      let s = catnspans e (List.hd (List.rev es)) in
       mk s (EXApplication (e, es))
     else e
 
-and atom_expression must p : expr node =
+and atom_expression must p =
   let mk' i = mk_t i (advance p) in
   match current_t p with
     | INTEGER i -> mk' (EXLiteral (LIInt i))
@@ -362,8 +386,7 @@ and atom_expression must p : expr node =
           unclosed "'('" start_s "the closing ')' here" (current p).span;
 
         let s = catspans start_s p.previous.span in
-        let e' = if groups then EXGrouping e else e.item in
-        mk s e'
+        mk s (if groups then EXGrouping e else e.item)
       end
 
     (* TODO: lists and whatnot *)
@@ -388,7 +411,7 @@ and infix_operators =
 and allowed_infix_operators prec =
   List.nth infix_operators prec
   |> List.map fst
-and mk_infix_operator t : expr node =
+and mk_infix_operator t =
   let name =
     let rec go = function
       | (op, (name : string)) :: _ when op = t.typ -> name
@@ -402,7 +425,7 @@ and mk_infix_operator t : expr node =
 and unary_operators = [BANG, "~!"; PLUS, "~+"; MINUS, "~-"]
 
 and allowed_unary_operators _ = List.map fst unary_operators
-and mk_unary_operator t : expr node =
+and mk_unary_operator t =
   let name =
     let find_fn (tt, _) = t.typ = tt in
     try snd (List.find find_fn unary_operators)
@@ -413,9 +436,9 @@ and mk_unary_operator t : expr node =
 
 (* ============================= types ============================ *)
 
-and typ p : typ node = forall_type p
+and typ p = forall_type p
 
-and forall_type p : typ node =
+and forall_type p =
   try try_parse p begin fun p ->
     let start_s = (current p).span in
     let parsefn p = mk_t (unpack_str p.previous.typ) p.previous in
@@ -426,42 +449,60 @@ and forall_type p : typ node =
   end with Backtrack ->
     function_type p
 
-and function_type p : typ node =
+and function_type p =
   let mk_fn lhs rhs s = mk s (TYFunction (lhs, rhs)) in
   left_assoc p tuple_type ARROW mk_fn
 
-and tuple_type p : typ node =
-  let t = effect_type p in
-  let ts = many p (matsch SEMICOLON) effect_type in
+and tuple_type p =
+  let t = constructed_type true p in
+  let ts = many p (matsch SEMICOLON) (constructed_type true) in
 
   if ts <> [] then
     let s = catnspans t (List.hd ts) in
     mk s (TYTuple (t :: ts))
   else t
 
-(* TODO: constructed types *)
+and constructed_type must p =
+  (* TODO: `A B` works, but `A B C` only works as `(A B) C` *)
+  let t = effect_type must p in
+  try
+    let i = upper_longident p false in
+    mk (catnspans t i) (TYConstruct (Some t, i))
+  with Backtrack -> t
 
-and effect_type p : typ node =
+and effect_type must p =
   if matsch BANG p then
     let b_span = p.previous.span in
-    let t = effect_type p in
+    let t = effect_type true p in
     let s = catspans b_span t.span in
     mk s (TYEffect t)
   else
-    atom_type p
+    atom_type must p
 
-and atom_type p : typ node =
-  if matschs [dummy `BUILTINITY; dummy `BUILTINFTY; BUILTINVTY] p then
+and atom_type must p =
+  if matsch LPAREN p then begin
+    let start_s = p.previous.span in
+    let t = typ p in
+    if not (matsch RPAREN p) then
+      unclosed "'('" start_s "the closing ')' here" (current p).span;
+
+    let s = catspans start_s p.previous.span in
+    mk s (if groups then TYGrouping t else t.item)
+  end
+
+  else if matschs [dummy `BUILTINITY; dummy `BUILTINFTY; BUILTINVTY] p then
     mk p.previous.span (TYPrimitive (unpack_typ p.previous.typ))
 
   else if matsch (dummy `PRIMENAME) p then
-    mk p.previous.span (TYVariable (unpack_str p.previous.typ))
+    let n = mk_t (unpack_str p.previous.typ) p.previous in
+    mk p.previous.span (TYVariable n)
 
   else try try_parse p begin fun p ->
     let i = upper_longident p false in
     mk i.span (TYConstruct (None, i))
   end with Backtrack ->
-    error_at_current p (Expected "a type") []
+    if must then error_at_current p (Expected "a type") []
+    else backtrack ()
 
 (* ========================== identifiers ========================= *)
 

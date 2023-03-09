@@ -3,6 +3,7 @@ let next_id =
   fun () -> incr i; !i
 
 type t =
+  | TVariant of (Symbols.Ident.t * t) list
   | TName of Symbols.Ident.t
   | TPrim of prim
   | TVague of vague ref
@@ -78,6 +79,14 @@ let show ty debug =
   let wrap prim s = if prim then "(" ^ s ^ ")" else s in
 
   let rec go prim = function
+    | TVariant rows ->
+      let show_row (i, t) =
+        Symbols.Ident.to_string i ^ " : " ^ go false t
+      in
+      if debug then
+        "[" ^ (List.map show_row rows |> String.concat " | ") ^ "]"
+      else
+        Printf.sprintf "<%d variants>" (List.length rows)
     | TName p -> Symbols.Ident.to_string p
     | TPrim p -> show_prim p
     | TVague k -> begin match !k with
@@ -85,7 +94,7 @@ let show ty debug =
         | VGFloat -> if debug then "<float>" else "$f.*"
         | VGGeneric k ->
           let k_str = go true (TVague (ref k)) in
-          if debug then "#" ^ k_str else k_str
+          if debug then "#$" ^ k_str else k_str
         | VGSolved t -> go prim t
       end
     | TVar {contents=VRUnbound (id, _)} -> show_var `U unames id

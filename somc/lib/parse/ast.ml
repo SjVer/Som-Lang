@@ -25,10 +25,11 @@ and value_definition =
 
 and type_definition =
   {
+    td_params: string node list;
     td_name: Ident.t node;
-    td_type: typ node;
+    td_type: complex_typ node;
   }
-  
+
 and extern_definition =
   {
     (*
@@ -95,14 +96,18 @@ and value_binding =
 
 (* ======================== Type ======================== *)
 
+and complex_typ =
+  | CTVariant of row list
+  | CTSimple of typ node
+
+and row = Ident.t node * typ node list
+
 and typ =
-  (* typedef-only *)
-  | TYVariant of (string node * typ node list) list
   (* generic *)
   | TYGrouping of typ node
   | TYAny
   | TYForall of string node list * typ node
-  | TYVariable of string
+  | TYVariable of string node
   | TYEffect of typ node
   | TYFunction of typ node * typ node
   | TYTuple of typ node list

@@ -1,7 +1,5 @@
--- use module
--- let foo2 = module::foo
+type Int is $i.s.32
 
--- from module use sub::subsub::bar
--- let bar2 = bar
+type Boxed of Box Int
 
-let x = #add 1 2.2
+let char_box = Box 123

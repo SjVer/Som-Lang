@@ -1,24 +1,11 @@
 open Types
 open Report.Error
 
-let error do_raise e span =
-  let r = Report.make_error (Type_error e) span in
-  let is_about_prim_type =
-    let go str = String.contains str '$' in
-    match e with
-      | Expected (t1, t2) -> go t1 || go t2
-      | Expected_function t -> go t
-      | _ -> false
-  in
-  let r =
-    if is_about_prim_type then
-      Report.add_note
-        "types starting with '$' are primitive types.\n\
-        for more info see <TODO>." r
-    else r
-  in
-  if do_raise then Report.raise r
-  else Report.report r
+exception Unification_failed of string list
+exception Recursive_type
+
+let error e span notes =
+  Report.make (`Error (Type_error e)) (Some span) notes []
 
 (** generalizes type [ty] replacing unbound
     type variables with generic ones, and
@@ -32,8 +19,11 @@ let rec generalize level = function
     k := VGGeneric !k;
     TVague k
 
-  | TVar {contents = VRSolved ty} -> generalize level ty
+  | TVariant rows ->
+    let f (i, ts) = i, generalize level ts in
+    TVariant (List.map f rows)
 
+  | TVar {contents = VRSolved ty} -> generalize level ty
   | TEff t -> TEff (generalize level t)
   | TFun (p, r) -> TFun (generalize level p, generalize level r)
   | TApp (a, t) -> TApp (generalize level a, generalize level t)
@@ -49,7 +39,9 @@ let rec generalize level = function
     vague types with normal vague types *)
 let instantiate level ty =
   let id_var_map = Hashtbl.create 20 in
-  let rec go ty = match ty with
+  let rec go = function
+    | TVariant rows ->
+      TVariant (List.map (fun (i, t) -> i, go t) rows)
     | TVar {contents = VRSolved ty} -> go ty
     | TVar {contents = VRGeneric id} -> begin
         try Hashtbl.find id_var_map id
@@ -64,23 +56,24 @@ let instantiate level ty =
     | TApp (a, t) -> TApp (go a, go t)
     | TFun (p, r) -> TFun (go p, go r)
     | TTup ts -> TTup (List.map go ts)
-    | TName _ | TPrim _ | TVague _ | TError | TNever -> ty
+    | TName _ as ty -> ty
+    | TPrim _ | TVague _ | TError | TNever -> ty
   in go ty
 
 (** asserts that the type isn't recursive
   and solves constraints like {'a = 'b}
   if 'b comes from a higher level than 'a *)
-let occurs_check_adjust_levels ?(do_raise=false) span id level =
+let occurs_check_adjust_levels id level =
   let rec go = function
     | TName _ | TPrim _ | TVague _ | TError | TNever -> ()
+    | TVariant rows -> List.iter (fun (_, t) -> go t) rows
     | TVar {contents = VRSolved ty} -> go ty
     | TVar {contents = VRGeneric _} -> ()
     | TVar ({contents = VRUnbound (other_id, other_level)} as other) ->
-      if other_id = id then
-        error do_raise Recursive_type (Some span);
-      if other_level > level
-        then other := VRUnbound (other_id, other_level)
-        else ()
+      if other_id = id then raise Recursive_type
+      else
+        if other_level <= level then ()
+        else other := VRUnbound (other_id, other_level)
     | TEff t -> go t
     | TApp (a, t) -> go a; go t
     | TFun (p, r) -> go p; go r
@@ -97,18 +90,12 @@ let rec can_unify_vague_ty env kind = function
   | TVar {contents = VRSolved t} -> can_unify_vague_ty env kind t
   | _ -> false
 
-let rec unify_name ?(do_raise=false) env span ty1 ty2 =
-  let add_alias_note n t =
-    Printf.sprintf
-      "type `%s` is an alias for `%s`."
+let rec unify_name env span ty1 ty2 =
+  let alias_note n nty =
+    Printf.sprintf "type `%s` is an alias for `%s`."
       (Symbols.Ident.to_string n)
-      (Types.show t false)
-    |> Report.add_note
+      (Types.show nty false)
   in
-  let error =
-    if do_raise then Report.raise
-    else Report.report
-  in 
   match (ty1, ty2) with
     | TName n1, TName n2 ->
       if n1 = n2 then ()
@@ -116,18 +103,18 @@ let rec unify_name ?(do_raise=false) env span ty1 ty2 =
         let t1 = Env.lookup_alias env n1 in
         let t2 = Env.lookup_alias env n2 in
         begin
-          try unify ~do_raise:true env span t1 t2
-          with Report.Error r -> r
-            |> add_alias_note n1 t1
-            |> add_alias_note n2 t2
-            |> error
+          try unify env span t1 t2
+          with Unification_failed notes ->
+            let note1 = alias_note n1 t1 in
+            let note2 = alias_note n2 t2 in
+            raise (Unification_failed (note1 :: note2 :: notes))
         end
 
     | TName n, ty | ty, TName n ->
       let nty = Env.lookup_alias env n in
       begin
         try
-          unify ~do_raise:true env span nty ty;
+          unify env span nty ty;
           (* make sure that e.g. [unify Int $i.*] links the
              ['a] to [Int] and not to [Int]'s 'contents'.*)
           begin match ty with
@@ -137,20 +124,37 @@ let rec unify_name ?(do_raise=false) env span ty1 ty2 =
               v := (VRSolved (TName n))
             | _ -> ()
           end
-        with Report.Error r -> r
-          |> add_alias_note n nty
-          |> error
+        with Unification_failed notes ->
+          let note = alias_note n nty in
+          raise (Unification_failed (note :: notes))
       end
 
     | _ -> invalid_arg "unify_name"
 
-and unify ?(do_raise=false) env span ty1 ty2 =
+and unify env span ty1 ty2 =
   if ty1 == ty2 then ()
   else match [@warning "-57"] (ty1, ty2) with
     | TName _, _ | _, TName _ ->
-      unify_name ~do_raise env span ty1 ty2
+      unify_name env span ty1 ty2
 
-    | TPrim p1, TPrim p2 when p1 = p2 -> ()
+    | TVariant rows1, TVariant rows2 when
+      begin
+        let idents1 = List.split rows1 |> fst in
+        let idents2 = List.split rows2 |> fst in
+        idents1 = idents2
+      end ->
+        let ts1 = List.split rows1 |> snd in
+        let ts2 = List.split rows2 |> snd in
+        List.iter2 (unify env span) ts1 ts2
+
+    | TPrim p1, TPrim p2 ->
+      if p1 <> p2 then
+        let note =
+          "types starting with '$' are primitive types.\n\
+          for more information see <TODO>."
+        in
+        raise (Unification_failed [note])
+      else ()
 
     | TVague ({contents = VGInt | VGFloat} as k), ty
     | ty, TVague ({contents = VGInt | VGFloat} as k)
@@ -178,15 +182,20 @@ and unify ?(do_raise=false) env span ty1 ty2 =
 
     | TVar ({contents = VRUnbound (id, level)} as tvar), ty
     | ty, TVar ({contents = VRUnbound (id, level)} as tvar) ->
-      occurs_check_adjust_levels ~do_raise span id level ty;
+      occurs_check_adjust_levels id level ty;
       tvar := VRSolved ty
 
     | TTup ts1, TTup ts2 -> List.iter2 (unify env span) ts1 ts2
 
-    | _ ->
-      let ty1' = show (generalize (-1) ty1) false in
-      let ty2' = show (generalize (-1) ty2) false in
-      error do_raise (Expected (ty1', ty2')) (Some span)
+    | _ -> raise (Unification_failed [])
+
+let unify ?(do_raise=false) env span ty1 ty2 =
+  try unify env span ty1 ty2
+  with Unification_failed notes ->
+    let ty1' = show (generalize (-1) ty1) false in
+    let ty2' = show (generalize (-1) ty2) false in
+    error (Expected (ty1', ty2')) span notes
+    |> (if do_raise then Report.raise else Report.report)
 
 (** asserts that the given type is a function type *)
 let rec match_fun_ty span = function
@@ -199,6 +208,7 @@ let rec match_fun_ty span = function
     param_ty, return_ty
   | TError -> TError, TError
   | t ->
-    error false (Expected_function (show t false)) (Some span);
+    error (Expected_function (show t false)) span []
+    |> Report.report;
     TError, TError
 

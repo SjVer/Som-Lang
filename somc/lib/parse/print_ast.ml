@@ -30,8 +30,7 @@ let rec show_path = function
 
 (* print functions *)
 
-let rec print_patt_node' i node =
-  let { span; item } = node in
+let rec print_patt_node' i { span; item } =
   match item with
     | PAVariable n ->
       p i ("PAVariable " ^ n) span;
@@ -39,16 +38,8 @@ let rec print_patt_node' i node =
     | PAWildcard ->
       p i "PAWildcard" span
     
-and print_type_node' i node =
-  let { span; item } = node in
+and print_type_node' i { span; item } =
   match item with
-    | TYVariant cs ->
-      p i "TYVariant" span;
-      let f (s, ts) = begin
-        p (i + 1) s.item s.span;
-        List.iter (print_type_node' (i + 2)) ts
-      end in List.iter f cs
-
     | TYGrouping t ->
       p i "TYGrouping" span;
       print_type_node' (i + 1) t
@@ -63,7 +54,7 @@ and print_type_node' i node =
       p i "TYAny" span
 
     | TYVariable s ->
-      p i ("TYVariable '" ^s) span
+      p i ("TYVariable '" ^ s.item) span
 
     | TYEffect t ->
       p i "TYEffect" span;
@@ -86,8 +77,19 @@ and print_type_node' i node =
     | TYPrimitive t ->
       p i ("TYPrimitive " ^ show_primitive_type t) span
 
-and print_expr_node' i node =
-  let { span; item } = node in
+and print_complex_type_node' i { span; item } =
+  match item with
+    | CTVariant rows ->
+      p i "CTVariant" span;
+      let f (id, ts) = begin
+        p (i + 1) (Ident.to_string id.item) id.span;
+        List.iter (print_type_node' (i + 2)) ts
+      end in List.iter f rows
+    | CTSimple t ->
+      p i "CTSimple" span;
+      print_type_node' (i + 1) t
+
+and print_expr_node' i { span; item } =
   match item with
     | EXGrouping e -> 
       p i "EXGrouping" span;
@@ -136,8 +138,7 @@ and print_expr_node' i node =
     | EXMagical n -> p i ("EXMagical " ^ n) span
     | EXError -> p i "EXError" span
 
-and print_import_kind_node' i node =
-  let {span; item} = node in
+and print_import_kind_node' i { span; item } =
   match item with
     | IK_Module -> p i "IK_Module" span
     | IK_Simple n -> p i ("IK_Simple " ^ show_path n) span
@@ -148,16 +149,17 @@ and print_import_kind_node' i node =
       p i "IK_Nested" span;
       List.iter (print_import_kind_node' (i + 2)) is
 
-and print_toplevel_node' i node =
-  let { span; item } = node in
+and print_toplevel_node' i { span; item } =
   match item with
     | TLValueDef {vd_name; vd_expr} ->
       p i ("TLValueDef " ^ Ident.to_string vd_name.item) span;
       print_expr_node' (i + 1) vd_expr
 
-    | TLTypeDef {td_name; td_type} ->
-      p i ("TLTypeDef " ^ Ident.to_string td_name.item) span;
-      print_type_node' (i + 1) td_type
+    | TLTypeDef {td_params; td_name; td_type} ->
+      let params = nmapi td_params |> String.concat " '" in
+      let name = params ^ Ident.to_string td_name.item in
+      p i ("TLTypeDef " ^ name) span;
+      print_complex_type_node' (i + 1) td_type
 
     | TLExternDef {ed_native_name; ed_name; ed_type} ->
       p i ("TLExternDef " ^ Ident.to_string ed_name.item) span;

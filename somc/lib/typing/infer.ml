@@ -106,10 +106,10 @@ and infer_expr level env exp =
       (* TODO: look these up instead? *)
       let name n = TName (Cons ("_std_types", Ident n)) in
       let l', t = match l with
-        | LIChar c   -> LIChar c,   name "Chr"
+        | LIChar c   -> LIChar c,   TPrim (PInt (false, 8))
         | LIFloat f  -> LIFloat f,  TVague (ref VGFloat)
         | LIInt i    -> LIInt i,    TVague (ref VGInt) 
-        | LINil      -> LINil,      name "Nll"
+        | LINil      -> LINil,      TPrim PVoid
         | LIString s -> LIString s, name "Str"
       in mk s t (EXLiteral l')
     
@@ -123,7 +123,7 @@ and infer_expr level env exp =
         let t = Magicals.type_of m in
         mk s t (EXMagical m)
       with Not_found ->
-        error false (Use_of_invalid_magical n) (Some s); 
+        error (Use_of_invalid_magical n) s [] |> Report.report; 
         mk s TError EXError
       end
 

@@ -33,6 +33,24 @@ let rec resolve_type ctx typ =
   in
   {typ with item}
 
+let resolve_complex_type ctx cmplxtyp =
+  let ctx', item = match cmplxtyp.item with
+    | CTVariant rows ->
+      let rec resolve_rows ctx = function
+        | (i, ts) :: rest ->
+          let ts' = List.map (resolve_type ctx) ts in
+          let qi = Context.qualify ctx i.item in
+          let ctx' = Context.bind_value ctx i.item qi in
+          let ctx'', rest' = resolve_rows ctx' rest in
+          ctx'', ({i with item = qi}, ts') :: rest'
+        | [] -> ctx, []
+      in
+      let ctx', rows' = resolve_rows ctx rows in
+      ctx', CTVariant rows'
+    | CTSimple t -> ctx, CTSimple (resolve_type ctx t)
+  in
+  ctx', {cmplxtyp with item}
+
 let bind_pattern ctx = function
   | PAVariable n -> Context.bind_value ctx (Ident n) (Ident n)
   | PAWildcard -> ctx
@@ -96,17 +114,19 @@ let rec resolve_toplevel ctx tl =
       ctx', [mk (TLValueDef vdef')]
 
     | TLTypeDef tdef ->
+      let ctx', type' = resolve_complex_type ctx tdef.td_type in
       let tdef' =
         {
-          td_name = qualnode ctx tdef.td_name;
-          td_type = resolve_type ctx tdef.td_type;
+          td_params = tdef.td_params;
+          td_name = qualnode ctx' tdef.td_name;
+          td_type = type';
         }
       in
-      let ctx' = Context.bind_type ctx
+      let ctx'' = Context.bind_type ctx'
         tdef.td_name.item
         tdef'.td_name.item
       in
-      ctx', [mk (TLTypeDef tdef')]
+      ctx'', [mk (TLTypeDef tdef')]
 
     | TLExternDef edef ->
       (* TODO: fix this if we know how *)

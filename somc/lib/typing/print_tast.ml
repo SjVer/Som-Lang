@@ -7,9 +7,11 @@ let p i str span =
   print_string [] (String.make i '\t' ^ str);
   print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
   print_newline ()
+
 let pt i str typ span =
   print_string [] (String.make i '\t' ^ str);
-  print_string [Foreground Cyan] (" : " ^ Types.show typ true);
+  let tstr = Types.show typ Configs.tast_print_debug in
+  print_string [Foreground Cyan] (" : " ^ tstr);
   print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
   print_newline ()
 

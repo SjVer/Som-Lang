@@ -44,7 +44,8 @@ let to_string m =
 let type_of =
   let open Types in
   (* TODO: expand on this *)
-  let int = TPrim (PInt (true, 32)) in
+  let int = TVague (ref VGInt) in
+  (* let int = TPrim (PInt (true, 32)) in *)
   let int_fn = TFun (int, int) in
   let ints_fn = TFun (int, int_fn) in
   function
