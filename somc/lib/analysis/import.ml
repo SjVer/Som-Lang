@@ -117,10 +117,12 @@ let import_symbol src_ctx src_path dest_ctx dest_ident =
   let src_ident = Ident.from_list (nmapi src_path) in
   try
     let qual_ident = lookup_qual_value_ident src_ctx src_ident in
-    Context.bind_qual_value_ident dest_ctx dest_ident qual_ident
+    (* NOTE: changed from (removed) bind_qual_value_ident *)
+    Context.bind_value dest_ctx dest_ident qual_ident
   with Not_found -> try
     let qual_ident = lookup_qual_type_ident src_ctx src_ident in
-    Context.bind_qual_type_ident dest_ctx dest_ident qual_ident
+    (* NOTE: changed from (removed) bind_qual_type_ident *)
+    Context.bind_type dest_ctx dest_ident qual_ident
   with Not_found ->
     let span = Span.concat_spans
       (List.hd src_path).span
@@ -203,7 +205,7 @@ let rec gather_and_apply_imports ctx ast =
           gather_and_apply_imports mod_ctx mod_ast
         in
         let ctx' = Context.add_subcontext_prefixed ctx mod_ctx n.item in
-        Context.print ctx';
+        (* Context.print ctx'; *)
         let tl' = {tl with item = TLModule (n, mod_main_ast)} in
         ctx', imp_ast @* mod_imp_ast, main_ast @ [tl']
 

@@ -87,8 +87,10 @@ let show ty debug =
         "[" ^ (List.map show_row rows |> String.concat " | ") ^ "]"
       else
         Printf.sprintf "<%d variants>" (List.length rows)
+    
     | TName p -> Symbols.Ident.to_string p
     | TPrim p -> show_prim p
+    
     | TVague k -> begin match !k with
         | VGInt -> if debug then "<int>" else "$i.*"
         | VGFloat -> if debug then "<float>" else "$f.*"
@@ -97,17 +99,30 @@ let show ty debug =
           if debug then "#$" ^ k_str else k_str
         | VGSolved t -> go prim t
       end
+    
     | TVar {contents=VRUnbound (id, _)} -> show_var `U unames id
     | TVar {contents=VRSolved ty} -> go prim ty
     | TVar {contents=VRGeneric id} -> show_var `G gnames id
-    | TApp (t1, t2) -> wrap prim (go false t1 ^ " " ^ go true t2)
+    
+    | TApp (t1, t2) ->
+      (* let ts' = match ts with
+        | [t] -> go false t
+        | ts ->
+          let ts' = List.map (go false) ts in
+          "(" ^ String.concat ", " ts' ^ ")"
+      in
+      wrap prim (ts' ^ " " ^ go false t) *)
+      go true t1 ^ " " ^ go true t2
+    
     | TEff t -> "!" ^ go true t
+    
     | TFun (a, r) ->
       let a' = go true a in (* eval a first *)
       wrap prim (a' ^ " -> " ^ go false r)
     | TTup ts ->
       let ts' = List.map (go true) ts in
       wrap prim (String.concat " ; " ts')
+    
     | TNever -> if debug then "<never>" else ""
     | TError -> if debug then "<error>" else "_"
 

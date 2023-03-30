@@ -114,19 +114,19 @@ let rec resolve_toplevel ctx tl =
       ctx', [mk (TLValueDef vdef')]
 
     | TLTypeDef tdef ->
-      let ctx', type' = resolve_complex_type ctx tdef.td_type in
+      (* NOTE: types are always recursive now *)
+      let td_name = qualnode ctx tdef.td_name in
+      let ctx = Context.bind_type ctx tdef.td_name.item td_name.item in
+
+      let ctx, type' = resolve_complex_type ctx tdef.td_type in
       let tdef' =
         {
           td_params = tdef.td_params;
-          td_name = qualnode ctx' tdef.td_name;
+          td_name;
           td_type = type';
         }
       in
-      let ctx'' = Context.bind_type ctx'
-        tdef.td_name.item
-        tdef'.td_name.item
-      in
-      ctx'', [mk (TLTypeDef tdef')]
+      ctx, [mk (TLTypeDef tdef')]
 
     | TLExternDef edef ->
       (* TODO: fix this if we know how *)

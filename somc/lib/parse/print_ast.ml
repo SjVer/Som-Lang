@@ -156,7 +156,11 @@ and print_toplevel_node' i { span; item } =
       print_expr_node' (i + 1) vd_expr
 
     | TLTypeDef {td_params; td_name; td_type} ->
-      let params = nmapi td_params |> String.concat " '" in
+      let params =
+        nmapi td_params
+        |> List.map (fun p -> "'" ^ p ^ " ")
+        |> String.concat ""
+      in
       let name = params ^ Ident.to_string td_name.item in
       p i ("TLTypeDef " ^ name) span;
       print_complex_type_node' (i + 1) td_type

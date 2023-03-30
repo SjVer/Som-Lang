@@ -28,9 +28,8 @@ let typecheck_toplevel env node =
       env, [mk (TLValueDef vdef')]
   
     | TLTypeDef tdef ->
-      let dest = Types.TName tdef.td_name.item in
       let env, t = Parse_type.parse_complex
-        env tdef.td_params dest tdef.td_type.item
+        env tdef.td_params tdef.td_name.item tdef.td_type.item
       in 
       let env = Env.add_alias env tdef.td_name.item t in
       

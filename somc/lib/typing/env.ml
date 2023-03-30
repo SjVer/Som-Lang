@@ -53,7 +53,10 @@ let undefined_error ident =
     if might_be_std then
       "this probably means that something has \n\
       gone wrong with the standard library."
-    else "this is probably an internal error."
+    else
+      "this is probably an internal error. if it \n\
+      happens often, please open an issue at \n\
+      https://github.com/SjVer/Som-Lang/issues/new/."
   in
   let e = Report.Error.(Type_error (Other msg)) in
   

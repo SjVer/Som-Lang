@@ -1,7 +1,8 @@
 module Ident = Symbols.Ident
-
 open Parse.Ast
 open Types
+
+module SMap = Map.Make(String)
 
 let check_alias_exists env name span =
   try
@@ -17,34 +18,32 @@ let check_alias_exists env name span =
     |> Report.report;
     Report.exit ()
 
-let rec parse env level =
-  let tvars = Hashtbl.create 10 in
-  let get_tvar name =
-    match Hashtbl.find_opt tvars name with
-      | Some var -> var
-      | None ->
-        let var = Types.new_var level in
-        Hashtbl.add tvars name var;
-        var
-  in function
-    | TYGrouping t -> parse env level t.item
-    | TYAny -> Types.new_var level
+let rec parse ?(tvars=SMap.empty) env level =
+  let go = parse ~tvars env in
+  function
     | TYForall (ps, t) ->
-      let add p =
+      (* let add p =
         let t = Types.new_var (level + 1) in
         Hashtbl.add tvars p.item t
       in
       List.iter add ps;
       let t' = parse env (level + 1) t.item in
-      List.iter (fun p -> Hashtbl.remove tvars p.item) ps;
-      t'
-    | TYVariable n -> get_tvar n.item
-    | TYEffect t -> TEff (parse env level t.item)
-    | TYFunction (a, r) ->
-      TFun (parse env level a.item, parse env level r.item)
-    | TYTuple ts -> 
-      let map = List.map (fun t -> parse env level t.item) in
-      TTup (map ts)
+      List.iter (fun p -> Hashtbl.remove tvars p.item) ps; *)
+      let f m var = SMap.add var (Types.new_var (level + 1)) m in
+      let tvars = List.fold_left f tvars (nmapi ps) in
+      parse ~tvars env (level + 1) t.item
+      
+    | TYGrouping t -> go level t.item
+    | TYAny -> Types.new_var level
+
+    | TYVariable n -> begin
+        try SMap.find n.item tvars
+        with Not_found -> Types.new_var level
+      end
+
+    | TYEffect t -> TEff (go level t.item)
+    | TYFunction (a, r) -> TFun (go level a.item, go level r.item)
+    | TYTuple ts -> TTup (List.map (go level) (nmapi ts))
     | TYPrimitive b -> begin
         let open Types in
         match b with
@@ -57,25 +56,42 @@ let rec parse env level =
     | TYConstruct (None, t) ->
       check_alias_exists env (Ident.to_string t.item) t.span;
       TName t.item
-    | TYConstruct _ -> failwith "Types.parse_type (constr)"
 
-let parse_complex env params dest cmplxtyp =
-  (* used to pass on the [params] to [parse] *)
-  let mk_fake_forall t = TYForall (params, t) in
+    | TYConstruct (Some a, t) ->
+      check_alias_exists env (Ident.to_string t.item) t.span;
+      TApp (go level a.item, TName t.item)
+
+let parse_complex env params ident cmplxtyp =
+  (* create tvars for params *)
+  let f m var = SMap.add var (Types.new_var 1) m in
+  let tvars = List.fold_left f SMap.empty (nmapi params) in
+
+  (* wrap in constructed type *)
+  let dest =
+    let tvars' = SMap.bindings tvars |> List.split |> snd in
+    let f acc t = TApp (t, acc) in
+    List.fold_left f (TName ident) tvars' 
+  in
+  let env = Env.add_alias env ident dest in
+
+  (* helper function *)
+  let mkfty ts ret =
+    let f acc t = TFun (t, acc) in
+    List.fold_left f ret (List.rev ts)
+  in
 
   let env, t = match cmplxtyp with
     | CTVariant rows ->
-      let mkfty acc t = TFun (t, acc) in
+      (* parses one row *)
       let parse_row (acc, env) (i, ts) =
-        let ts = List.map mk_fake_forall ts in
-        let ts' = List.map (parse env 1) ts in
-        let t = List.fold_left mkfty dest ts' in
-        acc @ [i.item, t], Env.add_value env i.item t
+        let ts' = List.map (parse ~tvars env 1) (nmapi ts) in
+        let fty = mkfty ts' dest in
+        acc @ [i.item, fty], Env.add_value env i.item fty
       in
       let rows', env = List.fold_left parse_row ([], env) rows in
       env, TVariant rows'
 
-    | CTSimple t -> env, parse env 1 t.item
+    | CTSimple t -> env, parse ~tvars env 1 t.item
   in
 
   env, Unify.generalize 0 t

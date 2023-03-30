@@ -47,7 +47,10 @@ let print ctx =
 
   print_endline "=============================="
 
-let qualify ctx ident = Ident.append ctx.name ident
+let qualify ctx ident =
+  (* NOTE: might cause bugs, keep an eye on this shit! *)
+  if ctx.name = Ident.Ident "" then ident
+  else Ident.append ctx.name ident
 
 (* initializers *)
 
@@ -81,14 +84,6 @@ let bind_type ctx ident qual_ident =
   let entry = qual_ident, next_id () in
   let type_map = IMap.add ident entry ctx.type_map in
   {ctx with type_map}
-
-let bind_qual_value_ident ctx ident qual =
-  let entry = qual, next_id () in
-  {ctx with value_map = IMap.add ident entry ctx.value_map}
-
-let bind_qual_type_ident ctx ident qual =
-  let entry = qual, next_id () in
-  {ctx with type_map = IMap.add ident entry ctx.type_map}
 
 (* ugly shit *)
 

@@ -81,7 +81,7 @@ and infer_expr level env exp =
       begin
         try unify ~do_raise:true env s t' e'.typ
         with Report.Error r ->
-          Report.add_note "type expected by type constraint." r
+          Report.add_note "type is enforced by type constraint." r
           |> Report.report
       end;
       set_ty t' e'

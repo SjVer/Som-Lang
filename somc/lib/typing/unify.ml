@@ -115,7 +115,7 @@ let rec unify_name env span ty1 ty2 =
       begin
         try
           unify env span nty ty;
-          (* make sure that e.g. [unify Int $i.*] links the
+          (* make sure that e.g. [unify Int 'a] links the
              ['a] to [Int] and not to [Int]'s 'contents'.*)
           begin match ty with
             | TVague ({contents = VGSolved _} as k) ->

@@ -39,7 +39,9 @@ module AnalyzeFile = Query.Make(struct
     let ast = ParseFile.call (f, i) in
     let mod_ident = match m with
       | Some mod_ident -> mod_ident
-      | None -> Ident.Ident Filename.(chop_extension (basename f))
+      | None ->
+        (* Ident.Ident Filename.(chop_extension (basename f)) *)
+        Ident.Ident ""
     in
     Analysis.resolve mod_ident ast
 end)

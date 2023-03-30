@@ -1,5 +1,7 @@
 type Int is $i.s.32
 
-type Boxed of Box Int
+type 'a List of Cons 'a ; 'a List | Nil
 
-let char_box = Box 123
+let singleton x = Cons x ; (Nil)
+
+let one_int = singleton 123
