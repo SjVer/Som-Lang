@@ -21,7 +21,7 @@ test: build
 
 .PHONY: stdlib
 stdlib:
-	@cd stdlib && make stdlib
+	@cd stdlib/runtime && make stdlib
 
 install: build stdlib
 	sudo cp $(EXE) /usr/bin/somc

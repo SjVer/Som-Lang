@@ -31,7 +31,6 @@
 -- useful aliases for basic types
 
 type Bln is $i.u.1  -- boolean
-type Nyb is $i.u.4  -- nybble
 type Byt is $i.u.8  -- byte
 type Chr is $i.u.8  -- character
 type Int is $i.s.32 -- integer

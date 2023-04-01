@@ -6,7 +6,9 @@ CXXFLAGS = -fPIC $(addprefix -D,$(DEFS))
 EXT = .c
 
 SRCDIR = src
+INCDIR = include
 BINDIR = bin
+
 OBJDIR = $(BINDIR)/obj
 LIB = $(BINDIR)/libsom.so
 
@@ -25,7 +27,7 @@ stdlib: $(OBJ) | makedirs
 $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 	@mkdir -p $(dir $@)
 	@printf "[$(word 1,$(OBJCOUNT))/$(words $(OBJ))] compiling $(notdir $<) into $(notdir $@)..."
-	@$(CC) $(CXXFLAGS) -I$(SRCDIR) -o $@ -c $< -fmodule-name=std/$(notdir $(<:$(EXT)=.som))
+	@$(CC) $(CXXFLAGS) -I$(INCDIR) -o $@ -c $< -fmodule-name=std/$(notdir $(<:$(EXT)=.som))
 	@printf "\b\b done!\n"
 
 	@for s in $$(nm $@ | grep -oP 'som_\w+'); \

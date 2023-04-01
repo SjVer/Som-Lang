@@ -4,6 +4,6 @@
 **/*.install
 **/out/
 
-stdlib/bin/
+stdlib/runtime/bin/
 
 tools/vscode-extension/node_modules/
