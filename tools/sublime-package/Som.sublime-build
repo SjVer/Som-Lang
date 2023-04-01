@@ -2,7 +2,6 @@
 	"word_wrap": false,
 	"kill_previous": true,
 
-	// "cmd": ["/usr/bin/somc $file -o $file_path/$file_base_name && $file_path/$file_base_name; rm $file_path/$file_base_name"],
 	"cmd": [
 		"/usr/bin/somc",
 		"$file",

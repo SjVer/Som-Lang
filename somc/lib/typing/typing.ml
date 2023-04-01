@@ -8,7 +8,6 @@ open TAst
 open Infer
 open Unify
 
-
 let typecheck_toplevel env node =
   let mk item = {span = node.Parse.Ast.span; item} in
   match (node.item : Parse.Ast.toplevel) with
@@ -30,7 +29,7 @@ let typecheck_toplevel env node =
     | TLTypeDef tdef ->
       let env, t = Parse_type.parse_complex
         env tdef.td_params tdef.td_name.item tdef.td_type.item
-      in 
+      in
       let env = Env.add_alias env tdef.td_name.item t in
       
       (* keep the tdef for backend purposes *)

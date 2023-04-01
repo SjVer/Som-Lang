@@ -124,7 +124,9 @@ rule lex = parse
   | '!' { BANG }
   | '~' { TILDE }
 
-  | "$i." ('s'|'u' as s) '.' (digit+ as w) { BUILTINITY (Some (s = 's', int_of_string w)) }
+  | "$i." ('s'|'u' as s) '.' ("128"|"32"|"16"|"8"|"1" as w)
+    { BUILTINITY (Some (s = 's', int_of_string w)) }
+  (* | "$i." ('s'|'u' as s) '.' (digit+ as w) { BUILTINITY (Some (s = 's', int_of_string w)) } *)
   | "$i." ('s'|'u' as s) ".s" { BUILTINITY (Some (s = 's', Sys.word_size)) }
   | "$i.*" { BUILTINITY None }
   | "$f." ("64"|"32"|"16" as w) { BUILTINFTY (Some (int_of_string w)) }
@@ -134,7 +136,7 @@ rule lex = parse
     error (curr_span lexbuf)
       (Invalid_builtin_type (Lexing.lexeme lexbuf))
       ["a valid builtin type is one of the following:\n\
-       $i.(s|u).<int>. $i.*, $f.(64|32|16), f.*, $v"];
+       $i.(s|u).(s|128|64|32|16|8|1). $i.*, $f.(64|32|16), f.*, $v"];
     BUILTINVTY
   }
 

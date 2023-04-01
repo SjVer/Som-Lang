@@ -21,7 +21,8 @@ variables:
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
   # basic types
-  inttype: i\.((s|u)\.(s|[0-9]+)|\*)
+  # inttype: i\.((s|u)\.(s|[0-9]+)|\*)
+  inttype: i\.((s|u)\.(s|128|64|32|16|8|1)|\*)
   floattype: f\.(64|32|16|\*)
   voidtype: v
   basictype: \$(?:{{inttype}}|{{floattype}}|{{voidtype}})

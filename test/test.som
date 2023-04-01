@@ -1,7 +1,3 @@
 type Int is $i.s.32
 
 type 'a List of Cons 'a ; 'a List | Nil
-
-let singleton x = Cons x ; (Nil)
-
-let one_int = singleton 123

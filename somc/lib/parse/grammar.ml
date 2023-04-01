@@ -345,6 +345,9 @@ and unary_expression p =
 and application_expression p =
   (* first try construct *)
   try try_parse p begin fun p ->
+    (* TODO: because the parsing of the upper ident
+       is 'above' atom_expression we cannot parse
+       stuff like `Nil` in `List 123 ; Nil`. *)
     let ident = upper_longident p false in
     let es =
       try
