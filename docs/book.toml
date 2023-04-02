@@ -1,0 +1,6 @@
+[book]
+title = "Som Documentation"
+authors = ["Sjoerd Vermeulen"]
+description = "The documentation for the Som programming language."
+src = "."
+language = "en"
