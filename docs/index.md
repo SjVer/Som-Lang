@@ -1,1 +1,0 @@
-# Som Language Documentation

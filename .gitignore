@@ -7,3 +7,5 @@
 stdlib/runtime/bin/
 
 tools/vscode-extension/node_modules/
+
+docs/book/
