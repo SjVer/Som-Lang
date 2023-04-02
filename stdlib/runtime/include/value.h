@@ -48,37 +48,37 @@ typedef enum _ValueType {
 typedef struct _Value {
 	ValueType type;
 	union {
-		prim_v 		void_;
+		prim_v		void_;
 
-		prim_iu1 	prim_iu1;
-		prim_is1 	prim_is1;
+		prim_iu1	prim_iu1;
+		prim_is1	prim_is1;
 
-		prim_iu8 	prim_iu8;
-		prim_is8 	prim_is8;
+		prim_iu8	prim_iu8;
+		prim_is8	prim_is8;
 
-		prim_iu16 	prim_iu16;
-		prim_is16 	prim_is16;
+		prim_iu16	prim_iu16;
+		prim_is16	prim_is16;
 
-		prim_iu32 	prim_iu32;
-		prim_is32 	prim_is32;
+		prim_iu32	prim_iu32;
+		prim_is32	prim_is32;
 
-		prim_iu64 	prim_iu64;
-		prim_is64 	prim_is64;
+		prim_iu64	prim_iu64;
+		prim_is64	prim_is64;
 
 		prim_iu128	prim_iu128;
 		prim_is128	prim_is128;
 
-		prim_ius 	prim_ius;
-		prim_iss 	prim_iss;
+		prim_ius	prim_ius;
+		prim_iss	prim_iss;
 
-		prim_f16 	prim_f16;
-		prim_f32 	prim_f32;
-		prim_f64 	prim_f64;
+		prim_f16	prim_f16;
+		prim_f32	prim_f32;
+		prim_f64	prim_f64;
 
-		prim_v 		prim_v;
+		prim_v		prim_v;
 
-		Thunk 		thunk;
-		Tuple 		tuple;
+		Thunk		thunk;
+		Tuple		tuple;
 	} packed as;
 } Value;
 
