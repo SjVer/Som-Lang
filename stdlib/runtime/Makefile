@@ -1,4 +1,4 @@
-CC = clang
+CC = /usr/bin/clang
 
 DEFS = STDIN_PATH='"/dev/stdin"' STDOUT_PATH='"/dev/stdout"' STDERR_PATH='"/dev/stderr"'
 LDFLAGS = -shared

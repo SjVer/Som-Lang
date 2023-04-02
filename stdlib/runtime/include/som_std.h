@@ -1,14 +1,13 @@
-#include "value.h"
-#pragma once
+#include "som_value.h"
 
-// macros
+#pragma once
 
 #define CTOR void __attribute__((constructor)) som_CTOR
 #define DTOR void __attribute__((destructor)) som_DTOR
 
 #ifdef TYPE_ASSERTIONS
-#	include <assert.h>
-#	define ASSERT_TYPE(value, type) assert(value.type == type)
+#include <assert.h>
+#define ASSERT_TYPE(value, type) assert(value.type == type)
 #else
-#	define ASSERT_TYPE(value, type)
+#define ASSERT_TYPE(value, type)
 #endif

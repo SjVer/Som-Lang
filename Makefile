@@ -35,4 +35,4 @@ install: build stdlib
 
 clean:
 	@cd somc && dune clean
-	@cd stdlib && make clean
+	@cd stdlib/runtime && make clean

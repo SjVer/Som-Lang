@@ -29,11 +29,11 @@
 -- !!.stdlib
 -- !!.warn_redef "redefinition may break stdlib"
 
-from std::ptr use Pointer
+from std::ptr use Ptr
 
-type Str is Chr Pointer
+type Str is Chr Ptr
 
-ext _som_std_str_length as length str           : Str -> Int
+ext _som_std_str_length as length str           : Str -> Sze
 ext _som_std_str_concat as concat str1 str2     : Str -> Str -> Str
 ext _som_std_str_substr as substr str start len : Str -> Str -> Str
 ext _som_std_str_split  as split  str delim     : Str -> Str -> Str

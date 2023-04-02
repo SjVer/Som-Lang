@@ -1,19 +1,22 @@
-#include "types.h"
+#include "som_types.h"
+
 #pragma once
 
 #define packed __attribute__ ((packed))
 
-typedef struct _Thunk {
+typedef struct Value Value;
+
+typedef struct {
 	value_ptr function;
-	struct _Value** arguments;
+	Value* arguments;
 } packed Thunk;
 
-typedef struct _Tuple {
+typedef struct {
 	int size;
-	struct _Value** values;
+	Value* values;
 } packed Tuple;
 
-typedef enum _ValueType {
+typedef enum {
 	VAL_PRIM_IU1,
 	VAL_PRIM_IS1,
 
@@ -45,11 +48,9 @@ typedef enum _ValueType {
 	VAL_TUPLE,
 } packed ValueType;
 
-typedef struct _Value {
+typedef struct Value {
 	ValueType type;
 	union {
-		prim_v		void_;
-
 		prim_iu1	prim_iu1;
 		prim_is1	prim_is1;
 
@@ -82,5 +83,13 @@ typedef struct _Value {
 	} packed as;
 } Value;
 
-#define VAL(vtype, vas, val) (Value){.type = vtype, .as.vas = val}
-#define VAL_VOID VAL(VAL_PRIM_V, prim_v, 0)
+#define VAL(vtype, vas, val) (Value){.type = vtype, .as.vas = (vas)(val)}
+#define VOID_VAL VAL(VAL_PRIM_V, prim_v, 0)
+#define IS32_VAL(v) VAL(VAL_PRIM_IS32, prim_is32, v)
+#define IUS_VAL(v) VAL(VAL_PRIM_IUS, prim_ius, v)
+#define TUPLE_VAL(count, els) \
+	(Value){.type = VAL_TUPLE, .as.tuple = {.size = count, .values = (Value*)(els)}}
+#define TAG_TUPLE_VAL(tag) TUPLE_VAL(1, (Value[]){IUS_VAL(tag)})
+
+#define TUPLE_GET(tup, index, vas) tup.values[index].as.vas
+#define TUPLE_TAG(tup) TUPLE_GET(tup, 0, prim_ius)

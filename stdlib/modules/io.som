@@ -39,25 +39,26 @@ type IOMode of
   read_write
 
 type File of
-  path: Str
+  path: Str,
+  descr: Int,
+  mode: IOMode
 
 --- files ---
 
-let stdin  : File = #_som_std_io_stdin
-let stdout : File = #_som_std_io_stdout
-let stderr : File = #_som_std_io_stderr
+ext _som_std_io_stdin  as stdin  : File 
+ext _som_std_io_stdout as stdout : File 
+ext _som_std_io_stderr as stderr : File 
 
 --- functions ---
 
 -- opens the file with the given path and mode
-let openf path mode : _Str -> IOMode -> !File =
-  #_som_std_io_openf path mode
+ext _som_std_io_openf as openf path mode : _Str -> IOMode -> !File
 
 -- closes the given file
-let closef file : File -> !Nll = #_som_std_io_closef file
+ext _som_std_io_closef as closef file : File -> !Nll
 
 -- writes the given string to the given file
-let putsf file str : File -> _Str -> !Nll = #_som_std_io_putsf file str
+ext _som_std_io_putsf as putsf file str : File -> _Str -> !Nll
 
 -- prints the given string to stdout
 let puts str : _Str -> !Nll = putsf stdout str, putsf stdout "\n"
