@@ -8,7 +8,8 @@ language = "en"
 default-theme = "light"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/SjVer/Som-Lang"
-additional-js = ["som-playground.js", "som-highlighting.js"]
+additional-css = ["style-tweaks.css"]
+additional-js = ["js/som-ace.js", "js/som-hljs.js", "js/som-editor.js"]
 
 [output.html.playground]
 editable = true
@@ -16,5 +17,8 @@ copyable = true
 # line-numbers = true
 runnable = true
 
+[preprocessor.chapter-number]
+renderer = ["html"]
+
 [build]
-extra-watch-dirs = ["som-playground.js", "som-highlighting.js"]
+extra-watch-dirs = ["js", "som", "style-tweaks.css"]

@@ -1,0 +1,32 @@
+.content p {
+	text-align: justify;
+}
+
+pre > .buttons {
+    visibility: visible;
+    opacity: 1;
+    transition: none;
+}
+pre > .buttons :hover {
+    color: var(--sidebar-fg);
+    border-color: var(--icons);
+	background-color: transparent;
+}
+pre > .buttons button {
+    cursor: inherit;
+	visibility: visible;
+    opacity: 0;
+    transition: visibility 0.2s linear, opacity 0.2s linear;
+}
+pre > .buttons button:hover {
+	visibility: visible;
+	opacity: 1;
+    transition: visibility 0.1s linear, opacity 0.1s linear;
+}
+pre > .buttons a {
+	font-size: var(--code-font-size);
+	color: var(--icons) !important;
+}
+pre > .buttons a:hover {
+	color: var(--icons) !important;
+}

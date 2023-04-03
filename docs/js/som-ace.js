@@ -1,10 +1,18 @@
 const escape_seq = "\\\\(?:a|b|f|n|r|t|v|\\\\|\\'|\\\"|0)";
 
-const syntax_rules = {
+const ace_syntax_rules = {
   start: [
     {
-      token: "keyword.import.som",
+      token: "keyword.som",
       regex: "\\b(?:use|from|mod)\\b",
+    },
+    {
+      token: "keyword.som",
+      regex: "\\b(?:if|then|else|match|switch)\\b",
+    },
+    {
+      token: "keyword.definition.som",
+      regex: "\\b(?:let|type|ext|is|of)\\b",
     },
     {
       token: "storage.type.integer.som",
@@ -45,10 +53,6 @@ const syntax_rules = {
       ],
     },
     {
-      token: "keyword.definition.som",
-      regex: "\\b(?:let|type|ext|is|of)\\b",
-    },
-    {
       token: "entity.name.namespace.som",
       regex: "\\b_*[a-z][a-zA-Z0-9_]*(?=\\s*\\:\\:)",
     },
@@ -81,7 +85,7 @@ const syntax_rules = {
     },
     {
       token: "keyword.operator",
-      regex: /\$|[-=]>|[-+%^=!&|<>]=?|[*/](?![*/])=?/,
+      regex: /<<|>>|=|\/=|<=|>=|<|>|\&\&|\|\||\*|\/|\+|\-|\%|\.\.|~|(?<!!)!(?!!)/,
     },
     {
       token: "punctuation.operator",
@@ -117,7 +121,7 @@ ace.define(
     var SomHighlightRules = function () {
       // regexp must not have capturing parentheses. Use (?:) instead.
       // regexps are ordered -> the first match is used
-      this.$rules = syntax_rules;
+      this.$rules = ace_syntax_rules;
       this.normalizeRules();
     };
 
