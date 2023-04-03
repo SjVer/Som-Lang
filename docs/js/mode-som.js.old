@@ -1,0 +1,96 @@
+ace.define(
+  "ace/mode/som_highlight_rules",
+  [
+    "require",
+    "exports",
+    "module",
+    "ace/lib/oop",
+    "ace/mode/text_highlight_rules",
+  ],
+  function (require, exports, module) {
+    "use strict";
+
+    var oop = require("../lib/oop");
+    var TextHighlightRules =
+      require("./text_highlight_rules").TextHighlightRules;
+
+    var SomHighlightRules = function () {
+      this.$rules = {
+        start: [
+          {
+            regex: "\\$i.(?:(?:s|u).(?:s|128|64|32|16|8|1)|\\*)",
+            token: "storage.type.integer.som",
+          },
+          {
+            regex: "\\$f\\.(?:64|32|16|\\*)",
+            token: "storage.type.float.som",
+          },
+          {
+            regex: "\\$V",
+            token: "storage.type.void.som",
+          },
+          {
+            regex: "\b(?:use|from|mod)\b",
+            token: "keyword.import.som",
+          },
+        ],
+      };
+      this.normalizeRules();
+    };
+
+    SomHighlightRules.metaData = {
+      fileTypes: ["som"],
+      name: "Som",
+      scopeName: "source.som",
+    };
+
+    oop.inherits(SomHighlightRules, TextHighlightRules);
+    exports.SomHighlightRules = SomHighlightRules;
+  }
+);
+
+ace.define(
+  "ace/mode/som",
+  [
+    "require",
+    "exports",
+    "module",
+    "ace/lib/oop",
+    "ace/mode/text",
+    "ace/mode/som_highlight_rules",
+    "ace/mode/folding/cstyle",
+  ],
+  function (require, exports, module) {
+    "use strict";
+
+    var oop = require("../lib/oop");
+    var TextMode = require("./text").Mode;
+    var SomHighlightRules = require("./som_highlight_rules").SomHighlightRules;
+    // var FoldMode = require("./folding/cstyle").FoldMode;
+
+    var SomMode = function () {
+      this.HighlightRules = SomHighlightRules;
+      // this.foldingRules = new FoldMode();
+      this.$behaviour = this.$defaultBehaviour;
+      this.lineCommentStart = "--";
+      this.blockComment = {
+        start: "---",
+        end: "---",
+        nestable: false,
+      };
+      this.$quotes = {
+        '"': '"',
+      };
+      this.$id = "ace/mode/som";
+    };
+
+    oop.inherits(SomMode, TextMode);
+    exports.Mode = SomMode;
+  }
+);
+
+ace.require(["ace/mode/som"], function (m) {
+  if (typeof module == "object" && typeof exports == "object" && module) {
+    module.exports = m;
+  }
+});

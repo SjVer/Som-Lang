@@ -2,5 +2,19 @@
 title = "Som Documentation"
 authors = ["Sjoerd Vermeulen"]
 description = "The documentation for the Som programming language."
-src = "."
 language = "en"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/SjVer/Som-Lang"
+additional-js = ["som-playground.js", "som-highlighting.js"]
+
+[output.html.playground]
+editable = true
+copyable = true
+# line-numbers = true
+runnable = true
+
+[build]
+extra-watch-dirs = ["som-playground.js", "som-highlighting.js"]

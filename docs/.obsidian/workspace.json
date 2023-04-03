@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "SUMMARY.md",
+                "file": "src/hello_world.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "SUMMARY.md",
+                "file": "src/hello_world.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "SUMMARY.md",
+                "file": "src/hello_world.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "SUMMARY.md"
+                "file": "src/hello_world.md"
               }
             }
           }
@@ -148,7 +148,45 @@
   },
   "active": "bc5b3ca2cb2fec8f",
   "lastOpenFiles": [
-    "introduction.md",
-    "SUMMARY.md"
+    "book/mode-som.js",
+    "book/editor.js",
+    "book/ace.js",
+    "mode-som.js",
+    "gen_rules.py",
+    "editor.js",
+    "ace.js",
+    "book/theme-tomorrow_night.js",
+    "book/theme-dawn.js",
+    "book/mode-rust.js",
+    "js/gen_rules.py",
+    "ace/Readme.md",
+    "Readme.md",
+    "book/FontAwesome/fonts/fontawesome-webfont.svg",
+    "book/favicon.svg",
+    "src/SUMMARY.md",
+    "src/misc_info/credits.md",
+    "src/misc_info/license.md",
+    "book/_FontAwesome/fonts/fontawesome-webfont.svg",
+    "book/favicon.png",
+    "src/the_complete_syntax.md",
+    "src/standard_library.md",
+    "src/introduction.md",
+    "src/hello_world.md",
+    "misc_info/license.md",
+    "src/misc_info/style-conventions.md",
+    "src/misc_info/miscellaneous_information.md",
+    "src/language/value-bindings.md",
+    "src/language/the_language.md",
+    "src/language/pattern-matching.md",
+    "src/language/modules.md",
+    "src/language/lexical-lonventions.md",
+    "src/language/function-application.md",
+    "src/language/expressions.md",
+    "src/language/complex-types.md",
+    "src/compiler/the_compiler.md",
+    "src/compiler/installation.md",
+    "src/compiler/compilation.md",
+    "src/basics/values.md",
+    "src/basics/types.md"
   ]
 }

@@ -141,7 +141,7 @@ contexts:
         - match: ':'
           scope: punctuation.separator.annotation.som
           push: type
-        - match: =
+        - match: '='
           scope: keyword.operator.assignment.som
           pop: true
         - include: pattern
@@ -285,7 +285,7 @@ contexts:
     - match: '{{lnamep}}'
       scope: variable.member.enum.som
       set:
-        - match: =
+        - match: '='
           scope: keyword.operator.assignment.som
           push:
             - match: (?=\,)
@@ -408,7 +408,7 @@ contexts:
         - match: '{{lnamep}}'
           scope: variable.member.enum.som
           push:
-            - match: =
+            - match: '='
               scope: keyword.operator.assignment.som
               set:
                 - match: \,|(?=\})

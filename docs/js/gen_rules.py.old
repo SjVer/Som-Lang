@@ -1,0 +1,71 @@
+from yaml import safe_load
+from json import dumps
+
+SOURCE_FILE = "../../tools/sublime-package/Som.sublime-syntax"
+OUTPUT_FILE = "rules.js"
+
+VARIABLES = {}
+
+def replace_vars(str):
+	new_str = str
+	for var in VARIABLES.keys():
+		new_str = new_str.replace(f"{{{{{var}}}}}", VARIABLES[var])
+	
+	if new_str != str:
+		return replace_vars(new_str)
+	else:
+		return new_str
+
+def parse_rule(src_rule: object):
+	rule = {}
+
+	if "match" in src_rule:
+		rule["regex"] = replace_vars(src_rule["match"])
+
+	if "scope" in src_rule:
+		rule["token"] = src_rule["scope"]
+
+	if "include" in src_rule:
+		rule["include"] = src_rule["include"]
+
+	if "push" in src_rule:
+		if type(src_rule["push"]) == list:
+			rule["push"] = []
+			for push_rule in src_rule["push"]:
+				new_rule = parse_rule(push_rule)
+				if new_rule != {}: rule["push"].append(new_rule)
+		else:
+			rule["push"] = src_rule["push"]
+
+	if "pop" in src_rule:
+		rule["pop"] = src_rule["pop"]
+
+	return rule
+
+def get_states(sublime_syntax: object):
+	states = {}
+	for context in sublime_syntax["contexts"].keys():
+		rules = []
+		for src_rule in sublime_syntax["contexts"][context]:
+			rule = parse_rule(src_rule)
+			if rule != {}: rules.append(rule)
+		
+		if context == "main": context = "start"
+		if rules != []: states[context] = rules
+
+	return states
+
+def main():
+	global VARIABLES
+	
+	with open(SOURCE_FILE, "r") as f:
+		sublime_syntax = safe_load(f)
+
+	VARIABLES = sublime_syntax["variables"]
+	states = get_states(sublime_syntax)
+	
+	with open(OUTPUT_FILE, "w") as f:
+		f.write(f"const som_rules = {dumps(states, indent=2)};")
+
+if __name__ == "__main__":
+	main()
