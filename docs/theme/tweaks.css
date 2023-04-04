@@ -1,0 +1,14 @@
+.content p {
+    text-align: justify;
+}
+
+h1.menu-title a {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+.right-side {
+    display: inline-block;
+    width: 100%;
+    text-align: end;
+}

@@ -4,16 +4,16 @@
     "type": "split",
     "children": [
       {
-        "id": "63bfdaedea61311f",
+        "id": "20d75ef79b535e79",
         "type": "tabs",
         "children": [
           {
-            "id": "99e4d2a35bd4f559",
+            "id": "609f5771be8d6b11",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "hello_world.md",
+                "file": "SUMMARY.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "hello_world.md",
+                "file": "SUMMARY.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "hello_world.md",
+                "file": "SUMMARY.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "hello_world.md"
+                "file": "SUMMARY.md"
               }
             }
           }
@@ -146,11 +146,30 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "3c961af3b64d8698",
+  "active": "609f5771be8d6b11",
   "lastOpenFiles": [
+    "language/complex_types.md",
+    "language/matching.md",
+    "language/types.md",
+    "language/application.md",
+    "language/bindings.md",
+    "language/lexical.md",
+    "language/language.md",
+    "basics/basics.md",
+    "compiler/compiler.md",
+    "the_complete_syntax.md",
+    "misc_info/misc_info.md",
+    "misc_info/style-conventions.md",
+    "misc_info/conventions.md",
+    "introduction.md",
+    "compiler/the_compiler.md",
+    "compiler/compilation.md",
+    "syntax.md",
+    "misc_info/license.md",
+    "hello_world.md",
+    "().md",
     "Untitled",
     "SUMMARY.md",
-    "hello_world.md",
     "standard_library.md"
   ]
 }

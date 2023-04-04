@@ -1,0 +1,234 @@
+/*
+ * An increased contrast highlighting scheme loosely based on the
+ * "Base16 Atelier Dune Light" theme by Bram de Haan
+ * (http://atelierbram.github.io/syntax-highlighting/atelier-schemes/dune)
+ * Original Base16 color scheme by Chris Kempson
+ * (https://github.com/chriskempson/base16)
+ */
+
+/* Grey */
+.hljs-punctuation,
+.hljs-comment,
+.hljs-quote {
+  color: #575757;
+}
+
+/* Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute,
+.hljs-tag,
+.hljs-name,
+.hljs-regexp,
+.hljs-link,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #d70025;
+}
+
+/* Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-params {
+  color: #fe640b;
+}
+
+/* Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-meta,
+.hljs-bullet {
+  color: #008200;
+}
+
+/* Blue */
+.hljs-title,
+.hljs-type,
+.hljs-section {
+  color: #1e66f5;
+}
+
+/* Purple */
+.hljs-operator,
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #755e91;
+}
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  background: #e6e9ef;
+  border-radius: 5px;
+  color: #343647;
+}
+
+pre code.hljs {
+  background: #eceef3;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-addition {
+  color: #22863a;
+  background-color: #f0fff4;
+}
+
+.hljs-deletion {
+  color: #b31d28;
+  background-color: #ffeef0;
+}
+
+/* theme from https://github.com/catppuccin/mdbook */
+
+.mocha code.hljs {
+  color: #cdd6f4;
+  background: #181825;
+}
+.mocha code .hljs-keyword {
+  color: #cba6f7;
+}
+.mocha code .hljs-built_in {
+  color: #f38ba8;
+}
+.mocha code .hljs-type {
+  color: #f9e2af;
+}
+.mocha code .hljs-literal {
+  color: #fab387;
+}
+.mocha code .hljs-number {
+  color: #fab387;
+}
+.mocha code .hljs-operator {
+  color: #94e2d5;
+}
+.mocha code .hljs-punctuation {
+  color: #bac2de;
+}
+.mocha code .hljs-property {
+  color: #94e2d5;
+}
+.mocha code .hljs-regexp {
+  color: #f5c2e7;
+}
+.mocha code .hljs-string {
+  color: #a6e3a1;
+}
+.mocha code .hljs-char.escape_ {
+  color: #a6e3a1;
+}
+.mocha code .hljs-subst {
+  color: #a6adc8;
+}
+.mocha code .hljs-symbol {
+  color: #f2cdcd;
+}
+.mocha code .hljs-variable {
+  color: #cba6f7;
+}
+.mocha code .hljs-variable.language_ {
+  color: #cba6f7;
+}
+.mocha code .hljs-variable.constant_ {
+  color: #fab387;
+}
+.mocha code .hljs-title {
+  color: #89b4fa;
+}
+.mocha code .hljs-title.class_ {
+  color: #f9e2af;
+}
+.mocha code .hljs-title.function_ {
+  color: #89b4fa;
+}
+.mocha code .hljs-params {
+  color: #cdd6f4;
+}
+.mocha code .hljs-comment {
+  color: #585b70;
+}
+.mocha code .hljs-doctag {
+  color: #f38ba8;
+}
+.mocha code .hljs-meta {
+  color: #fab387;
+}
+.mocha code .hljs-section {
+  color: #89b4fa;
+}
+.mocha code .hljs-tag {
+  color: #a6adc8;
+}
+.mocha code .hljs-name {
+  color: #cba6f7;
+}
+.mocha code .hljs-attr {
+  color: #89b4fa;
+}
+.mocha code .hljs-attribute {
+  color: #a6e3a1;
+}
+.mocha code .hljs-bullet {
+  color: #94e2d5;
+}
+.mocha code .hljs-code {
+  color: #a6e3a1;
+}
+.mocha code .hljs-emphasis {
+  color: #f38ba8;
+  font-style: italic;
+}
+.mocha code .hljs-strong {
+  color: #f38ba8;
+  font-weight: bold;
+}
+.mocha code .hljs-formula {
+  color: #94e2d5;
+}
+.mocha code .hljs-link {
+  color: #74c7ec;
+  font-style: italic;
+}
+.mocha code .hljs-quote {
+  color: #a6e3a1;
+  font-style: italic;
+}
+.mocha code .hljs-selector-tag {
+  color: #f9e2af;
+}
+.mocha code .hljs-selector-id {
+  color: #89b4fa;
+}
+.mocha code .hljs-selector-class {
+  color: #94e2d5;
+}
+.mocha code .hljs-selector-attr {
+  color: #cba6f7;
+}
+.mocha code .hljs-selector-pseudo {
+  color: #94e2d5;
+}
+.mocha code .hljs-template-tag {
+  color: #f2cdcd;
+}
+.mocha code .hljs-template-variable {
+  color: #f2cdcd;
+}
+.mocha code .hljs-diff-addition {
+  color: #a6e3a1;
+  background: rgba(166, 227, 161, 0.15);
+}
+.mocha code .hljs-diff-deletion {
+  color: #f38ba8;
+  background: rgba(243, 139, 168, 0.15);
+}

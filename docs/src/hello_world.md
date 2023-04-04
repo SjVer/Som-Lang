@@ -2,8 +2,10 @@
 
 The traditional "Hello World!" program implemented in Som looks as follows:
 
-```som,file=hello_world.som
-{{#include ../som/hello_world.som}}
+```som
+from std::io use puts
+
+let main = puts "Hello, World!"
 ```
 
 Let's break this down line by line.
@@ -14,7 +16,7 @@ Next is the [value binding](language/value-bindings.md) of `main`. Every Som pro
 
 And that's it! Since Som is designed to be easy to use, there's practically no boiler-plate needed; As long as there's an entrypoint like `main` the program will run!
 
-Now let's test the program by compiling and executing it:
+Now let's test the program by compiling and executing it. If you haven't installed the compiler yet, follow the [installation instructions](compiler/installation.md) first. After installing the compiler, save the program as `hello_world.som` and then invoke `somc`. You can then run the resulting executable:
 
 ```shell
 $ # Linux or MacOS

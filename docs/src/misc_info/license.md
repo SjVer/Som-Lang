@@ -1,10 +1,11 @@
 # License
+
 The following license applies to every component of the som compiler, its standard library and its tools. In other words, it applies to the entire contents of the github repository [SjVer/Som-Lang](https://github.com/SjVer/Som-Lang).
 
 ```
 MIT License
 
-Copyright (c) 2023 Sjoerd Vermeulen
+Copyright (c) 2022-2023 Sjoerd Vermeulen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,3 +25,5 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+This license simply means that anyone is free to use Som for any purpose. The only requirement for copying or reusing any part of the aforementioned source code or assets is that credit is given by including the above license.

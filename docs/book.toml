@@ -5,10 +5,10 @@ description = "The documentation for the Som programming language."
 language = "en"
 
 [output.html]
-default-theme = "light"
-preferred-dark-theme = "navy"
+default-theme = "latte"
+preferred-dark-theme = "mocha"
 git-repository-url = "https://github.com/SjVer/Som-Lang"
-additional-css = ["style-tweaks.css"]
+additional-css = ["theme/theme.css", "theme/highlight.css", "theme/tweaks.css"]
 additional-js = ["js/som-ace.js", "js/som-hljs.js", "js/som-editor.js"]
 
 [output.html.playground]
@@ -21,4 +21,4 @@ runnable = true
 renderer = ["html"]
 
 [build]
-extra-watch-dirs = ["js", "som", "style-tweaks.css"]
+extra-watch-dirs = ["js", "theme"]

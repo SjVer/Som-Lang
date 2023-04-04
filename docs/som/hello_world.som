@@ -1,3 +1,0 @@
-from std::io use puts
-
-let main = puts "Hello, World!"

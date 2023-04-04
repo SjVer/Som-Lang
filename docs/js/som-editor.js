@@ -77,15 +77,6 @@ playgrounds.forEach(function (pre_block) {
     buttons.className = "buttons";
     pre_block.insertBefore(buttons, pre_block.firstChild);
   }
-
-  var code_block = pre_block.querySelector("code");
-  if(/file=.*/.test(code_block.className)) {
-      var file = /file=([\w\.]+)/.exec(code_block.className)[1];
-      var filenameSpan = document.createElement("a");
-      filenameSpan.innerHTML = file;
-      filenameSpan.href = "https://github.com/SjVer/Som-Lang/tree/main/docs/som/" + file;
-      buttons.insertBefore(filenameSpan, buttons.firstChild);
-    }
 });
 
 // Process playground code blocks

@@ -1,0 +1,65 @@
+/* themes from https://github.com/catppuccin/mdbook */
+
+.mocha {
+  --bg: #1e1e2e;
+  --fg: #cdd6f4;
+  --sidebar-bg: #181825;
+  --sidebar-fg: #cdd6f4;
+  --sidebar-non-existant: #6c7086;
+  --sidebar-active: #f5e0dc;
+  --sidebar-spacer: #6c7086;
+  --scrollbar: #6c7086;
+  --icons: #6c7086;
+  --icons-hover: #7f849c;
+  --links: #89b4fa;
+  --inline-code-color: #fab387;
+  --theme-popup-bg: #181825;
+  --theme-popup-border: #6c7086;
+  --theme-hover: #6c7086;
+  --quote-bg: #181825;
+  --quote-border: #11111b;
+  --table-border-color: #11111b;
+  --table-header-bg: #181825;
+  --table-alternate-bg: #11111b;
+  --searchbar-border-color: #11111b;
+  --searchbar-bg: #181825;
+  --searchbar-fg: #cdd6f4;
+  --searchbar-shadow-color: #11111b;
+  --searchresults-header-fg: #cdd6f4;
+  --searchresults-border-color: #11111b;
+  --searchresults-li-bg: #1e1e2e;
+  --search-mark-bg: #fab387;
+}
+
+.latte {
+  /* --bg: #eff1f5; */
+  --bg: #f4f8ff;
+  --fg: #4c4f69;
+  --sidebar-bg: #e6e9ef;
+  --sidebar-fg: #4c4f69;
+  --sidebar-non-existant: #9ca0b0;
+  --sidebar-active: #dc8a78;
+  --sidebar-spacer: #9ca0b0;
+  --scrollbar: #9ca0b0;
+  --icons: #9ca0b0;
+  --icons-hover: #8c8fa1;
+  --links: #1e66f5;
+  /* --inline-code-color: #343647; */
+  --inline-code-color: #fe640b;
+  --theme-popup-bg: #e6e9ef;
+  --theme-popup-border: #9ca0b0;
+  --theme-hover: #9ca0b0;
+  --quote-bg: #e6e9ef;
+  --quote-border: #dce0e8;
+  --table-border-color: #dce0e8;
+  --table-header-bg: #e6e9ef;
+  --table-alternate-bg: #dce0e8;
+  --searchbar-border-color: #dce0e8;
+  --searchbar-bg: #e6e9ef;
+  --searchbar-fg: #4c4f69;
+  --searchbar-shadow-color: #dce0e8;
+  --searchresults-header-fg: #4c4f69;
+  --searchresults-border-color: #dce0e8;
+  --searchresults-li-bg: #eff1f5;
+  --search-mark-bg: #fe640b;
+}
