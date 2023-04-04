@@ -3,7 +3,18 @@ const hljs_language_def = () => ({
   contains: [
     hljs.COMMENT("--", "$"),
     hljs.COMMENT("---", "---"),
-
+    {
+      className: "symbol",
+      begin: /(?<=\b(let|ext)\s*)[_a-z]\w*\'*/
+    },
+    // {
+    //   className: "params",
+    //   begin: /(?<=\b(let|ext)\s*[_a-z]\w*\'*\s*)[_a-z]\w*\'*/
+    // },
+    {
+      className: "meta",
+      begin: /!!(\s*[_a-z]+\s*\.)*\s*[_a-z]+/
+    },
     {
       className: "number",
       begin: /\b(?:[0-9]+(?:\.[0-9]+)?|0b[0-1]+|0c[0-7]+|0x[0-9a-fA-F]+)\b/,
@@ -26,6 +37,10 @@ const hljs_language_def = () => ({
     {
       className: "type",
       begin: /\$i.(?:(?:s|u).(?:s|128|64|32|16|8|1)|\*)|\$f\.(?:64|32|16|\*)|\$v/
+    },
+    {
+      className: "type",
+      begin: /\'\w+|_*[A-Z]\w*/
     },
     {
       className: "class",

@@ -1,21 +1,21 @@
 # The Complete Syntax
 
-Here is the complete syntax of Som in a simplified BNF. Do note that it might be incomplete due to the continuing development of the Som language.
+Here is the complete syntax of Som in a simplified BNF. Do note that it might be incomplete due to the continuing development of the Som language. The irony of this has been duly noted.
 
-```
+```python
 program            = toplevel*
 
-toplevel           = module
-                   | import
+toplevel           = import_statement
+                   | module_definition
                    | value_definition
                    | type_definition
                    | extern_definition
 
-module             = "mod" "{" toplevel* "}"
-
-import             = "use" LONG_LIDENT
+import_statement   = "use" LONG_LIDENT
                    | "from" LONG_LIDENT "use" "*"
                    | "from" LONG_LIDENT "use" (LONG_IDENT ",")* LONG_IDENT
+
+module_definition  = "mod" "{" toplevel* "}"
 
 value_definition   = "let" LIDENT pattern* "=" expression
 

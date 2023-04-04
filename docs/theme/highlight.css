@@ -6,94 +6,101 @@
  * (https://github.com/chriskempson/base16)
  */
 
+.hljs {
+  display: block;
+  overflow-x: auto;
+  border-radius: 5px;
+}
+
+/* themes from https://github.com/catppuccin/mdbook */
+
 /* Grey */
-.hljs-punctuation,
-.hljs-comment,
-.hljs-quote {
-  color: #575757;
+.latte code .hljs-punctuation,
+.latte code .hljs-comment,
+.latte code .hljs-quote {
+  color: #777676;
 }
 
 /* Red */
-.hljs-variable,
-.hljs-template-variable,
-.hljs-attribute,
-.hljs-tag,
-.hljs-name,
-.hljs-regexp,
-.hljs-link,
-.hljs-name,
-.hljs-selector-id,
-.hljs-selector-class {
+.latte code .hljs-variable,
+.latte code .hljs-template-variable,
+.latte code .hljs-attribute,
+.latte code .hljs-tag,
+.latte code .hljs-regexp,
+.latte code .hljs-link,
+.latte code .hljs-name,
+.latte code .hljs-selector-id,
+.latte code .hljs-params,
+.latte code .hljs-selector-class {
   color: #d70025;
 }
 
 /* Orange */
-.hljs-number,
-.hljs-built_in,
-.hljs-builtin-name,
-.hljs-literal,
-.hljs-params {
+.latte code .hljs-number,
+.latte code .hljs-built_in,
+.latte code .hljs-builtin-name,
+.latte code .hljs-symbol,
+.latte code .hljs-literal {
   color: #fe640b;
 }
 
 /* Green */
-.hljs-string,
-.hljs-symbol,
-.hljs-meta,
-.hljs-bullet {
-  color: #008200;
+.latte code .hljs-string,
+.latte code .hljs-meta,
+.latte code .hljs-bullet {
+  /* color: #008200; */
+  color: rgb(53, 185, 53);
 }
 
 /* Blue */
-.hljs-title,
-.hljs-type,
-.hljs-section {
+.latte code .hljs-title,
+.latte code .hljs-type,
+.latte code .hljs-section {
   color: #1e66f5;
 }
 
 /* Purple */
-.hljs-operator,
-.hljs-keyword,
-.hljs-selector-tag {
+.latte code .hljs-operator,
+.latte code .hljs-keyword,
+.latte code .hljs-selector-tag {
   color: #755e91;
 }
 
-.hljs {
-  display: block;
-  overflow-x: auto;
+.latte code.hljs {
   background: #e6e9ef;
-  border-radius: 5px;
-  color: #343647;
+}
+.latte code .hljs {
+  color: #2a2c3a;
 }
 
-pre code.hljs {
-  background: #eceef3;
-}
 
-.hljs-emphasis {
+.latte code .hljs-emphasis {
   font-style: italic;
 }
 
-.hljs-strong {
+.latte code .hljs-strong {
   font-weight: bold;
 }
 
-.hljs-addition {
+.latte code .hljs-addition {
   color: #22863a;
   background-color: #f0fff4;
 }
 
-.hljs-deletion {
+.latte code .hljs-deletion {
   color: #b31d28;
   background-color: #ffeef0;
 }
 
-/* theme from https://github.com/catppuccin/mdbook */
+
 
 .mocha code.hljs {
-  color: #cdd6f4;
   background: #181825;
 }
+.mocha code .hljs {
+  color: #cdd5f4;
+}
+
 .mocha code .hljs-keyword {
   color: #cba6f7;
 }

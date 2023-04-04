@@ -12,3 +12,18 @@ h1.menu-title a {
     width: 100%;
     text-align: end;
 }
+
+.mocha hr {
+    border-color: var(--sidebar-spacer);
+}
+
+h3 code:not(.hljs) {
+    color: var(--value-fg);
+}
+h3 code.hljs {
+    text-decoration: none !important;
+    background: var(--bg) !important;
+}
+h3 code::before {
+    color: var(--fg);
+}

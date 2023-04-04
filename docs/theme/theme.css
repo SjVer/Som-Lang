@@ -29,6 +29,9 @@
   --searchresults-border-color: #11111b;
   --searchresults-li-bg: #1e1e2e;
   --search-mark-bg: #fab387;
+
+  --type-fg: #1e66f5;
+  --value-fg: #fab387;
 }
 
 .latte {
@@ -44,8 +47,8 @@
   --icons: #9ca0b0;
   --icons-hover: #8c8fa1;
   --links: #1e66f5;
-  /* --inline-code-color: #343647; */
-  --inline-code-color: #fe640b;
+  --inline-code-color: #343647;
+  /* --inline-code-color: #fe640b; */
   --theme-popup-bg: #e6e9ef;
   --theme-popup-border: #9ca0b0;
   --theme-hover: #9ca0b0;
@@ -62,4 +65,7 @@
   --searchresults-border-color: #dce0e8;
   --searchresults-li-bg: #eff1f5;
   --search-mark-bg: #fe640b;
+
+  --type-fg: #f9e2af;
+  --value-fg: #fe640b;
 }

@@ -4,16 +4,16 @@
     "type": "split",
     "children": [
       {
-        "id": "20d75ef79b535e79",
+        "id": "f85549505f81385f",
         "type": "tabs",
         "children": [
           {
-            "id": "609f5771be8d6b11",
+            "id": "9c843dd85b86bd41",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "SUMMARY.md",
+                "file": "stdlib/io.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "SUMMARY.md",
+                "file": "stdlib/io.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "SUMMARY.md",
+                "file": "stdlib/io.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "SUMMARY.md"
+                "file": "stdlib/io.md"
               }
             }
           }
@@ -146,8 +146,16 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "609f5771be8d6b11",
+  "active": "9c843dd85b86bd41",
   "lastOpenFiles": [
+    "stdlib/prelude.md",
+    "stdlib/io.md",
+    "stdlib/stdlib.md",
+    "SUMMARY.md",
+    "hello_world.md",
+    "standard_library.md",
+    "stdlib",
+    "syntax.md",
     "language/complex_types.md",
     "language/matching.md",
     "language/types.md",
@@ -164,12 +172,8 @@
     "introduction.md",
     "compiler/the_compiler.md",
     "compiler/compilation.md",
-    "syntax.md",
     "misc_info/license.md",
-    "hello_world.md",
     "().md",
-    "Untitled",
-    "SUMMARY.md",
-    "standard_library.md"
+    "Untitled"
   ]
 }
