@@ -2,9 +2,9 @@
 
 The `prelude` module provides basic features and is (when not [disabled](../compiler/compilation.md#prelude)) automatically included in every Som file.
 
-```som
--- Standard module implicitly imported by default into all Som modules unless
--- explicitly disabled using the `no_prelude` or `no_stdlib` directive.
+```txt,doc
+  Standard module implicitly imported by default into all Som modules unless
+  explicitly disabled using the `no_prelude` or `no_stdlib` directive.
 ```
 
 Manually having to import even the most trivial and commonly used symbols in every file would be overly verbose and tedious. Hence, this prelude is automatically imported in each Som file. It's kept as simple and light-weight as possible.
@@ -53,3 +53,5 @@ use std::ops
 use std::str
 from std::io use putsf, stderr
 ```
+
+View the source code [here](../sources/prelude.md).

@@ -17,8 +17,14 @@ copyable = true
 # line-numbers = true
 runnable = true
 
+[build]
+extra-watch-dirs = ["js", "theme"]
+
 [preprocessor.chapter-number]
 renderer = ["html"]
 
-[build]
-extra-watch-dirs = ["js", "theme"]
+[preprocessor.gen-sources]
+renderer = ["html"]
+before = ["links"]
+output-dir = "sources"
+command = "python3 gen_sources.py"

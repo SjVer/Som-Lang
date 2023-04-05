@@ -30,8 +30,9 @@
   --searchresults-li-bg: #1e1e2e;
   --search-mark-bg: #fab387;
 
-  --type-fg: #1e66f5;
+  --type-fg: #f9e2af;
   --value-fg: #fab387;
+  --doc-fg: #585b70;
 }
 
 .latte {
@@ -68,4 +69,5 @@
 
   --type-fg: #f9e2af;
   --value-fg: #fe640b;
+  --doc-fg: #777676;
 }

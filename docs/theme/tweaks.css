@@ -17,6 +17,11 @@ h1.menu-title a {
     border-color: var(--sidebar-spacer);
 }
 
+pre:has(code.doc) {
+    white-space: pre-wrap;
+    color: var(--doc-fg);
+}
+
 h3 code:not(.hljs) {
     color: var(--value-fg);
 }

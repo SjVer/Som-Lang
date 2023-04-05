@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "stdlib/io.md",
+                "file": "stdlib/prelude.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "stdlib/io.md",
+                "file": "stdlib/prelude.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "stdlib/io.md",
+                "file": "stdlib/prelude.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "stdlib/io.md"
+                "file": "stdlib/prelude.md"
               }
             }
           }
@@ -148,11 +148,13 @@
   },
   "active": "9c843dd85b86bd41",
   "lastOpenFiles": [
-    "stdlib/prelude.md",
     "stdlib/io.md",
-    "stdlib/stdlib.md",
     "SUMMARY.md",
     "hello_world.md",
+    "functions.md",
+    "stdlib/prelude.md",
+    "test.md",
+    "stdlib/stdlib.md",
     "standard_library.md",
     "stdlib",
     "syntax.md",
@@ -173,7 +175,6 @@
     "compiler/the_compiler.md",
     "compiler/compilation.md",
     "misc_info/license.md",
-    "().md",
     "Untitled"
   ]
 }

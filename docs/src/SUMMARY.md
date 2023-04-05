@@ -1,27 +1,35 @@
 # Summary
 
+# About Som
+
 - [Introduction](introduction.md)
 - [Hello World](hello_world.md)
-- [Basic Concepts](basics/basics.md)
-	- [Values](basics/values.md)
-	- [Functions](basics/functions.md)
-	- [Types](basics/types.md)
-- [The Language](language/language.md)
-	- [Lexical Conventions](language/lexical.md)
-	- [Expressions](language/expressions.md)
-	- [Value Bindings](language/bindings.md)
-	- [Function Application](language/application.md)
-	- [Complex Types](language/types.md)
-	- [Pattern Matching](language/matching.md)
-	- [Modules](language/modules.md)
+- [Basic Concepts]()
+	- [Values]()
+	- [Functions]()
+	- [Types]()
+
+# Language Guide
+
+- [The Language]()
+	- [Lexical Conventions]()
+	- [Expressions]()
+	- [Value Bindings]()
+	- [Function Application]()
+	- [Complex Types]()
+	- [Pattern Matching]()
+	- [Modules]()
 - [The Standard Library](stdlib/stdlib.md)
 	- [The IO Module](stdlib/io.md)
 	- [The Prelude Module](stdlib/prelude.md)
-- [The Compiler](compiler/compiler.md)
-	- [Installation](compiler/installation.md)
-	- [Compilation](compiler/compilation.md)
+
+# Other Information
+
+- [The Compiler]()
+	- [Installation]()
+	- [Compilation]()
 - [The Complete Syntax](syntax.md)
-- [Miscellaneous Information](misc_info/misc_info.md)
-	- [Style Conventions](misc_info/conventions.md)
-	- [Credits](misc_info/credits.md)
+- [Miscellaneous Information]()
+	- [Style Conventions]()
+	- [Credits]()
 	- [License](misc_info/license.md)

@@ -1,8 +1,8 @@
 const hljs_language_def = () => ({
   keywords: "from use mod let ext as type is of if then else match switch",
   contains: [
-    hljs.COMMENT("--", "$"),
     hljs.COMMENT("---", "---"),
+    hljs.COMMENT("--", "$"),
     {
       className: "symbol",
       begin: /(?<=\b(let|ext)\s*)[_a-z]\w*\'*/
@@ -40,7 +40,7 @@ const hljs_language_def = () => ({
     },
     {
       className: "type",
-      begin: /\'\w+|_*[A-Z]\w*/
+      begin: /(\'\w+)|(_*[A-Z]\w*)/
     },
     {
       className: "class",

@@ -2,8 +2,8 @@
 
 The `io` module provides I/O functionality, such as opening files and printing to the terminal.
 
-```som
--- Standard module containing types and functions for (file) input/output.
+```txt,doc
+  Standard module containing types and functions for (file) input/output.
 ```
 
 This module's most trivial functionality, such as printing to the terminal, is included in the prelude.
@@ -23,8 +23,8 @@ type IOMode of
 ```
 The different modes for opening a [file](#file).
 
+### `File` 
 <!-- This kind of entry could be generated in the future -->
-### <code class="language-som hljs">File</code> 
 <pre><code class="language-som hljs">type File of
   path: <a href="str.md#str">Str</a>,
   descr: <a href="types.md#int">Int</a>,
@@ -86,3 +86,5 @@ Publicly imported symbols:
 ```som
 from std::str use Str
 ```
+
+View the source code [here](../sources/io.md).

@@ -107,6 +107,12 @@
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
+        <script>
+            // remove the entries of the sources 
+            var chapters = document.querySelector("#sidebar .sidebar-scrollbox .chapter");
+            chapters.removeChild(chapters.lastChild);
+            chapters.removeChild(chapters.lastChild);
+        </script>
 
         <div id="page-wrapper" class="page-wrapper">
 
