@@ -71,17 +71,21 @@ let parseargs () =
     ~placeholder:"CODE"
     ~description:"Explain the given error code"
     () in
-  let print_ast = flag
-    ~set_long:"print-ast"
-    ~description:"Print the parsetree"
+  let dump_ast = flag
+    ~set_long:"dump-ast"
+    ~description:"Dump the parsetree"
     false in
-  let print_rast = flag
-    ~set_long:"print-rast"
-    ~description:"Print the resolved parsetree"
+  let dump_rast = flag
+    ~set_long:"dump-rast"
+    ~description:"Dump the resolved parsetree"
     false in
-  let print_tast = flag
-    ~set_long:"print-tast"
-    ~description:"Print the typed parsetree"
+  let dump_tast = flag
+    ~set_long:"dump-tast"
+    ~description:"Dump the typed parsetree"
+    false in
+  let dump_ir = flag
+    ~set_long:"dump-ir"
+    ~description:"Dump the intermediate representation"
     false in
   
   (* parse stuff *)
@@ -136,9 +140,10 @@ let parseargs () =
     force_tty;
 
     file;
-    print_ast;
-    print_rast;
-    print_tast;
+    dump_ast;
+    dump_rast;
+    dump_tast;
+    dump_ir;
 
     no_prelude;
     search_dirs;
@@ -160,20 +165,25 @@ let () =
   let args = !(C.args) in
 
   try
-    if args.print_ast then
+    if args.dump_ast then
       let ast = Pipeline.ParseFile.call ((!C.args).file, None) in
       Report.Util.maybe_newline ();
-      Parse.PrintAst.print_ast ast
+      Parse.Print_ast.print_ast ast
 
-    else if args.print_rast then
-      let _, ast = Pipeline.AnalyzeFile.call ((!C.args).file, None, None) in
+    else if args.dump_rast then
+      let ast = Pipeline.AnalyzeFile.call ((!C.args).file, None) in
       Report.Util.maybe_newline ();
-      Parse.PrintAst.print_ast ast
+      Parse.Print_ast.print_ast ast
 
-    else if args.print_tast then
+    else if args.dump_tast then
       let tast = Pipeline.TypecheckFile.call (!C.args).file in
       Report.Util.maybe_newline ();
-      Typing.PrintTAst.print_tast tast
+      Typing.Print_tast.print_tast tast
+
+    else if args.dump_ir then
+      let ir = Pipeline.LowerFile.call (!C.args).file in
+      Report.Util.maybe_newline ();
+      Lambda.Print_ir.print_program ir
 
     else
       ignore (Pipeline.TypecheckFile.call (!C.args).file);

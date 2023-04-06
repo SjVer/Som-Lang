@@ -1,11 +1,14 @@
 (library
   (name somc)
   (libraries
-    codegen
-    parse
     analysis
+    codegen
+    configs
+    lambda
+    parse
     report
     span
+    symbols
     typing
   )
 )

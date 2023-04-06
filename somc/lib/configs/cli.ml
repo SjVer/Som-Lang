@@ -18,9 +18,10 @@ type args_t =
     force_tty: bool;
 
     file: string;
-    print_ast: bool;
-    print_rast: bool;
-    print_tast: bool;
+    dump_ast: bool;
+    dump_rast: bool;
+    dump_tast: bool;
+    dump_ir: bool;
 
     search_dirs: string list;
     no_prelude: bool;
@@ -37,9 +38,10 @@ let args = ref {
     force_tty = false;
     
     file = "";
-    print_ast = false;
-    print_rast = false;
-    print_tast = false;
+    dump_ast = false;
+    dump_rast = false;
+    dump_tast = false;
+    dump_ir = false;
 
     search_dirs = [];
     no_prelude = false;

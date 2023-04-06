@@ -56,8 +56,7 @@ let instantiate level ty =
     | TApp (a, t) -> TApp (go a, go t)
     | TFun (p, r) -> TFun (go p, go r)
     | TTup ts -> TTup (List.map go ts)
-    | TName _ as ty -> ty
-    | TPrim _ | TVague _ | TError | TNever -> ty
+    | TName _ | TPrim _ | TVague _ | TError | TNever as ty -> ty
   in go ty
 
 (** asserts that the type isn't recursive

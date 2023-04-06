@@ -1,6 +1,6 @@
 module Env = Env
 module TAst = Tast
-module PrintTAst = Print_tast
+module Print_tast = Print_tast
 module Types = Types
 
 open Parse.Ast
