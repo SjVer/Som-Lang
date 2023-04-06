@@ -3,7 +3,7 @@
   (libraries
     codegen
     parse
-    pipeline
+    analysis
     report
     span
     typing

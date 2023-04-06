@@ -1,4 +1,0 @@
-(library
-  (name pipeline)
-  (libraries report parse analysis typing configs)
-)
