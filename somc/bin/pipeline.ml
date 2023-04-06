@@ -28,23 +28,29 @@ module ParseFile = Query.Make(struct
 end)
 
 module AnalyzeFile = Query.Make(struct
-  type a = string * Span.t option
-  type r = Parse.Ast.ast
-  let c (f, i) =
+  type a = string * Ident.t option * Span.t option
+  type r = Analysis.Context.t * Parse.Ast.ast
+  let c (f, m, i) =
     (* if [m] ("module") is the ident of
        the module that's importing this one.
        if [m] is None we're not importing.
        the same counts for [i], an optional
        span of the import statement. *)
     let ast = ParseFile.call (f, i) in
-    Analysis.resolve ast
+    let mod_ident = match m with
+      | Some mod_ident -> mod_ident
+      | None ->
+        (* Ident.Ident Filename.(chop_extension (basename f)) *)
+        Ident.Ident ""
+    in
+    Analysis.resolve mod_ident ast
 end)
 
 module TypecheckFile = Query.Make(struct
   type a = string
   type r = Typing.TAst.tast
   let c f =
-    let ast = AnalyzeFile.call (f, None) in
+    let _, ast = AnalyzeFile.call (f, None, None) in
     
     (* we can just manually insert the ast from the prelude
        in the parsed ast because it isn't really imported
@@ -63,7 +69,7 @@ end)
    have to solve dependency cycles *)
 let init () =
   Report.Util.read_file_fn := (fun f -> ReadFile.call (f, None));
-  Analysis.Import.get_ast_from_file := fun f s ->
-    ParseFile.call (f, Some s)
+  Analysis.Import.get_ctx_and_ast := fun f m s ->
+    AnalyzeFile.call (f, Some m, Some s)
 
 let () = init ()

@@ -63,7 +63,7 @@ let rec fold_expr e =
     item;
   }
 
-let rec fold_constants ast =
+let rec fold_constants (ast : ast) : ast =
   let go tl =
     let item = match tl.item with
       | TLValueDef b ->

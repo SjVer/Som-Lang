@@ -68,7 +68,6 @@ type other_error =
   | Cannot_explain of int (*+error code*)
   | Nonexistent_pass of string
   | Invalid_opt_level of string (*+optimization level*)
-  | Other of string (*+error*)
 
 let get_other_error_msg = function
   | Could_not_open w    -> _f "could not open file '%s'" w
@@ -78,7 +77,6 @@ let get_other_error_msg = function
   | Cannot_explain w    -> _f "cannot explain invalid error code E%03d" w
   | Nonexistent_pass w  -> _f "cannot run nonexistend LLVM pass '%s'" w
   | Invalid_opt_level w -> _f "invalid optimization level '%s'" w
-  | Other w             -> w
 
 (* Types *)
 

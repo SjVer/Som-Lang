@@ -70,8 +70,8 @@ let lookup_qual_value_ident ctx ident =
 let lookup_qual_type_ident ctx ident =
   IMap.find ident ctx.type_map |> fst
 
-let check_subcontext ctx ident =
-  List.exists ((=) ident) ctx.subcontexts
+(* let check_subcontext ctx ident =
+  List.exists ((=) ident) ctx.subcontexts *)
 
 (* adding *)
 
@@ -107,7 +107,7 @@ let add_subcontext_prefixed ctx subctx prefix =
   let f ids k (q, i) m =
     (* skip if the binding already exists *)
     if List.exists ((=) i) ids then m
-    else IMap.add (Ident.prepend prefix k) (q, i) m
+    else IMap.add (Ident.prepend (Ident prefix) k) (q, i) m
   in
   {
     ctx with
