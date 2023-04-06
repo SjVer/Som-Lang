@@ -1,3 +1,0 @@
-type Int is $i.s.32
-
-type 'a List of Cons 'a ; 'a List | Nil

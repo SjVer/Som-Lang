@@ -166,7 +166,7 @@ let () =
       Parse.PrintAst.print_ast ast
 
     else if args.print_rast then
-      let _, ast = Pipeline.AnalyzeFile.call ((!C.args).file, None, None) in
+      let ast = Pipeline.AnalyzeFile.call ((!C.args).file, None) in
       Report.Util.maybe_newline ();
       Parse.PrintAst.print_ast ast
 
