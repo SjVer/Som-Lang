@@ -87,6 +87,10 @@ let parseargs () =
     ~set_long:"dump-ir"
     ~description:"Dump the intermediate representation"
     false in
+  let dump_llvm = flag
+    ~set_long:"dump-llvm"
+    ~description:"Dump the LLVM IR"
+    false in
   
   (* parse stuff *)
   let no_prelude = flag
@@ -144,6 +148,7 @@ let parseargs () =
     dump_rast;
     dump_tast;
     dump_ir;
+    dump_llvm;
 
     no_prelude;
     search_dirs;
@@ -185,8 +190,13 @@ let () =
       Report.Util.maybe_newline ();
       Lambda.Print_ir.print_program ir
 
+    else if args.dump_llvm then
+      let modul = Pipeline.CodegenFile.call (!C.args).file in
+      Report.Util.maybe_newline ();
+      Codegen.print_module modul
+
     else
-      ignore (Pipeline.TypecheckFile.call (!C.args).file);
+      ignore (Pipeline.CodegenFile.call (!C.args).file);
 
     exit 0
   with

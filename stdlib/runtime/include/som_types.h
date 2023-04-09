@@ -2,8 +2,8 @@
 
 #include <bits/types.h>
 
-typedef _Bool       prim_iu1;
-typedef _Bool       prim_is1;
+typedef _Bool		prim_iu1;
+typedef _Bool		prim_is1;
 
 typedef __uint8_t	prim_iu8;
 typedef __int8_t	prim_is8;
@@ -34,6 +34,4 @@ typedef __fp16		prim_f16;
 typedef float		prim_f32;
 typedef double		prim_f64;
 
-typedef _Bool      	prim_v;
-
-typedef __ssize_t	value_ptr;
+typedef _Bool     	prim_v;

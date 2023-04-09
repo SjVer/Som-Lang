@@ -2,7 +2,6 @@ open Ir
 open Format
 
 let fpf = fprintf
-let dpf = dprintf
 let kw = ANSITerminal.(sprintf [magenta]) "%s"
 let var str =
   (* let var = ANSITerminal.(sprintf [green]) "%s" *)
@@ -18,62 +17,55 @@ let print_atom' ppf = function
   | Atom_const (Const_string s) -> fpf ppf "\"%s\"" s
   | Atom_const Const_nil -> pp_print_string ppf "()"
   | Atom_var v -> print_var' ppf v
+  | Atom_magic m ->
+    let m' = Typing.Magicals.to_string m in
+    fpf ppf "#%s" m'
 
-let rec fpf_step ppf r b printer =
-  fpf ppf "@[<2>(%s@ %s@ " (kw "let") (var r);
-  printer ppf;
-  fpf ppf "@ %s@ %a)@]" (kw "in") print_expr' b
-
-and print_expr' ppf = function
-  | Expr_lambda (r, (params, expr), b) ->
-    fpf_step ppf r b begin
-      dpf "@[<2>(%s@ %a@ %a)@]"
-        (kw "lam")
-        (pp_print_list pp_print_string) params
-        print_expr' expr
-    end
-  | Expr_apply (r, (func, args), b) ->
-    fpf_step ppf r b begin
-      dpf "@[<2>(%s@ %a@ %a)@]"
-        (kw "apply")
-        print_atom' func
-        (pp_print_list print_atom') args
-    end
-  | Expr_eval (r, var, b) ->
-    fpf_step ppf r b begin
-      dpf "@[<2>(%s@ %a)@]"
-        (kw "eval")
-        print_var' var
-    end
-  | Expr_if (r, (cond, thenexpr, elseexpr), b) ->
-    fpf_step ppf r b begin
-      dpf "@[<2>(%s@ %a@ %s@ %a@ %s@ %a)@]"
-        (kw "if") print_atom' cond
-        (kw "then") print_expr' thenexpr
-        (kw "else") print_expr' elseexpr
-    end
-  | Expr_sequence (r, (e1, e2), b) ->
-    fpf_step ppf r b begin
-      dpf "@[<2>(%s@ @[%a@ %a@])@]"
-        (kw "seq")
-        print_expr' e1
-        print_expr' e2
-    end
-  | Expr_tuple (r, els, b) ->
+let rec print_expr' ppf = function
+  | Expr_let (v, value, expr) ->
+    fpf ppf "@[<2>(%s@ %s@ %a@ %s@ %a)@]"
+      (kw "let") (var v)
+      print_expr' value
+      (kw "in") print_expr' expr
+  | Expr_lambda (params, expr) ->
+    fpf ppf "@[<2>(%s@ %a@ %a)@]"
+      (kw "lam")
+      (pp_print_list pp_print_string) params
+      print_expr' expr
+  | Expr_apply (func, args) ->
+    fpf ppf "@[<2>(%s@ %a@ %a)@]"
+      (kw "apply")
+      print_atom' func
+      (pp_print_list print_atom') args
+  | Expr_if (cond, thenexpr, elseexpr) ->
+    fpf ppf "@[<2>(%s@ %a@ %s@ %a@ %s@ %a)@]"
+      (kw "if") print_atom' cond
+      (kw "then") print_expr' thenexpr
+      (kw "else") print_expr' elseexpr
+  | Expr_sequence (e1, e2) ->
+    fpf ppf "@[<2>(%s@ @[%a@ %a@])@]"
+      (kw "seq")
+      print_expr' e1
+      print_expr' e2
+  | Expr_tuple els ->
     let fpf_el ppf a =
       fpf ppf "@ %a" print_atom' a
     in
-    fpf_step ppf r b begin
-      dpf "@[<2>(%s%a)@]"
-        (kw "tup")
-        (pp_print_list fpf_el) els
-    end
-  | Expr_get (r, (tup, i), b) ->
-    fpf_step ppf r b begin
-      dpf "@[<2>(%s@ %a@ %d)@]"
-        (kw "get")
-        print_var' tup i
-    end
+    fpf ppf "@[<2>(%s%a)@]"
+      (kw "tup")
+      (pp_print_list fpf_el) els
+  | Expr_lazy expr ->
+    fpf ppf "@[<2>(%s@ %a)@]"
+      (kw "lazy")
+      print_expr' expr
+  | Expr_get (tup, i) ->
+    fpf ppf "@[<2>(%s@ %a@ %d)@]"
+      (kw "get")
+      print_var' tup i
+  | Expr_eval var ->
+    fpf ppf "@[<2>(%s@ %a)@]"
+      (kw "eval")
+      print_var' var
   | Expr_atom a -> print_atom' ppf a
 
 let print_stmt' ppf = function

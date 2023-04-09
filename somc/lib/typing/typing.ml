@@ -2,6 +2,7 @@ module Env = Env
 module TAst = Tast
 module Print_tast = Print_tast
 module Types = Types
+module Magicals = Magicals
 
 open Parse.Ast
 open TAst

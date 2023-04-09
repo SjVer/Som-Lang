@@ -1,7 +1,7 @@
--- type Int is $i.s.32
+type Int is $i.s.32
 
--- ext print_int as print : Int -> $v
+ext print_int as print : Int -> $v
 
-let id x = 3
+let add_one x = #add x 1
 
-let main = id 1, 2
+let main = print (add_one 2)

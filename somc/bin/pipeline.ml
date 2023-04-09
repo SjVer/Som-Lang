@@ -66,6 +66,14 @@ module LowerFile = Query.Make(struct
     Lambda.convert tast
 end)
 
+module CodegenFile = Query.Make(struct
+  type a = string
+  type r = Codegen.llmodule
+  let c file =
+    let program = LowerFile.call file in
+    Codegen.codegen_program program
+end)
+
 (* export functions bc otherwise i'd somehow
    have to solve dependency cycles *)
 let init () =

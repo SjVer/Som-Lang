@@ -21,16 +21,17 @@ let fresh () = mangle "r"
 
 let local r = Atom_var (Var_local r)
 
-let cont_atom a = Expr_atom a
-let cont_eval = function
-  | Atom_const _ as a -> Expr_atom a
-  | Atom_var v ->
-    let r = fresh () in
-    Expr_eval (r, v, cont_atom (local r))
+let wrap_exprs_in_let exprs cont =
+  let rs = List.map (fun _ -> fresh ()) exprs in
+  let f acc (r, el) = Expr_let (r, el, acc) in
 
-let get_atom = function
-  | Expr_atom a -> a
-  | _ -> invalid_arg "get_atom"
+  List.fold_left f
+    (cont (List.map local rs))
+    (List.combine rs exprs |> List.rev)
+
+(* let make_lazy = function
+  | Expr_lambda _ as e -> e
+  | e -> Expr_lazy e *)
 
 (* lowering stuff *)
 
@@ -50,47 +51,48 @@ let lower_pattern vars patt =
       let var = mangle i in
       bind_local vars (Ident i) var, [var]
     | PAWildcard ->
-      vars, []
+      vars, [mangle "_"]
 
-let rec lower_expr cont vars expr =
+let rec lower_expr vars expr =
   match expr.item with
-    | EXGrouping e -> lower_expr cont vars e
+    | EXGrouping e -> lower_expr vars e
 
-    | EXBinding (bind, body) ->
+    | EXBinding _ -> failwith "lower EXBinding"
+    (* | EXBinding (bind, body) ->
       let vars, params = lower_pattern vars bind.vb_patt in
       let e = lower_expr cont_atom vars bind.vb_expr in
       let bound = mangle "TODO" in
       let body = lower_expr cont_atom vars body in
-      Expr_lambda (bound, (params, e), body)
+      Expr_lambda (bound, (params, e), body) *)
 
     | EXLambda bind ->
       let vars, params = lower_pattern vars bind.vb_patt in
-      let e = lower_expr cont_atom vars bind.vb_expr in
-      let r = fresh () in
-      Expr_lambda (r, (params, e), cont (local r))
+      let e = lower_expr vars bind.vb_expr in
+      Expr_lambda (params, e)
 
     | EXSequence (e1, e2) ->
-      let e =
-        lower_expr cont_atom vars e1,
-        lower_expr cont_atom vars e2
-      in
-      let r = fresh () in
-      Expr_sequence (r, e, cont (local r))
+      let e1' = lower_expr vars e1 in
+      let e2' = lower_expr vars e2 in
+      Expr_sequence (e1', e2')
 
     | EXApplication (f, es) ->
-      let f' = lower_expr cont_atom vars f in
-      let es' = List.map (lower_expr cont_atom vars) es in
-      let args = List.map get_atom es' in
-      let r = fresh () in
-      Expr_apply (r, (get_atom f', args), cont (local r))
+      let f' = lower_expr vars f in
+      let es' = List.map (lower_expr vars) es in
+      let app rs =
+        let r = fresh () in
+        Expr_let (r, f', Expr_apply (local r, rs))
+      in
+      wrap_exprs_in_let es' app
 
-    | EXTuple _ -> failwith "lower EXTuple"
+    | EXTuple es ->
+      let es' = List.map (lower_expr vars) es in
+      wrap_exprs_in_let es' (fun rs -> Expr_tuple rs)
+    
     | EXConstruct _ -> failwith "lower EXConstruct"
 
-    | EXLiteral l -> cont (lower_literal l)
-    | EXIdentifier i -> cont (Atom_var (IMap.find i.item vars))      
-
-    | EXMagical _ -> failwith "lower EXMagical"
+    | EXLiteral l -> Expr_atom (lower_literal l)
+    | EXIdentifier i -> Expr_atom (Atom_var (IMap.find i.item vars))      
+    | EXMagical m -> Expr_atom (Atom_magic m)
 
     | EXError -> failwith "cannot lower invalid expression"
 
@@ -98,7 +100,7 @@ let lower_toplevel vars (tl : toplevel node) =
   match tl.item with
     | TLValueDef vdef ->
       let var = mangle_ident vdef.vd_name.item in
-      let expr = lower_expr cont_atom vars vdef.vd_expr in
+      let expr = lower_expr vars vdef.vd_expr in
       let stmt = Stmt_definition (var, expr) in
       let vars = bind_global vars vdef.vd_name.item var in
       vars, Some stmt

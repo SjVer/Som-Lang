@@ -22,6 +22,7 @@ type args_t =
     dump_rast: bool;
     dump_tast: bool;
     dump_ir: bool;
+    dump_llvm: bool;
 
     search_dirs: string list;
     no_prelude: bool;
@@ -42,6 +43,7 @@ let args = ref {
     dump_rast = false;
     dump_tast = false;
     dump_ir = false;
+    dump_llvm = false;
 
     search_dirs = [];
     no_prelude = false;

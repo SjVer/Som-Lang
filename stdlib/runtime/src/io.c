@@ -89,6 +89,8 @@ Value som_putsf(Value file, Value str) {
 }
 
 CTOR() {
+	printf("som_value size: %zu\n", sizeof(Value));
+
 	stdin_tup[FILE_MEM_PATH] = STR_VAL(STDIN_PATH);
 	stdin_tup[FILE_MEM_DESCR] = IS32_VAL(STDIN_FILENO);
 	stdin_tup[FILE_MEM_MODE] = TAG_TUPLE_VAL(IOMODE_READ);

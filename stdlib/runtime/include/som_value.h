@@ -2,21 +2,28 @@
 
 #pragma once
 
-#define packed __attribute__ ((packed))
+typedef __uint64_t value;
 
-typedef struct Value Value;
+/*
+	Structure:
+	00-07: value type (1 byte)
+	08-15: gc/value info (1 byte)
+	16-30: padding (2 bytes)
+	31-63: unboxed value or boxed value size (4 bytes)
+	64-..: boxed value
+*/
 
-typedef struct {
-	value_ptr function;
-	Value* arguments;
-} packed Thunk;
+// struct {
+// 	value* function;
+// 	value* arguments;
+// } Thunk;
 
-typedef struct {
-	int size;
-	Value* values;
-} packed Tuple;
+// struct {
+// 	int size;
+// 	value* values;
+// } Tuple;
 
-typedef enum {
+enum ValueType {
 	VAL_PRIM_IU1,
 	VAL_PRIM_IS1,
 
@@ -46,50 +53,20 @@ typedef enum {
 
 	VAL_THUNK,
 	VAL_TUPLE,
-} packed ValueType;
+};
 
-typedef struct Value {
-	ValueType type;
-	union {
-		prim_iu1	prim_iu1;
-		prim_is1	prim_is1;
+#define VAL_TYPE(v) ((ValueType)(v & 0xff))
+#define VAL_INFO(v) ((__uint8_t)((v << 8) & 0xff))
+#define VAL_VALUE(v) ((v << 24) & 0xffffffff)
+#define VAL_SIZE(v) ((__uint8_t)VAL_VALUE(v))
 
-		prim_iu8	prim_iu8;
-		prim_is8	prim_is8;
+// #define VAL(vtype, vas, val) (Value){.type = vtype, .as.vas = (vas)(val)}
+// #define VOID_VAL VAL(VAL_PRIM_V, prim_v, 0)
+// #define IS32_VAL(v) VAL(VAL_PRIM_IS32, prim_is32, v)
+// #define IUS_VAL(v) VAL(VAL_PRIM_IUS, prim_ius, v)
+// #define TUPLE_VAL(count, els) \
+// 	(Value){.type = VAL_TUPLE, .as.tuple = {.size = count, .values = (Value*)(els)}}
+// #define TAG_TUPLE_VAL(tag) TUPLE_VAL(1, (Value[]){IUS_VAL(tag)})
 
-		prim_iu16	prim_iu16;
-		prim_is16	prim_is16;
-
-		prim_iu32	prim_iu32;
-		prim_is32	prim_is32;
-
-		prim_iu64	prim_iu64;
-		prim_is64	prim_is64;
-
-		prim_iu128	prim_iu128;
-		prim_is128	prim_is128;
-
-		prim_ius	prim_ius;
-		prim_iss	prim_iss;
-
-		prim_f16	prim_f16;
-		prim_f32	prim_f32;
-		prim_f64	prim_f64;
-
-		prim_v		prim_v;
-
-		Thunk		thunk;
-		Tuple		tuple;
-	} packed as;
-} Value;
-
-#define VAL(vtype, vas, val) (Value){.type = vtype, .as.vas = (vas)(val)}
-#define VOID_VAL VAL(VAL_PRIM_V, prim_v, 0)
-#define IS32_VAL(v) VAL(VAL_PRIM_IS32, prim_is32, v)
-#define IUS_VAL(v) VAL(VAL_PRIM_IUS, prim_ius, v)
-#define TUPLE_VAL(count, els) \
-	(Value){.type = VAL_TUPLE, .as.tuple = {.size = count, .values = (Value*)(els)}}
-#define TAG_TUPLE_VAL(tag) TUPLE_VAL(1, (Value[]){IUS_VAL(tag)})
-
-#define TUPLE_GET(tup, index, vas) tup.values[index].as.vas
-#define TUPLE_TAG(tup) TUPLE_GET(tup, 0, prim_ius)
+// #define TUPLE_GET(tup, index, vas) tup.values[index].as.vas
+// #define TUPLE_TAG(tup) TUPLE_GET(tup, 0, prim_ius)
