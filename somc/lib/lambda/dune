@@ -1,4 +1,4 @@
 (library
   (name lambda)
-  (libraries typing)
+  (libraries typing ANSITerminal)
 )

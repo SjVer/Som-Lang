@@ -16,7 +16,7 @@ type atom =
 
 type expr =
   | Expr_lambda of (ident list * expr) step
-  | Expr_apply of (var * atom list) step
+  | Expr_apply of (atom * atom list) step
   | Expr_eval of var step
   | Expr_if of (atom * expr * expr) step
   | Expr_sequence of (expr * expr) step
