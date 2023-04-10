@@ -55,10 +55,10 @@ ext _som_std_io_stderr as stderr : File
 ext _som_std_io_openf as openf path mode : _Str -> IOMode -> !File
 
 -- closes the given file
-ext _som_std_io_closef as closef file : File -> !Nll
+ext _som_std_io_closef as closef file : File -> !Nil
 
 -- writes the given string to the given file
-ext _som_std_io_putsf as putsf file str : File -> _Str -> !Nll
+ext _som_std_io_putsf as putsf file str : File -> _Str -> !Nil
 
 -- prints the given string to stdout
-let puts str : _Str -> !Nll = putsf stdout str, putsf stdout "\n"
+let puts str : _Str -> !Nil = putsf stdout str, putsf stdout "\n"

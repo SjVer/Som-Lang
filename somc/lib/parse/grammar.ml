@@ -492,14 +492,6 @@ and atom_type must p =
     let s = catspans start_s p.previous.span in
     mk s (if groups then TYGrouping t else t.item)
   end
-
-  else if matschs [dummy `BUILTINITY; dummy `BUILTINFTY; BUILTINVTY] p then
-    mk p.previous.span (TYPrimitive (unpack_typ p.previous.typ))
-
-  else if matsch (dummy `PRIMENAME) p then
-    let n = mk_t (unpack_str p.previous.typ) p.previous in
-    mk p.previous.span (TYVariable n)
-
   else try try_parse p begin fun p ->
     let i = upper_longident p false in
     mk i.span (TYConstruct (None, i))

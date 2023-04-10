@@ -15,9 +15,6 @@ let rec generalize level = function
     when other_level > level ->
       ty := VRGeneric id;
       TVar ty
-  | TVague ({contents = VGInt | VGFloat} as k) ->
-    k := VGGeneric !k;
-    TVague k
 
   | TVariant rows ->
     let f (i, ts) = i, generalize level ts in
@@ -31,8 +28,7 @@ let rec generalize level = function
   
   | TVar {contents = VRGeneric _}
   | TVar {contents = VRUnbound _}
-  | TName _ | TPrim _ | TVague _
-  | TError | TNever as ty -> ty
+  | TName _ | TPrim _ | TError | TNever as ty -> ty
 
 (** instantiates type [ty] replacing generic
     type variables with fresh ones and generic
@@ -51,12 +47,11 @@ let instantiate level ty =
           var
       end
     | TVar {contents = VRUnbound _} -> ty
-    | TVague {contents = VGGeneric k} -> TVague (ref k)
     | TEff t -> TEff (go t)
     | TApp (a, t) -> TApp (go a, go t)
     | TFun (p, r) -> TFun (go p, go r)
     | TTup ts -> TTup (List.map go ts)
-    | TName _ | TPrim _ | TVague _ | TError | TNever as ty -> ty
+    | TName _ | TPrim _ | TError | TNever as ty -> ty
   in go ty
 
 (** asserts that the type isn't recursive
@@ -64,7 +59,7 @@ let instantiate level ty =
   if 'b comes from a higher level than 'a *)
 let occurs_check_adjust_levels id level =
   let rec go = function
-    | TName _ | TPrim _ | TVague _ | TError | TNever -> ()
+    | TName _ | TPrim _ | TError | TNever -> ()
     | TVariant rows -> List.iter (fun (_, t) -> go t) rows
     | TVar {contents = VRSolved ty} -> go ty
     | TVar {contents = VRGeneric _} -> ()
@@ -78,16 +73,6 @@ let occurs_check_adjust_levels id level =
     | TFun (p, r) -> go p; go r
     | TTup ts -> List.iter go ts
   in go
-
-let rec can_unify_vague_ty env kind = function
-  (* we unify vague types with primitives or other vague types *)
-  | TName n -> can_unify_vague_ty env kind (Env.lookup_alias env n)
-  | TPrim (PInt _) when kind = VGInt -> true
-  | TPrim (PFloat _) when kind = VGFloat -> true
-  | TVague {contents = (VGInt | VGFloat) as k} -> k = kind
-  | TVague {contents = VGSolved t}
-  | TVar {contents = VRSolved t} -> can_unify_vague_ty env kind t
-  | _ -> false
 
 let rec unify_name env span ty1 ty2 =
   let alias_note n nty =
@@ -117,8 +102,6 @@ let rec unify_name env span ty1 ty2 =
           (* make sure that e.g. [unify Int 'a] links the
              ['a] to [Int] and not to [Int]'s 'contents'.*)
           begin match ty with
-            | TVague ({contents = VGSolved _} as k) ->
-              k := (VGSolved (TName n))
             | TVar ({contents = VRSolved _} as v) ->
               v := (VRSolved (TName n))
             | _ -> ()
@@ -149,20 +132,11 @@ and unify env span ty1 ty2 =
     | TPrim p1, TPrim p2 ->
       if p1 <> p2 then
         let note =
-          "types starting with '$' are primitive types.\n\
-          for more information see <TODO>."
+          "types starting with '$' are primitive types for more.\n\
+          information see https://sjver.github.io/Som-Lang/basics/types."
         in
         raise (Unification_failed [note])
       else ()
-
-    | TVague ({contents = VGInt | VGFloat} as k), ty
-    | ty, TVague ({contents = VGInt | VGFloat} as k)
-      when can_unify_vague_ty env !k ty ->
-        k := VGSolved ty
-
-    | TVague {contents = VGSolved ty1}, ty2
-    | ty1, TVague {contents = VGSolved ty2} ->
-      unify env span ty1 ty2
 
     | TError, _ | _, TError
     | TNever, _ | _, TNever -> ()

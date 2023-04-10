@@ -36,10 +36,6 @@ const hljs_language_def = () => ({
     },
     {
       className: "type",
-      begin: /\$i.(?:(?:s|u).(?:s|128|64|32|16|8|1)|\*)|\$f\.(?:64|32|16|\*)|\$v/
-    },
-    {
-      className: "type",
       begin: /(\'\w+)|(_*[A-Z]\w*)/
     },
     {

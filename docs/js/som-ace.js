@@ -15,18 +15,6 @@ const ace_syntax_rules = {
       regex: "\\b(?:let|type|ext|is|of)\\b",
     },
     {
-      token: "storage.type.integer.som",
-      regex: "\\$i.(?:(?:s|u).(?:s|128|64|32|16|8|1)|\\*)",
-    },
-    {
-      token: "storage.type.float.som",
-      regex: "\\$f\\.(?:64|32|16|\\*)",
-    },
-    {
-      token: "storage.type.void.som",
-      regex: "\\$V",
-    },
-    {
       token: "constant.numeric.som",
       regex: "\\b(?:[0-9]+(?:\\.[0-9]+)?|0b[0-1]+|0c[0-7]+|0x[0-9a-fA-F]+)\\b",
     },

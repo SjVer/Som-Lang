@@ -31,16 +31,11 @@
 
 --- public imports ---
 
-from std::types use *
 from std::ops use *
 from std::str use Str
+from std::list use List
 
 --- private imports ---
-
-use std::types as _std_types
-use std::list as _std_list
-use std::ops as _std_ops
-use std::str as _std_str
 
 from std::io use
 	putsf as _putsf,
@@ -53,9 +48,9 @@ let return v : 'a -> !'a = v
 
 -- terminates the calling process immediately with the given status
 !!no_return
-ext _som_std_prelude_exit as exit status : Int -> Nll
+ext _som_std_prelude_exit as exit status : Int -> Nil
 
-let assert cond msg : Bln -> Str -> Nll =
+let assert cond msg : Bln -> Str -> Nil =
 	if cond then
 		_putsf _stderr msg,
 		exit 1

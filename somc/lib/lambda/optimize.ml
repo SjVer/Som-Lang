@@ -1,6 +1,5 @@
 open Ir
 
-
 module RemoveLetAtom = struct
   let replaced : (ident, atom) Hashtbl.t = Hashtbl.create 10
 
@@ -20,6 +19,8 @@ module RemoveLetAtom = struct
       Expr_let (var, optimize_expr value, optimize_expr expr)
     | Expr_lambda (args, expr) ->
       Expr_lambda (args, optimize_expr expr)
+    | Expr_call (f, args) ->
+      Expr_call (check_atom f, List.map check_atom args)
     | Expr_apply (f, args) ->
       Expr_apply (check_atom f, List.map check_atom args)
     | Expr_if (cond, thenexpr, elseexpr) ->
@@ -32,7 +33,7 @@ module RemoveLetAtom = struct
       Expr_lazy (optimize_expr expr)
     | Expr_tuple els ->
       Expr_tuple (List.map check_atom els)
-    | Expr_eval (Var_local var) as expr -> begin
+    | Expr_eval (Var_local var | Var_global var) as expr -> begin
         try Expr_atom (Hashtbl.find replaced var)
         with Not_found -> expr
       end
@@ -49,7 +50,7 @@ end
 let optimize_stmt stmt =
   RemoveLetAtom.optimize_stmt stmt
 
-let rec optimize program =
+let rec optimize_program program =
   let program' = List.map optimize_stmt program in
   if program' = program then program'
-  else optimize program'
+  else optimize_program program'

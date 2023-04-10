@@ -44,15 +44,6 @@ let rec parse ?(tvars=SMap.empty) env level =
     | TYEffect t -> TEff (go level t.item)
     | TYFunction (a, r) -> TFun (go level a.item, go level r.item)
     | TYTuple ts -> TTup (List.map (go level) (nmapi ts))
-    | TYPrimitive b -> begin
-        let open Types in
-        match b with
-          | PTInt (Some (s, w)) -> TPrim (PInt (s, w))
-          | PTInt None -> TVague (ref VGInt)
-          | PTFloat (Some w) -> TPrim (PFloat w)
-          | PTFloat None -> TVague (ref VGFloat)
-          | PTVoid -> TPrim PVoid
-      end
     | TYConstruct (None, t) ->
       check_alias_exists env (Ident.to_string t.item) t.span;
       TName t.item

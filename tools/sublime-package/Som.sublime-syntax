@@ -20,13 +20,6 @@ variables:
   hexadecimal: '\b0x[0-9a-fA-F]+\b'
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
-  # basic types
-  # inttype: i\.((s|u)\.(s|[0-9]+)|\*)
-  inttype: i\.((s|u)\.(s|128|64|32|16|8|1)|\*)
-  floattype: f\.(64|32|16|\*)
-  voidtype: v
-  basictype: \$(?:{{inttype}}|{{floattype}}|{{voidtype}})
-
   escape_seq: a|b|f|n|r|t|v|\\|\'|\"|0
 
   directive_prefix: \!\!\s*\.?\s*
@@ -161,7 +154,10 @@ contexts:
       captures:
         1: variable.som
         2: entity.name.type.som
-      pop: true
+      set:
+        - include: import-as
+        - match: (?=\S)
+          pop: true
 
     - include: invalid
 
@@ -192,6 +188,7 @@ contexts:
         1: variable.som
         2: entity.name.type.som
       push:
+        - include: import-as
         - match: \,
           scope: punctuation.separator.sequence.som
           pop: 1
@@ -200,10 +197,22 @@ contexts:
 
     - include: invalid
 
+  import-as:
+    - match: \bas\b
+      scope: keyword.import.as.som
+      push:
+        - match: ({{lnamep}})|({{uname}})
+          captures:
+            1: variable.som
+            2: entity.name.type.som
+          pop: true
+
+        - include: invalid
+
   # TYPES
 
   optional-type:
-    - match: (?=(?<!!)!(?!!)|\(|{{basictype}}|{{uname}}|{{pname}}|_)
+    - match: (?=(?<!!)!(?!!)|\(|{{uname}}|{{pname}}|_)
       push: type
 
   type:
@@ -224,14 +233,14 @@ contexts:
         - match: (?=\S)
           push: type
 
-    - match: '{{basictype}}|{{uname}}|{{pname}}|_'
+    - match: '{{uname}}|{{pname}}|_'
       scope: storage.type.som
       set: finish-type
 
     - include: invalid
 
   finish-type:
-    - match: '{{basictype}}|{{uname}}|{{pname}}|_'
+    - match: '{{uname}}|{{pname}}|_'
       scope: storage.type.som
 
     # function

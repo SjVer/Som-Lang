@@ -52,7 +52,7 @@ value som_openf(value path, value mode) {
 
 value som_closef(value file) {
 	close(Val_value(File_descr(file)));
-	return Void_val;
+	return Null_val;
 }
 
 value som_readf(value file) {
@@ -76,7 +76,7 @@ value som_putsf(value file, value str) {
 	write(fd, Val_string(str), Hd_payload(*str));
 	fsync(fd);
 
-	return Void_val;
+	return Null_val;
 }
 
 CTOR() {

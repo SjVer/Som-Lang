@@ -20,6 +20,7 @@ type atom =
 type expr =
   | Expr_let of ident * expr * expr
   | Expr_lambda of ident list * expr
+  | Expr_call of atom * atom list
   | Expr_apply of atom * atom list
   | Expr_if of atom * expr * expr
   | Expr_sequence of expr * expr
@@ -33,7 +34,10 @@ type expr =
 (* let [string] = ['a] in [expr] *)
 
 type statement =
+  (* always generated from TAST *)
   | Stmt_definition of ident * expr
+  (* result of lambda lifting *)
+  | Stmt_function of ident * ident list * expr
   | Stmt_external of ident * ident
 
 type program = statement list

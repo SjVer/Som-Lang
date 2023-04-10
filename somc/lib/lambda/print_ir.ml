@@ -2,6 +2,7 @@ open Ir
 open Format
 
 let fpf = fprintf
+let pp_list pp = pp_print_list ~pp_sep:pp_print_space pp
 let kw = ANSITerminal.(sprintf [magenta]) "%s"
 let var str =
   (* let var = ANSITerminal.(sprintf [green]) "%s" *)
@@ -30,13 +31,18 @@ let rec print_expr' ppf = function
   | Expr_lambda (params, expr) ->
     fpf ppf "@[<2>(%s@ %a@ %a)@]"
       (kw "lam")
-      (pp_print_list pp_print_string) params
+      (pp_list pp_print_string) params
       print_expr' expr
+  | Expr_call (func, args) ->
+    fpf ppf "@[<2>(%s@ %a@ %a)@]"
+      (kw "call")
+      print_atom' func
+      (pp_list print_atom') args
   | Expr_apply (func, args) ->
     fpf ppf "@[<2>(%s@ %a@ %a)@]"
       (kw "apply")
       print_atom' func
-      (pp_print_list print_atom') args
+      (pp_list print_atom') args
   | Expr_if (cond, thenexpr, elseexpr) ->
     fpf ppf "@[<2>(%s@ %a@ %s@ %a@ %s@ %a)@]"
       (kw "if") print_atom' cond
@@ -71,7 +77,15 @@ let rec print_expr' ppf = function
 let print_stmt' ppf = function
   | Stmt_definition (name, expr) ->
     fpf ppf "@[<2>(%s@ %s@ %a@])"
-      (kw "define") (var (name ^ "!")) print_expr' expr
+      (kw "define")
+      (var (name ^ "!"))
+      print_expr' expr
+  | Stmt_function (name, params, expr) ->
+    fpf ppf "@[<2>(%s@ %s%a@ %a@])"
+      (kw "function")
+      (var (name ^ "!"))
+      (pp_print_list (fun f -> fpf f "@ %s")) params
+      print_expr' expr
   | Stmt_external (name, native) ->
     fpf ppf "(%s %s %s)"
       (kw "extern") (var (name ^ "!")) native

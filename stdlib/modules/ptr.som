@@ -35,7 +35,7 @@ type 'a Ptr is $i.u.s
 ext _som_std_ptr_deref as deref ptr : 'a Ptr -> 'a
 
 -- !!unsafe
-ext _som_std_ptr_set as set ptr val : 'a Ptr -> 'a -> !Nll
+ext _som_std_ptr_set as set ptr val : 'a Ptr -> 'a -> !Nil
 
 let is_null ptr : 'a Ptr -> Bln = ptr = 0
 
@@ -44,4 +44,4 @@ ext _som_std_ptr_malloc as malloc size : Sze -> !'a Ptr
 
 let malloc_ptr () : !'a Ptr = malloc (!!size_of 'a)
 
-ext _som_std_ptr_free as free ptr : 'a Ptr -> !Nll
+ext _som_std_ptr_free as free ptr : 'a Ptr -> !Nil

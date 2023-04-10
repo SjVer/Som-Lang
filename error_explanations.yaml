@@ -15,11 +15,6 @@ lexing:
     This error is raised when an integer, float or character
     literal contains invalid digits or an invalid character.
 
-  Invalid_builtin_type: >
-    This error is raised when an invalid builtin type is encountered,
-    such as "$wrong". Valid builtin types must one of the following:
-    "$i.(s|u).<int>", "$i.*", "$f.(64|32|16)", "f.*" or "$v".
-
 syntax:
   Expected: >
     This error is raised when a specific token was expected, but

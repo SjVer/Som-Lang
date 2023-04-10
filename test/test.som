@@ -1,7 +1,14 @@
-type Int is $i.s.32
+let add x y = #add x y
 
-ext print_int as print : Int -> $v
+---
+let add =
+  lam x ->
+    let f =
+      lam env y ->
+        let x = env[1] in
+        #add x y
+    in
+    (f; x)
+---
 
-let add_one x = #add x 1
-
-let main = print (add_one 2)
+-- let three = (add 1) 2

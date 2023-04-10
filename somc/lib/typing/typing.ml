@@ -9,6 +9,18 @@ open TAst
 open Infer
 open Unify
 
+let initial_env =
+  let open Env in
+  let open Types in
+  let add name typ env =
+    add_alias env (Ident name) (TPrim typ)
+  in
+  empty
+  |> add "Int" PInt 
+  |> add "Chr" PChar
+  |> add "Flt" PFloat
+  |> add "Nil" PNil 
+
 let typecheck_toplevel env node =
   let mk item = {span = node.Parse.Ast.span; item} in
   match (node.item : Parse.Ast.toplevel) with

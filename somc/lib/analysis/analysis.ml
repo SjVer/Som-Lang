@@ -21,11 +21,20 @@ let add_implicit_prelude ast =
   let imp_ast = !Import.get_ast_from_file prelude_file span in
   imp_ast @ ast
 
-let resolve ast : ast =
-  let ctx = Context.empty (Ident.Ident "") in
+let initial_ctx = 
+  let open Context in
+  let bind name ctx = bind_type ctx
+    (Ident name) (Ident name)
+  in 
+  empty (Ident "")
+  |> bind "Int"
+  |> bind "Chr"
+  |> bind "Flt"
+  |> bind "Nil"
 
+let resolve ast : ast =
   ast
   |> Import.include_imports
-  |> Resolve.resolve_ast ctx |> snd
+  |> Resolve.resolve_ast initial_ctx |> snd
   |> Constant_fold.fold_constants
   |> Builtins.rename_builtins

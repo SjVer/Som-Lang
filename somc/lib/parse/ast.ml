@@ -112,12 +112,6 @@ and typ =
   | TYFunction of typ node * typ node
   | TYTuple of typ node list
   | TYConstruct of typ node option * Ident.t node
-  | TYPrimitive of primitive_typ
-
-and primitive_typ =
-  | PTInt of (bool * int) option
-  | PTFloat of int option
-  | PTVoid
 
 (* ===================== Directive ===================== *)
 

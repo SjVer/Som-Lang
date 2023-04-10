@@ -9,14 +9,12 @@ type lexing_error =
   | Illegal_escape of char (*+sequence*)
   | Unterminated_string
   | Invalid_literal of string
-  | Invalid_builtin_type of string
 
 let get_lexing_error_msg = function
   | Unexpected_character w  -> _f "unexpected character '%s'" w
   | Illegal_escape w        -> _f "illegal escape sequence '\\%c'" w
   | Unterminated_string     -> _f "unterminated string"
   | Invalid_literal w       -> _f "invalid literal '%s'" w
-  | Invalid_builtin_type w  -> _f "invalid builtin type '%s'" w
 
 (* Syntax errors *)
 

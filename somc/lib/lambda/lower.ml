@@ -5,6 +5,19 @@ open Ir
 
 module IMap = Map.Make(Ident)
 
+let rec is_func_ty =
+  let open Typing.Types in
+  function
+    | TFun _ -> true
+    | TVar {contents = VRSolved ty} -> is_func_ty ty
+    | TVar ({contents = VRUnbound (_, level)} as tvar) ->
+      (* TODO: remove this? *)
+      let param_ty = new_var level in
+      let return_ty = new_var level in
+      tvar := VRSolved (TFun (param_ty, return_ty));
+      true
+    | _ -> false
+
 let bind_global vars ident var = IMap.add ident (Var_global var) vars
 let bind_local vars ident var = IMap.add ident (Var_local var) vars
 
@@ -80,7 +93,11 @@ let rec lower_expr vars expr =
       let es' = List.map (lower_expr vars) es in
       let app rs =
         let r = fresh () in
-        Expr_let (r, f', Expr_apply (local r, rs))
+        let expr = if is_func_ty expr.typ
+          then Expr_apply (local r, rs)
+          else Expr_call (local r, rs)
+        in
+        Expr_let (r, f', expr)
       in
       wrap_exprs_in_let es' app
 

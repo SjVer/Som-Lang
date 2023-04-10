@@ -15,14 +15,6 @@ let show_literal = function
   | LIString s -> "String \"" ^ String.escaped s ^ "\""
   | LINil -> "Nil"
 
-let show_primitive_type = function
-  | PTInt (Some (s, w)) ->
-    Printf.sprintf "$i.%c.%d" (if s then 's' else 'u') w
-  | PTFloat (Some w) -> Printf.sprintf "$f.%d" w
-  | PTInt None -> "$i.*"
-  | PTFloat None -> "$f.*"
-  | PTVoid -> "$v"
-
 let rec show_path = function
   | [] -> ""
   | [p] -> p.item
@@ -73,9 +65,6 @@ and print_type_node' i { span; item } =
       p i ("TYConstruct " ^ (Ident.to_string t.item)) span;
       if Option.is_some a
       then print_type_node' (i + 1) (Option.get a);
-    
-    | TYPrimitive t ->
-      p i ("TYPrimitive " ^ show_primitive_type t) span
 
 and print_complex_type_node' i { span; item } =
   match item with

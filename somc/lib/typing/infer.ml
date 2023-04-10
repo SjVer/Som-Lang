@@ -103,13 +103,12 @@ and infer_expr level env exp =
       mk s out_ty (EXConstruct (mk i.span constr_typ i.item, es'))
 
     | EXLiteral l ->
-      (* TODO: look these up instead? *)
-      let name n = TName (Cons ("_std_types", Ident n)) in
+      let name n = TName (Ident n) in
       let l', t = match l with
-        | LIChar c   -> LIChar c,   TPrim (PInt (false, 8))
-        | LIFloat f  -> LIFloat f,  TVague (ref VGFloat)
-        | LIInt i    -> LIInt i,    TVague (ref VGInt) 
-        | LINil      -> LINil,      TPrim PVoid
+        | LIInt i    -> LIInt i,    name "Int"
+        | LIChar c   -> LIChar c,   name "Chr"
+        | LIFloat f  -> LIFloat f,  name "Flt"
+        | LINil      -> LINil,      name "Nil"
         | LIString s -> LIString s, name "Str"
       in mk s t (EXLiteral l')
     

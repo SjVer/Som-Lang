@@ -6,7 +6,6 @@ type t =
   | TVariant of (Symbols.Ident.t * t) list
   | TName of Symbols.Ident.t
   | TPrim of prim
-  | TVague of vague ref
   | TVar of var ref
   | TEff of t
   | TApp of t * t
@@ -15,16 +14,11 @@ type t =
   | TNever
   | TError
 
-and vague =
-  | VGInt
-  | VGFloat
-  | VGSolved of t
-  | VGGeneric of vague
-
 and prim =
-  | PInt of bool * int
-  | PFloat of int
-  | PVoid
+  | PInt
+  | PChar
+  | PFloat
+  | PNil
 
 and var =
   | VRUnbound of int * int (** [id] and [depth] *)
@@ -34,14 +28,11 @@ and var =
 let new_var depth = TVar (ref (VRUnbound (next_id (), depth)))
 let new_gen_var () = TVar (ref (VRGeneric (next_id ())))
 
-let show_prim =
-  let f = Printf.sprintf in
-  function
-    | PInt (s, w) ->
-      let s' = if s then 's' else 'u' in
-      f "$i.%c.%d" s' w
-    | PFloat w -> f "$f.%d" w
-    | PVoid -> "$v"
+let show_prim = function
+  | PInt -> "$int"
+  | PChar -> "$char"
+  | PFloat -> "$float"
+  | PNil -> "$nil"
 
 let show ty debug =
   (* mapping id's to names starting by 'a' *)
@@ -90,15 +81,6 @@ let show ty debug =
     
     | TName p -> Symbols.Ident.to_string p
     | TPrim p -> show_prim p
-    
-    | TVague k -> begin match !k with
-        | VGInt -> if debug then "<int>" else "$i.*"
-        | VGFloat -> if debug then "<float>" else "$f.*"
-        | VGGeneric k ->
-          let k_str = go true (TVague (ref k)) in
-          if debug then "#$" ^ k_str else k_str
-        | VGSolved t -> go prim t
-      end
     
     | TVar {contents=VRUnbound (id, _)} -> show_var `U unames id
     | TVar {contents=VRSolved ty} -> go prim ty

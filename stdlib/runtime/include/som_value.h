@@ -91,6 +91,6 @@ typedef header* value;
 
 #define Val_data_ptr(v) (v + 1)
 #define Val_field(v, i) (Obj_data_ptr(value*, *(v))[i])
-#define Void_val Unboxed_val(0)
+#define Null_val Unboxed_val(0)
 
 #pragma endregion

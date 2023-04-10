@@ -8,7 +8,7 @@ value som_deref(value ptr) {
 
 value som_set(value ptr, value val) {
     **(value**)Val_data_ptr(ptr) = val;
-    return Void_val;
+    return Null_val;
 }
 
 value som_malloc(value size) {
@@ -21,5 +21,5 @@ value som_malloc(value size) {
 
 value som_free(value ptr) {
     free((void*)*Val_data_ptr(ptr));
-    return Void_val;
+    return Null_val;
 }
