@@ -1,36 +1,38 @@
 #include <malloc.h>
 #include <string.h>
 
+#include <stdio.h>
+
 #include "str.h"
 
-Value copy_str(Value str) {
-	char* c_str = (char*)str.as.prim_ius;
-	size_t size = strlen(c_str) + 1;
+value copy_str(value str) {
+	Assert_type(str, TYPE_RAW_DATA);
 
-	char* dest = malloc(sizeof(char) * size);
-	strcpy(dest, c_str);
+	ui32 size = Hd_payload(*str);
+	value new_str = (value)malloc(size + HEADER_SIZE);
 
-	return STR_VAL(dest);
+	*str = Hd_with_payload(Hd_with_type(0, TYPE_RAW_DATA), size);
+	strcpy(Val_string(new_str), Val_string(str));
+	return new_str;
 }
 
-Value som_length(Value str) {
-	ASSERT_TYPE(str, VAL_STR);
+value som_length(value str) {
+	Assert_type(str, TYPE_RAW_DATA);
 
-    size_t len = strlen((char*)str.as.prim_ius);
-	return IUS_VAL(len);
+	ui32 size = Hd_payload(*str);
+	return Unboxed_value(size);
 }
 
-Value som_concat(Value str1, Value str2) {
-	ASSERT_TYPE(str1, VAL_STR);
-	ASSERT_TYPE(str2, VAL_STR);
+value som_concat(value str1, value str2) {
+	Assert_type(str1, TYPE_RAW_DATA);
+	Assert_type(str2, TYPE_RAW_DATA);
 
-	char* c_str1 = (char*)str1.as.prim_ius;
-	char* c_str2 = (char*)str2.as.prim_ius;
+	ui32 size = Hd_payload(*str1) + Hd_payload(*str2);
+	value new_str = (value)malloc(size + HEADER_SIZE);
 
-	// TODO: error checking
-	char* result = malloc(strlen(c_str1) + strlen(c_str2) + 1);
-
-	strcpy(result, c_str1);
-	strcat(result, c_str2);
-	return STR_VAL(result);
+	Hd_with_payload(Hd_with_type(0, TYPE_RAW_DATA), size);
+	strcpy(Val_string(new_str), Val_string(str1));
+	strcat(Val_string(new_str), Val_string(str2));
+	return new_str;
 }
+

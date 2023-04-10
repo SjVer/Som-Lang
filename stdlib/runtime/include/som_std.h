@@ -7,7 +7,8 @@
 
 #ifdef TYPE_ASSERTIONS
 #include <assert.h>
-#define ASSERT_TYPE(value, type) assert(value.type == type)
+#define Assert_type(value, type) \
+	assert(!Is_unboxed(value) && Val_obj_type(value) == type)
 #else
-#define ASSERT_TYPE(value, type)
+#define Assert_type(value, type)
 #endif

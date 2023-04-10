@@ -2,11 +2,9 @@
 
 #pragma once
 
-#define VAL_STR VAL_PRIM_IUS
-#define STR_VAL(str) VAL(VAL_STR, prim_ius, str)
-#define STR_GET(str) (char*)str.as.prim_ius
+#define Val_string(v) Obj_data_ptr(char*, Val_object(v))
 
-Value copy_str(Value str);
+value copy_str(value str);
 
-Value som_length(Value str);
-Value som_concat(Value str1, Value str2);
+value som_length(value str);
+value som_concat(value str1, value str2);
