@@ -6,28 +6,25 @@
 #include "str.h"
 #include "io.h"
 
-Value stdin_tup[3];
-Value stdout_tup[3];
-Value stderr_tup[3];
+object stdin_obj;
+object stdout_obj;
+object stderr_obj;
 
-Value som_stdin() {
-	return TUPLE_VAL(3, stdin_tup);
+value som_stdin() {
+	return Boxed_value(stdin_obj);
 }
 
-Value som_stdout() {
-	return TUPLE_VAL(3, stdout_tup);
+value som_stdout() {
+	return Boxed_value(stdout_obj);
 }
 
-Value som_stderr() {
-	return TUPLE_VAL(3, stderr_tup);
+value som_stderr() {
+	return Boxed_value(stderr_obj);
 }
 
-Value som_openf(Value path, Value mode) {
-	ASSERT_TYPE(path, VAL_STR);
-	ASSERT_TYPE(mode, VAL_TUPLE);
-
+value som_openf(value path, value mode) {
     int flags;
-    switch (TUPLE_TAG(mode.as.tuple)) {
+    switch (Hd_tag(*mode)) {
         case IOMODE_READ:
             flags = O_RDONLY;
             break;
@@ -43,63 +40,58 @@ Value som_openf(Value path, Value mode) {
     };
 
     // TODO: error handling
-	int fd = open(STR_GET(path), flags, 438);
+	int fd = open(Val_string(path), flags, 438);
 
-	Value* file_tup = malloc(sizeof(Value) * 3);
-	file_tup[FILE_MEM_PATH] = copy_str(path);
-	file_tup[FILE_MEM_DESCR] = IS32_VAL(fd);
-	file_tup[FILE_MEM_MODE] = mode;
+	value file = malloc(HEADER_SIZE + VALUE_SIZE * 3);
+	Val_field(file, FILE_PATH) = copy_str(path);
+	Val_field(file, FILE_DESCR) = Unboxed_val(fd);
+	Val_field(file, FILE_MODE) = mode;
 
-    return TUPLE_VAL(3, file_tup);
+    return file;
 }
 
-Value som_closef(Value file) {
-	ASSERT_TYPE(file, VAL_TUPLE);
-
-	close(FILE_DESCR(file.as.tuple));
-	return VOID_VAL;
+value som_closef(value file) {
+	close(Val_value(File_descr(file)));
+	return Void_val;
 }
 
-Value som_readf(Value file) {
-	ASSERT_TYPE(file, VAL_TUPLE);
-
-	int fd = FILE_DESCR(file.as.tuple);
+value som_readf(value file) {
+	int fd = Val_value(File_descr(file));
 	size_t size = lseek(fd, 0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
 	char* buf = malloc(size + 1);
 	read(fd, buf, size);
 
-	return STR_VAL(buf);
+	value val = make_str(buf);
+	free(buf);
+
+	return val;
 }
 
-Value som_putsf(Value file, Value str) {
-	ASSERT_TYPE(file, VAL_TUPLE);
-	ASSERT_TYPE(str, VAL_STR);
-
-	int fd = FILE_DESCR(file.as.tuple);
-	char* c_str = (char*)str.as.prim_ius;
-	size_t size = strlen(c_str);
+value som_putsf(value file, value str) {
+	int fd = Val_value(File_descr(file));
 
 	// TODO: check mode and errors
-	write(fd, c_str, size);
+	write(fd, Val_string(str), Hd_payload(*str));
 	fsync(fd);
 
-	return VOID_VAL;
+	return Void_val;
 }
 
 CTOR() {
-	printf("som_value size: %zu\n", sizeof(Value));
+	Val_field(som_stdin(), FILE_PATH) = make_str(STDIN_PATH);
+	Val_field(som_stdin(), FILE_DESCR) = Unboxed_val(STDIN_FILENO);
+	Val_field(som_stdin(), FILE_MODE) = malloc(HEADER_SIZE);
+	*Val_field(som_stdin(), FILE_MODE) = Hd_with_tag(0, IOMODE_READ);
 
-	stdin_tup[FILE_MEM_PATH] = STR_VAL(STDIN_PATH);
-	stdin_tup[FILE_MEM_DESCR] = IS32_VAL(STDIN_FILENO);
-	stdin_tup[FILE_MEM_MODE] = TAG_TUPLE_VAL(IOMODE_READ);
+	Val_field(som_stdout(), FILE_PATH) = make_str(STDOUT_PATH);
+	Val_field(som_stdout(), FILE_DESCR) = Unboxed_val(STDOUT_FILENO);
+	Val_field(som_stdout(), FILE_MODE) = malloc(HEADER_SIZE);
+	*Val_field(som_stdout(), FILE_MODE) = Hd_with_tag(0, IOMODE_APPEND);
 
-	stdout_tup[FILE_MEM_PATH] = STR_VAL(STDOUT_PATH);
-	stdout_tup[FILE_MEM_DESCR] = IS32_VAL(STDOUT_FILENO);
-	stdout_tup[FILE_MEM_MODE] = TAG_TUPLE_VAL(IOMODE_APPEND);
-
-	stderr_tup[FILE_MEM_PATH] = STR_VAL(STDERR_PATH);
-	stderr_tup[FILE_MEM_DESCR] = IS32_VAL(STDERR_FILENO);
-	stderr_tup[FILE_MEM_MODE] = TAG_TUPLE_VAL(IOMODE_APPEND);
+	Val_field(som_stderr(), FILE_PATH) = make_str(STDERR_PATH);
+	Val_field(som_stderr(), FILE_DESCR) = Unboxed_val(STDERR_FILENO);
+	Val_field(som_stderr(), FILE_MODE) = malloc(HEADER_SIZE);
+	*Val_field(som_stderr(), FILE_MODE) = Hd_with_tag(0, IOMODE_APPEND);
 }

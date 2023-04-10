@@ -2,32 +2,24 @@
 
 #include "som_std.h"
 
-#define VAL_PTR VAL_PRIM_IUS
-
-Value som_deref(Value ptr) {
-    ASSERT_TYPE(ptr, VAL_PTR);
-
-    return *((Value*)ptr.as.prim_ius);
+value som_deref(value ptr) {
+    return **(value**)Val_data_ptr(ptr);
 }
 
-Value som_set(Value ptr, Value val) {
-    ASSERT_TYPE(ptr, VAL_PTR);
-
-    *((Value*)ptr.as.prim_ius) = val;
-    return VOID_VAL;
+value som_set(value ptr, value val) {
+    **(value**)Val_data_ptr(ptr) = val;
+    return Void_val;
 }
 
-Value som_malloc(Value size) {
-    ASSERT_TYPE(size, VAL_PRIM_IUS);
+value som_malloc(value size) {
+    void* ptr = malloc(Val_value(size));
+    value val = malloc(HEADER_SIZE + sizeof(void*));
 
-    // TODO: multiply size by sizeof(Value)?
-    void* ptr = malloc(size.as.prim_ius);
-    return IUS_VAL(ptr);
+    *(value*)Val_data_ptr(val) = ptr;
+    return val;
 }
 
-Value som_free(Value ptr) {
-    ASSERT_TYPE(ptr, VAL_PTR);
-
-    free((void*)ptr.as.prim_ius);
-    return VOID_VAL;
+value som_free(value ptr) {
+    free((void*)*Val_data_ptr(ptr));
+    return Void_val;
 }

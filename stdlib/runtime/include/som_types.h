@@ -2,6 +2,10 @@
 
 #include <bits/types.h>
 
+typedef __uint8_t byte;
+typedef __uint32_t ui32;
+typedef __uint64_t ui64;
+
 typedef _Bool		prim_iu1;
 typedef _Bool		prim_is1;
 

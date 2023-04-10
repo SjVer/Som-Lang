@@ -24,3 +24,7 @@ Reach:
 - GUI
 - Parsing toolkit (edited)
 - Cryptography
+
+Runtime:
+- value allocation
+- value copying (deep)

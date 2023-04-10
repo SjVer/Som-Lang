@@ -2,8 +2,6 @@
 
 #include "som_std.h"
 
-Value som_exit(Value status) {
-    ASSERT_TYPE(status, VAL_PRIM_IS32);
-    
-    exit(status.as.prim_is32);
+value som_exit(value status) {
+    exit(Val_value(status));
 }

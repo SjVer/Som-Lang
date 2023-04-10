@@ -12,27 +12,25 @@
 #   define STDERR_PATH "<stderr>"
 #endif
 
-#define VAL_FILE VAL_TUPLE
+#define FILE_PATH 0
+#define FILE_DESCR 1
+#define FILE_MODE 2
 
-#define FILE_MEM_PATH 0
-#define FILE_MEM_DESCR 1
-#define FILE_MEM_MODE 2
+#define File_path(v) Val_field(v, FILE_PATH)
+#define File_descr(v) Val_field(v, FILE_DESCR)
+#define File_mode(v) Val_field(v, FILE_MODE)
 
-#define FILE_PATH(tup) TUPLE_GET(tup, FILE_MEM_PATH, prim_ius)
-#define FILE_DESCR(tup) TUPLE_GET(tup, FILE_MEM_DESCR, prim_is32)
-#define FILE_MODE(tup) TUPLE_GET(tup, FILE_MEM_MODE, tuple)
+enum IOMode {
+	IOMODE_READ = TAG_MIN,
+	IOMODE_WRITE,
+	IOMODE_APPEND,
+	IOMODE_READ_WRITE,
+};
 
-typedef enum {
-    IOMODE_READ,
-    IOMODE_WRITE,
-    IOMODE_APPEND,
-    IOMODE_READ_WRITE,
-} IOMode;
-
-Value som_stdin();
-Value som_stdout();
-Value som_stderr();
-Value som_openf(Value path, Value mode);
-Value som_closef(Value file);
-Value som_readf(Value file);
-Value som_putsf(Value file, Value str);
+value som_stdin();
+value som_stdout();
+value som_stderr();
+value som_openf(value path, value mode);
+value som_closef(value file);
+value som_readf(value file);
+value som_putsf(value file, value str);
