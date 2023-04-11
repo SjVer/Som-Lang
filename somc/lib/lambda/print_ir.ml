@@ -11,6 +11,7 @@ let var str =
 let print_var' ppf = function
   | Var_local v -> fpf ppf "%s" (var v)
   | Var_global v -> fpf ppf "%s" (var (v ^ "!"))
+  | Var_tag t -> fpf ppf "<tag %d>" t
 
 let print_atom' ppf = function
   | Atom_const (Const_int i) -> pp_print_int ppf i
@@ -41,7 +42,7 @@ let rec print_expr' ppf = function
   | Expr_apply (func, args) ->
     fpf ppf "@[<2>(%s@ %a@ %a)@]"
       (kw "apply")
-      print_atom' func
+      print_expr' func
       (pp_list print_atom') args
   | Expr_if (cond, thenexpr, elseexpr) ->
     fpf ppf "@[<2>(%s@ %a@ %s@ %a@ %s@ %a)@]"
@@ -59,6 +60,13 @@ let rec print_expr' ppf = function
     in
     fpf ppf "@[<2>(%s%a)@]"
       (kw "tup")
+      (pp_print_list fpf_el) els
+  | Expr_object (tag, els) ->
+    let fpf_el ppf a =
+      fpf ppf "@ %a" print_atom' a
+    in
+    fpf ppf "@[<2>(%s #%d%a)@]"
+      (kw "object") tag
       (pp_print_list fpf_el) els
   | Expr_lazy expr ->
     fpf ppf "@[<2>(%s@ %a)@]"
@@ -80,12 +88,12 @@ let print_stmt' ppf = function
       (kw "define")
       (var (name ^ "!"))
       print_expr' expr
-  | Stmt_function (name, params, expr) ->
+  (* | Stmt_function (name, params, expr) ->
     fpf ppf "@[<2>(%s@ %s%a@ %a@])"
       (kw "function")
       (var (name ^ "!"))
       (pp_print_list (fun f -> fpf f "@ %s")) params
-      print_expr' expr
+      print_expr' expr *)
   | Stmt_external (name, native) ->
     fpf ppf "(%s %s %s)"
       (kw "extern") (var (name ^ "!")) native

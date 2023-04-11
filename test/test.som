@@ -1,14 +1,6 @@
-let add x y = #add x y
+type Num of
+  | Integer Int
+  | Float Flt
 
----
-let add =
-  lam x ->
-    let f =
-      lam env y ->
-        let x = env[1] in
-        #add x y
-    in
-    (f; x)
----
-
--- let three = (add 1) 2
+let int i = Integer i
+let float f = Float f

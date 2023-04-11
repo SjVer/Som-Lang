@@ -15,10 +15,12 @@ let free_vars =
       in_value @ remove name (go expr)
     | Expr_lambda (params, expr) ->
       diff (go expr) (of_list params)
-
-    | Expr_apply (f, args) ->
+    | Expr_call (f, args) ->
       let vs = List.map in_atom args in
       in_atom f @ of_list (List.map SSet.choose vs)
+    | Expr_apply (f, args) ->
+      let vs = List.map in_atom args in
+      go f @ of_list (List.map SSet.choose vs)
     | Expr_if (cond, thenexpr, elseexpr) ->
       in_atom cond @ go thenexpr @ go elseexpr
     | Expr_sequence (e1, e2) -> go e1 @ go e2
@@ -45,7 +47,7 @@ let rec convert_expr = function
       (diff (free_vars body) (of_list params)))
     in
 
-    if free_vars <> [] then
+    if List.length free_vars > 0 then
       (* helper function to create "let x = env[i] in e" *)
       let get (e, i) x = (
         Expr_let (x, Expr_get (Var_local env, i), e),
@@ -59,7 +61,7 @@ let rec convert_expr = function
       let f = Lower.mangle "f" in
       let thunk =
         let els = List.map Lower.local free_vars in
-        Expr_apply (Lower.local f, els)
+        Expr_apply (Expr_atom (Lower.local f), els)
       in
       (* let f = \env vars -> ... in (f, vars) *)
       Expr_let (f, lam, thunk)
@@ -75,7 +77,6 @@ let rec convert_expr = function
 
 let convert_stmt = function
   | Stmt_definition (name, expr) ->
-    (* TODO: params treated as free vars *)
     Stmt_definition (name, convert_expr expr)
   | stmt -> stmt
 

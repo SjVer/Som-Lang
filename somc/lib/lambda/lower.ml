@@ -34,7 +34,7 @@ let fresh () = mangle "r"
 
 let local r = Atom_var (Var_local r)
 
-let wrap_exprs_in_let exprs cont =
+let wrap_exprs_in_vars exprs cont =
   let rs = List.map (fun _ -> fresh ()) exprs in
   let f acc (r, el) = Expr_let (r, el, acc) in
 
@@ -66,6 +66,14 @@ let lower_pattern vars patt =
     | PAWildcard ->
       vars, [mangle "_"]
 
+let lower_application f args =
+  let app args' =
+    let r = fresh () in
+    let app = Expr_apply (Expr_atom (local r), args') in
+    Expr_let (r, f, app)
+  in
+  wrap_exprs_in_vars args app
+
 let rec lower_expr vars expr =
   match expr.item with
     | EXGrouping e -> lower_expr vars e
@@ -88,30 +96,29 @@ let rec lower_expr vars expr =
       let e2' = lower_expr vars e2 in
       Expr_sequence (e1', e2')
 
-    | EXApplication (f, es) ->
+    | EXApplication (f, args) ->
       let f' = lower_expr vars f in
-      let es' = List.map (lower_expr vars) es in
-      let app rs =
-        let r = fresh () in
-        let expr = if is_func_ty expr.typ
-          then Expr_apply (local r, rs)
-          else Expr_call (local r, rs)
-        in
-        Expr_let (r, f', expr)
-      in
-      wrap_exprs_in_let es' app
+      let args' = List.map (lower_expr vars) args in
+      lower_application f' args'
 
     | EXTuple es ->
       let es' = List.map (lower_expr vars) es in
-      wrap_exprs_in_let es' (fun rs -> Expr_tuple rs)
+      wrap_exprs_in_vars es' (fun rs -> Expr_tuple rs)
     
-    | EXConstruct _ -> failwith "lower EXConstruct"
+    | EXConstruct (ident, args) ->
+      let tag = match IMap.find ident.item vars with
+        | Var_tag tag -> tag
+        | _ -> failwith "EX_Constructor ident no tag"
+      in
+      let args' = List.map (lower_expr vars) args in
+      let expr args'' = Expr_object (tag, args'') in
+      wrap_exprs_in_vars args' expr
 
     | EXLiteral l -> Expr_atom (lower_literal l)
     | EXIdentifier i -> Expr_atom (Atom_var (IMap.find i.item vars))      
     | EXMagical m -> Expr_atom (Atom_magic m)
 
-    | EXError -> failwith "cannot lower invalid expression"
+    | EXError -> invalid_arg "EXError"
 
 let lower_toplevel vars (tl : toplevel node) =
   match tl.item with
@@ -122,13 +129,24 @@ let lower_toplevel vars (tl : toplevel node) =
       let vars = bind_global vars vdef.vd_name.item var in
       vars, Some stmt
 
+    | TLTypeDef tdef ->
+      let open Typing.Types in
+      let vars = match tdef.td_type.item with
+        | TVariant rows ->
+          let f (vars, tag) (ident, _) =
+            IMap.add ident (Var_tag tag) vars, tag + 1
+          in
+          List.fold_left f (vars, Configs.minimum_tag) rows
+          |> fst
+        | _ -> vars
+      in
+      vars, None
+
     | TLExternDef edef ->
       let var = mangle_ident edef.ed_name.item in
       let stmt = Stmt_external (var, edef.ed_native_name.item) in
       let vars = bind_global vars edef.ed_name.item var in
       vars, Some stmt
-    
-    | _ -> vars, None
 
 let lower_tast tast =
   let rec go vars program = function

@@ -25,3 +25,5 @@ let in_lsp_mode = ref false
 let hide_stdlib_nodes = false
 
 let tast_print_debug = true
+
+let minimum_tag = 4
