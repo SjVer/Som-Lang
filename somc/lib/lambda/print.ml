@@ -1,12 +1,11 @@
 open Ir
+open Matching
 open Format
 
 let fpf = fprintf
 let pp_list pp = pp_print_list ~pp_sep:pp_print_space pp
 let kw = ANSITerminal.(sprintf [magenta]) "%s"
-let var str =
-  (* let var = ANSITerminal.(sprintf [green]) "%s" *)
-  str
+let var str = str
 
 let print_var' ppf = function
   | Var_local v -> fpf ppf "%s" (var v)
@@ -22,6 +21,16 @@ let print_atom' ppf = function
   | Atom_magic m ->
     let m' = Typing.Magicals.to_string m in
     fpf ppf "#%s" m'
+
+let print_extractor' ppf =
+  let kw = ANSITerminal.(sprintf [blue]) "%s" in
+  let go ppf = function
+    | Extr_get i -> fpf ppf "%s %d" (kw "get") i
+    | Extr_tag t -> fpf ppf "%s #%d" (kw "tag") t
+  in
+  pp_print_list
+    ~pp_sep:(fun ppf () -> fpf ppf "@ |>@ ")
+    go ppf
 
 let rec print_expr' ppf = function
   | Expr_let (v, value, expr) ->

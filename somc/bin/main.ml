@@ -188,7 +188,7 @@ let () =
     else if args.dump_ir then
       let ir = Pipeline.LowerFile.call (!C.args).file in
       Report.Util.maybe_newline ();
-      Lambda.Print_ir.print_program ir
+      Lambda.Print.print_program ir
 
     else if args.dump_llvm then
       let modul = Pipeline.CodegenFile.call (!C.args).file in
