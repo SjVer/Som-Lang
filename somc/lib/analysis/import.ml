@@ -50,7 +50,7 @@ let rec recurse_in_dir dir = function
 let find_dir_or_file path =
   let search_dirs =
     "" (* CWD *)
-    :: !(Configs.Cli.args).search_dirs
+    :: !Configs.Cli.args.search_dirs
     @ [Configs.include_dir]
   in
   let rec go = function
@@ -82,7 +82,7 @@ let rec include_imports ast =
 
   let go ast_acc tl =
     match tl.item with
-      | TLImport imp -> begin try
+      | Ptl_import imp -> begin try
           let file, path = decide_on_file_and_path imp in
           let imp_ast = !get_ast_from_file file tl.span in
 
@@ -92,11 +92,11 @@ let rec include_imports ast =
             (List.hd (List.rev imp_ast)).span
           in
           (* prepend '#' to mark module as imported/hidden *)
-          let mod_tl = TLModule ({tl with item = "#" ^ mod_name}, imp_ast) in
+          let mod_tl = Ptl_module ({tl with item = "#" ^ mod_name}, imp_ast) in
 
           (* NOTE: this might be causing issues later on *)
           let imp_path = {tl with item = mod_name} :: path in
-          let imp_tl = TLImport {imp with i_path = imp_path} in
+          let imp_tl = Ptl_import {imp with i_path = imp_path} in
 
           ast_acc @ [{item=mod_tl; span=mod_span}; {tl with item=imp_tl}]
         with Report.Error r ->
@@ -104,9 +104,9 @@ let rec include_imports ast =
           ast_acc
         end
 
-      | TLModule (n, mod_ast) ->
+      | Ptl_module (n, mod_ast) ->
         let mod_ast = include_imports mod_ast in
-        let tl = {tl with item = TLModule (n, mod_ast)} in
+        let tl = {tl with item = Ptl_module (n, mod_ast)} in
         ast_acc @ [tl]
 
       | _ -> ast_acc @ [tl]

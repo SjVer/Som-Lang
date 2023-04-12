@@ -2,7 +2,6 @@ module Env = Env
 module TAst = Tast
 module Print_tast = Print_tast
 module Types = Types
-module Magicals = Magicals
 
 open Parse.Ast
 open TAst
@@ -21,10 +20,10 @@ let initial_env =
   |> add "Flt" PFloat
   |> add "Nil" PNil 
 
-let typecheck_toplevel env node =
-  let mk item = {span = node.Parse.Ast.span; item} in
-  match (node.item : Parse.Ast.toplevel) with
-    | TLValueDef vdef ->
+let typecheck_toplevel env (node : Ast.toplevel Ast.node) =
+  let mk item = {span = node.span; item} in
+  match node.item with
+    | Ptl_value_def vdef ->
       (* there's no pattern so just type the bound expr *)
       let expr = infer_expr env vdef.vd_expr in
       let expr = set_ty (generalize (-1) expr.typ) expr in
@@ -37,9 +36,9 @@ let typecheck_toplevel env node =
           vd_expr = expr;
         }
       in
-      env, [mk (TLValueDef vdef')]
+      env, [mk (Ttl_value_def vdef')]
   
-    | TLTypeDef tdef ->
+    | Ptl_type_def tdef ->
       let env, t = Parse_type.parse_complex
         env tdef.td_params tdef.td_name.item tdef.td_type.item
       in
@@ -52,9 +51,9 @@ let typecheck_toplevel env node =
           td_type = {span = tdef.td_type.span; item = t};
         }
       in
-      env, [mk (TLTypeDef tdef')]
+      env, [mk (Ttl_type_def tdef')]
 
-    | TLExternDef edef ->
+    | Ptl_extern_def edef ->
       let t = Parse_type.parse env 0 edef.ed_type.item in
       let env = Env.add_value env edef.ed_name.item t in
 
@@ -66,10 +65,10 @@ let typecheck_toplevel env node =
           ed_type = {span = edef.ed_type.span; item = t};
         }
       in
-      env, [mk (TLExternDef edef')]
+      env, [mk (Ttl_extern_def edef')]
 
-    | TLImport _ -> failwith "Import node survived analysis"
-    | TLModule _ -> failwith "Module node survived analysis"
+    | Ptl_import _ -> failwith "Import node survived analysis"
+    | Ptl_module _ -> failwith "Module node survived analysis"
 
 let typecheck_ast env ast =
   let rec go env = function

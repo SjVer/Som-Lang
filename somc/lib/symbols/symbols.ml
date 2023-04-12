@@ -1,4 +1,5 @@
 module Ident = Ident
+module Magic = Magic
 
 type key = [`Val of Ident.t | `Type of Ident.t]
 

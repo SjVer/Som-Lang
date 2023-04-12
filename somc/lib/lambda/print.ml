@@ -1,10 +1,10 @@
 open Ir
-open Matching
 open Format
 
 let fpf = fprintf
 let pp_list pp = pp_print_list ~pp_sep:pp_print_space pp
 let kw = ANSITerminal.(sprintf [magenta]) "%s"
+let ex = ANSITerminal.(sprintf [blue]) "%s"
 let var str = str
 
 let print_var' ppf = function
@@ -16,23 +16,44 @@ let print_atom' ppf = function
   | Atom_const (Const_int i) -> pp_print_int ppf i
   | Atom_const (Const_float f) -> pp_print_float ppf f
   | Atom_const (Const_string s) -> fpf ppf "\"%s\"" s
-  | Atom_const Const_nil -> pp_print_string ppf "()"
+  | Atom_const Const_nil -> fpf ppf "(%s)" (kw "null")
   | Atom_var v -> print_var' ppf v
   | Atom_magic m ->
-    let m' = Typing.Magicals.to_string m in
+    let m' = Symbols.Magic.to_string m in
     fpf ppf "#%s" m'
 
 let print_extractor' ppf =
-  let kw = ANSITerminal.(sprintf [blue]) "%s" in
   let go ppf = function
-    | Extr_get i -> fpf ppf "%s %d" (kw "get") i
-    | Extr_tag t -> fpf ppf "%s #%d" (kw "tag") t
+    | Extr_get i -> fpf ppf "%s %d" (ex "get") i
+    | Extr_tag t -> fpf ppf "%s #%d" (ex "tag") t
   in
   pp_print_list
     ~pp_sep:(fun ppf () -> fpf ppf "@ |>@ ")
     go ppf
 
-let rec print_expr' ppf = function
+let rec print_check' ppf = function
+  | Check_done -> pp_print_string ppf (ex "done")
+  | Check_const c -> print_atom' ppf (Atom_const c)
+  | Check_tag t -> fpf ppf "%s #%d" (kw "tag") t
+  | Check_tuple checks ->
+    fpf ppf "@[<2>(%s@ %a)@]"
+      (ex "tup")
+      (pp_list print_check') checks
+
+let rec print_case' ppf case =
+  fpf ppf "@[<2>(%s@ %a@ %s@ %a@ %s@ %a)@]"
+    (kw "case")
+    print_check' case.check
+    (kw "with")
+    (pp_print_list
+      ~pp_sep:(fun ppf () -> fpf ppf " ;@;<1 1>")
+      (fun ppf (v, e) ->
+        fpf ppf "%s <- %a" (var v) print_extractor' e)
+    ) case.extractors
+    (kw "in")
+    print_expr' case.action
+
+and print_expr' ppf = function
   | Expr_let (v, value, expr) ->
     fpf ppf "@[<2>(%s@ %s@ %a@ %s@ %a)@]"
       (kw "let") (var v)
@@ -43,6 +64,12 @@ let rec print_expr' ppf = function
       (kw "lam")
       (pp_list pp_print_string) params
       print_expr' expr
+  | Expr_match (scrut, cases) ->
+    fpf ppf "@[<2>(%s@ %a@ %a)@]"
+      (kw "match")
+      print_atom' scrut
+      (pp_list print_case') cases
+
   | Expr_call (func, args) ->
     fpf ppf "@[<2>(%s@ %a@ %a)@]"
       (kw "call")

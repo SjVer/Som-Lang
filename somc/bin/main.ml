@@ -167,43 +167,14 @@ let failed_to_compile f =
 let () =
   parseargs ();
   Symbols.reset ();
-  let args = !(C.args) in
-
   try
-    if args.dump_ast then
-      let ast = Pipeline.ParseFile.call ((!C.args).file, None) in
-      Report.Util.maybe_newline ();
-      Parse.Print_ast.print_ast ast
-
-    else if args.dump_rast then
-      let ast = Pipeline.AnalyzeFile.call ((!C.args).file, None) in
-      Report.Util.maybe_newline ();
-      Parse.Print_ast.print_ast ast
-
-    else if args.dump_tast then
-      let tast = Pipeline.TypecheckFile.call (!C.args).file in
-      Report.Util.maybe_newline ();
-      Typing.Print_tast.print_tast tast
-
-    else if args.dump_ir then
-      let ir = Pipeline.LowerFile.call (!C.args).file in
-      Report.Util.maybe_newline ();
-      Lambda.Print.print_program ir
-
-    else if args.dump_llvm then
-      let modul = Pipeline.CodegenFile.call (!C.args).file in
-      Report.Util.maybe_newline ();
-      Codegen.print_module modul
-
-    else
-      ignore (Pipeline.CodegenFile.call (!C.args).file);
-
+    ignore (Pipeline.CodegenFile.call !C.args.file);
     exit 0
   with
     | Report.Exit ->
-      failed_to_compile args.file;
+      failed_to_compile !C.args.file;
       exit 1
     | Report.Error r ->
       Report.report r;
-      failed_to_compile args.file;
+      failed_to_compile !C.args.file;
       exit 1

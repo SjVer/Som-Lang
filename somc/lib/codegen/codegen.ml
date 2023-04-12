@@ -18,7 +18,7 @@ let codegen_stmt _ctx = function
   | _ -> failwith "TODO: codegen_stmt"
 
 let codegen_program _program =
-  let name = Filename.basename (!(Configs.Cli.args).file) in
+  let name = Filename.basename !Configs.Cli.args.file in
   let ctx = Context.make name in
   (* let ctx = List.fold_left codegen_stmt ctx program in *)
   ctx.llmodule

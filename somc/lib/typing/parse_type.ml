@@ -21,7 +21,7 @@ let check_alias_exists env name span =
 let rec parse ?(tvars=SMap.empty) env level =
   let go = parse ~tvars env in
   function
-    | TYForall (ps, t) ->
+    | Pty_forall (ps, t) ->
       (* let add p =
         let t = Types.new_var (level + 1) in
         Hashtbl.add tvars p.item t
@@ -33,22 +33,22 @@ let rec parse ?(tvars=SMap.empty) env level =
       let tvars = List.fold_left f tvars (nmapi ps) in
       parse ~tvars env (level + 1) t.item
       
-    | TYGrouping t -> go level t.item
-    | TYAny -> Types.new_var level
+    | Pty_grouping t -> go level t.item
+    | Pty_wildcard -> Types.new_var level
 
-    | TYVariable n -> begin
+    | Pty_variable n -> begin
         try SMap.find n.item tvars
         with Not_found -> Types.new_var level
       end
 
-    | TYEffect t -> TEff (go level t.item)
-    | TYFunction (a, r) -> TFun (go level a.item, go level r.item)
-    | TYTuple ts -> TTup (List.map (go level) (nmapi ts))
-    | TYConstruct (None, t) ->
+    | Pty_effect t -> TEff (go level t.item)
+    | Pty_function (a, r) -> TFun (go level a.item, go level r.item)
+    | Pty_tuple ts -> TTup (List.map (go level) (nmapi ts))
+    | Pty_construct (None, t) ->
       check_alias_exists env (Ident.to_string t.item) t.span;
       TName t.item
 
-    | TYConstruct (Some a, t) ->
+    | Pty_construct (Some a, t) ->
       check_alias_exists env (Ident.to_string t.item) t.span;
       TApp (go level a.item, TName t.item)
 
@@ -72,7 +72,7 @@ let parse_complex env params ident cmplxtyp =
   in
 
   let env, t = match cmplxtyp with
-    | CTVariant rows ->
+    | Pct_variant rows ->
       (* parses one row *)
       let parse_row (acc, env) (i, ts) =
         let ts' = List.map (parse ~tvars env 1) (nmapi ts) in
@@ -82,7 +82,7 @@ let parse_complex env params ident cmplxtyp =
       let rows', env = List.fold_left parse_row ([], env) rows in
       env, TVariant rows'
 
-    | CTSimple t -> env, parse ~tvars env 1 t.item
+    | Pct_simple t -> env, parse ~tvars env 1 t.item
   in
 
   env, Unify.generalize 0 t

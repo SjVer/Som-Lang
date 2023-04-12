@@ -1,4 +1,5 @@
 module Ident = Symbols.Ident
+module C = Configs.Cli
 
 module ReadFile = Query.Make(struct
   type a = string * Span.t option
@@ -24,7 +25,9 @@ module ParseFile = Query.Make(struct
   type r = Parse.Ast.ast
   let c (file, imp_span) =
     let source = ReadFile.call (file, imp_span) in
-    Parse.parse file source imp_span
+    let ast = Parse.parse file source imp_span in
+    if !C.args.dump_ast then Parse.Print_ast.print_ast ast;
+    ast
 end)
 
 module AnalyzeFile = Query.Make(struct
@@ -36,7 +39,9 @@ module AnalyzeFile = Query.Make(struct
        [i] is an optional span of the import
        statement. *)
     let ast = ParseFile.call (file, imp_span) in
-    Analysis.resolve ast
+    let ast = Analysis.resolve ast in
+    if !C.args.dump_rast then Parse.Print_ast.print_ast ast;
+    ast
 end)
 
 module TypecheckFile = Query.Make(struct
@@ -48,13 +53,14 @@ module TypecheckFile = Query.Make(struct
     (* we can just manually insert the ast from the prelude
        in the parsed ast because it isn't really imported
        so it doesn't need its imports to be resolved. *)
-    let ast' = if (!Configs.Cli.args).no_prelude
+    let ast' = if !C.args.no_prelude
       then ast
       else Analysis.add_implicit_prelude ast
     in
 
     let env = Typing.initial_env in
     let tast = Typing.typecheck_ast env ast' in
+    if !C.args.dump_tast then Typing.Print_tast.print_tast tast;
     tast
 end)
 
@@ -63,8 +69,10 @@ module LowerFile = Query.Make(struct
   type r = Lambda.Ir.program
   let c file =
     let tast = TypecheckFile.call file in
-    if !Report.has_reported then
-      Report.exit ();
+    if !Report.has_reported then Report.exit ();
+
+    let program = Lambda.convert tast in
+    if !C.args.dump_ir then Lambda.Print.print_program program;
     Lambda.convert tast
 end)
 
@@ -73,7 +81,9 @@ module CodegenFile = Query.Make(struct
   type r = Codegen.llmodule
   let c file =
     let program = LowerFile.call file in
-    Codegen.codegen_program program
+    let llmodule = Codegen.codegen_program program in
+    if !C.args.dump_llvm then Codegen.print_module llmodule;
+    llmodule
 end)
 
 (* export functions bc otherwise i'd somehow

@@ -13,14 +13,57 @@ let set_ty typ n = {n with typ}
 
 (* inference functions *)
 
-let infer_patt level env (patt : Ast.pattern node) =
+let infer_magic =
+  let open Symbols.Magic in
+  (* TODO: expand on this *)
+  let int = TName (Ident "Int") in
+  let int_fn = TFun (int, int) in
+  let ints_fn = TFun (int, int_fn) in
+  function
+    | Magic_add
+    | Magic_sub 
+    | Magic_mul 
+    | Magic_div  -> ints_fn 
+    | Magic_rem  -> ints_fn
+    | Magic_abs
+    | Magic_neg  -> int_fn 
+    | Magic_and
+    | Magic_or   -> ints_fn
+    | Magic_not  -> int_fn
+    | Magic_eq
+    | Magic_gt 
+    | Magic_lt 
+    | Magic_neq 
+    | Magic_gteq
+    | Magic_lteq -> ints_fn 
+
+let infer_literal =
+  let name n = TName (Ident n) in
+  let open Ast in function
+    | Pli_int i    -> Tli_int i,    name "Int"
+    | Pli_char c   -> Tli_char c,   name "Chr"
+    | Pli_float f  -> Tli_float f,  name "Flt"
+    | Pli_null     -> Tli_null,     name "Nil"
+    | Pli_string s -> Tli_string s, name "Str"
+
+let rec infer_patt level env (patt : Ast.pattern node) =
   let env', item', typ = match patt.item with
-    | PAVariable v ->
+    | Ppat_wildcard -> env, Tpat_wildcard, new_var level
+    | Ppat_variable v ->
       let v_typ = new_var level in
-      let env' = Env.add_value env (Ident v) v_typ in
-      env', PAVariable v, v_typ
-    | PAWildcard ->
-      env, PAWildcard, new_var level
+      let env = Env.add_value env (Ident v) v_typ in
+      env, Tpat_variable v, v_typ
+    | Ppat_literal l ->
+      let l', t = infer_literal l in
+      env, Tpat_literal l', t
+    | Ppat_tuple patts ->
+      let f (env, patts') patt =
+        let env, patt' = infer_patt level env patt in
+        env, patts' @ [patt']
+      in
+      let env, patts' = List.fold_left f (env, []) patts in
+      let ts = List.map (fun n -> n.typ) patts' in
+      env, Tpat_tuple patts', TTup ts
   in
   env', mk patt.span typ item'
 
@@ -46,11 +89,11 @@ let rec infer_and_unify_appl level env span fty = function
 and infer_expr level env exp =
   let {span = s; item = exp} : Ast.expr Ast.node = exp in
   match exp with
-    | EXGrouping e ->
+    | Pexp_grouping e ->
       let t = infer_expr level env e in
-      mk s t.typ (EXGrouping t) 
+      mk s t.typ (Texp_grouping t) 
     
-    | EXBinding (bind, body) ->
+    | Pexp_binding (bind, body) ->
       (* the bound expr stands apart from the pattern its bound to *)
       let expr' = infer_expr (level + 1) env bind.vb_expr in
       (* the bound expr and its pattern should have the same type *)
@@ -61,21 +104,21 @@ and infer_expr level env exp =
       let expr'' = set_ty (generalize level expr'.typ) expr' in
       (* construct the updated binding *)
       let bind' = {vb_patt = patt'; vb_expr = expr''} in
-      mk s body'.typ (EXBinding (bind', body'))
+      mk s body'.typ (Texp_binding (bind', body'))
     
-    | EXLambda bind ->
+    | Pexp_lambda bind ->
       let env', patt' = infer_patt level env bind.vb_patt in
       let expr' = infer_expr level env' bind.vb_expr in
       (* construct the updated binding *)
       let binding = {vb_patt = patt'; vb_expr = expr'} in
-      mk s (TFun (patt'.typ, expr'.typ)) (EXLambda binding)
+      mk s (TFun (patt'.typ, expr'.typ)) (Texp_lambda binding)
     
-    | EXSequence (e1, e2) ->
+    | Pexp_sequence (e1, e2) ->
       let e1' = infer_expr level env e1 in
       let e2' = infer_expr level env e2 in
-      mk s e2'.typ (EXSequence (e1', e2'))
+      mk s e2'.typ (Texp_sequence (e1', e2'))
 
-    | EXConstraint (e, t) ->
+    | Pexp_constraint (e, t) ->
       let t' = Parse_type.parse env level t.item in
       let e' = infer_expr level env e in
       begin
@@ -86,47 +129,41 @@ and infer_expr level env exp =
       end;
       set_ty t' e'
 
-    | EXApplication (f, es) ->
+    | Pexp_apply (f, es) ->
       assert (es <> []);
       let f' = infer_expr level env f in
       let out_ty, es' = infer_and_unify_appl level env f'.span f'.typ es in
-      mk s out_ty (EXApplication (f', es'))
+      mk s out_ty (Texp_apply (f', es'))
 
-    | EXTuple es ->
+    | Pexp_tuple es ->
       let es' = List.map (infer_expr level env) es in
       let ts = List.map (fun e -> e.typ) es' in
-      mk s (TTup ts) (EXTuple es')
+      mk s (TTup ts) (Texp_tuple es')
 
-    | EXConstruct (i, es) ->
+    | Pexp_construct (i, es) ->
       let constr_typ = instantiate level (Env.lookup_value env i.item) in
       let out_ty, es' = infer_and_unify_appl level env i.span constr_typ es in
-      mk s out_ty (EXConstruct (mk i.span constr_typ i.item, es'))
+      mk s out_ty (Texp_construct (mk i.span constr_typ i.item, es'))
 
-    | EXLiteral l ->
-      let name n = TName (Ident n) in
-      let l', t = match l with
-        | LIInt i    -> LIInt i,    name "Int"
-        | LIChar c   -> LIChar c,   name "Chr"
-        | LIFloat f  -> LIFloat f,  name "Flt"
-        | LINil      -> LINil,      name "Nil"
-        | LIString s -> LIString s, name "Str"
-      in mk s t (EXLiteral l')
+    | Pexp_literal l ->
+      let l', t = infer_literal l in
+      mk s t (Texp_literal l')
     
-    | EXIdentifier {span; item} ->
+    | Pexp_ident {span; item} ->
       let t = instantiate level (Env.lookup_value env item) in
-      mk s t (EXIdentifier (mk span t item)) 
+      mk s t (Texp_ident (mk span t item)) 
 
-    | EXMagical n ->
+    | Pexp_magic n ->
       begin try
-        let m = Magicals.find n in
-        let t = Magicals.type_of m in
-        mk s t (EXMagical m)
+        let m = Symbols.Magic.find n in
+        let t = infer_magic m in
+        mk s t (Texp_magic m)
       with Not_found ->
         error (Use_of_invalid_magical n) s [] |> Report.report; 
-        mk s TError EXError
+        mk s TError Texp_error
       end
 
-    | EXError -> mk s TError EXError
+    | Pexp_error -> mk s TError Texp_error
 
 (* helper functions *)
 
@@ -136,7 +173,7 @@ let infer_expr env e =
     with Report.Error err ->
       Report.report err;
       let span = {e.span with Span.ghost=true} in
-      mk span (new_var 0) EXError
+      mk span (new_var 0) Texp_error
   in
   (* e' *)
   set_ty (generalize (-1) e'.typ) e'

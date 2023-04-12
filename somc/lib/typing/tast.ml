@@ -14,9 +14,9 @@ and 'a tnode =
 (* ====================== Toplevel ====================== *)
 
 and toplevel =
-  | TLValueDef of value_definition
-  | TLTypeDef of type_definition
-  | TLExternDef of extern_definition
+  | Ttl_value_def of value_definition
+  | Ttl_type_def of type_definition
+  | Ttl_extern_def of extern_definition
 
 and value_definition =
   {
@@ -41,30 +41,32 @@ and extern_definition =
 (* ====================== Pattern ======================= *)
 
 and pattern =
-  | PAVariable of string
-  | PAWildcard
+  | Tpat_wildcard
+  | Tpat_variable of string
+  | Tpat_literal of literal
+  | Tpat_tuple of pattern tnode list
 
 (* ===================== Expression ===================== *)
 
 and expr =
-  | EXGrouping of expr tnode
-  | EXBinding of value_binding * expr tnode
-  | EXLambda of value_binding
-  | EXSequence of expr tnode * expr tnode
-  | EXApplication of expr tnode * expr tnode list
-  | EXTuple of expr tnode list
-  | EXConstruct of Symbols.Ident.t tnode * expr tnode list
-  | EXLiteral of literal
-  | EXIdentifier of Symbols.Ident.t tnode
-  | EXMagical of Magicals.t
-  | EXError
+  | Texp_grouping of expr tnode
+  | Texp_binding of value_binding * expr tnode
+  | Texp_lambda of value_binding
+  | Texp_sequence of expr tnode * expr tnode
+  | Texp_apply of expr tnode * expr tnode list
+  | Texp_tuple of expr tnode list
+  | Texp_construct of Symbols.Ident.t tnode * expr tnode list
+  | Texp_literal of literal
+  | Texp_ident of Symbols.Ident.t tnode
+  | Texp_magic of Symbols.Magic.t
+  | Texp_error
 
 and literal =
-  | LIInt of int
-  | LIFloat of float
-  | LIChar of char
-  | LIString of string
-  | LINil
+  | Tli_int of int
+  | Tli_float of float
+  | Tli_char of char
+  | Tli_string of string
+  | Tli_null
 
 and value_binding =
   {

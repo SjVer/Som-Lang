@@ -11,11 +11,11 @@ and 'a node =
 (* ====================== Toplevel ===================== *)
 
 and toplevel =
-  | TLValueDef of value_definition
-  | TLTypeDef of type_definition
-  | TLExternDef of extern_definition
-  | TLImport of import
-  | TLModule of string node * ast
+  | Ptl_value_def of value_definition
+  | Ptl_type_def of type_definition
+  | Ptl_extern_def of extern_definition
+  | Ptl_import of import
+  | Ptl_module of string node * ast
 
 and value_definition =
   {
@@ -51,42 +51,44 @@ and import =
   }
     
 and import_kind =
-  | IK_Module
-  | IK_Simple of string node list
-  | IK_Glob
-  | IK_Rename of string node list * string node
-  | IK_Nested of import_kind node list
+  | Pik_module
+  | Pik_simple of string node list
+  | Pik_glob
+  | Pik_rename of string node list * string node
+  | Pik_nested of import_kind node list
   
 (* ====================== Pattern ====================== *)
 
 (** TODO: add pattern matching like as in
     github.com/ocaml/ocaml/blob/trunk/parsing/parsetree.mli#L219 *)
 and pattern =
-  | PAVariable of string
-  | PAWildcard
+  | Ppat_wildcard
+  | Ppat_variable of string
+  | Ppat_literal of literal
+  | Ppat_tuple of pattern node list
 
 (* ===================== Expression ===================== *)
 
 and expr =
-  | EXGrouping of expr node
-  | EXBinding of value_binding * expr node
-  | EXLambda of value_binding
-  | EXSequence of expr node * expr node
-  | EXConstraint of expr node * typ node
-  | EXApplication of expr node * expr node list
-  | EXTuple of expr node list
-  | EXConstruct of Ident.t node * expr node list
-  | EXLiteral of literal
-  | EXIdentifier of Ident.t node
-  | EXMagical of string
-  | EXError
+  | Pexp_grouping of expr node
+  | Pexp_binding of value_binding * expr node
+  | Pexp_lambda of value_binding
+  | Pexp_sequence of expr node * expr node
+  | Pexp_constraint of expr node * typ node
+  | Pexp_apply of expr node * expr node list
+  | Pexp_tuple of expr node list
+  | Pexp_construct of Ident.t node * expr node list
+  | Pexp_literal of literal
+  | Pexp_ident of Ident.t node
+  | Pexp_magic of string
+  | Pexp_error
 
 and literal =
-  | LIInt of int
-  | LIFloat of float
-  | LIChar of char
-  | LIString of string
-  | LINil
+  | Pli_int of int
+  | Pli_float of float
+  | Pli_char of char
+  | Pli_string of string
+  | Pli_null
 
 and value_binding =
   {
@@ -97,21 +99,21 @@ and value_binding =
 (* ======================== Type ======================== *)
 
 and complex_typ =
-  | CTVariant of row list
-  | CTSimple of typ node
+  | Pct_variant of row list
+  | Pct_simple of typ node
 
 and row = Ident.t node * typ node list
 
 and typ =
   (* generic *)
-  | TYGrouping of typ node
-  | TYAny
-  | TYForall of string node list * typ node
-  | TYVariable of string node
-  | TYEffect of typ node
-  | TYFunction of typ node * typ node
-  | TYTuple of typ node list
-  | TYConstruct of typ node option * Ident.t node
+  | Pty_grouping of typ node
+  | Pty_wildcard
+  | Pty_forall of string node list * typ node
+  | Pty_variable of string node
+  | Pty_effect of typ node
+  | Pty_function of typ node * typ node
+  | Pty_tuple of typ node list
+  | Pty_construct of typ node option * Ident.t node
 
 (* ===================== Directive ===================== *)
 

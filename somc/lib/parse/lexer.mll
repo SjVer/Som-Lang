@@ -41,6 +41,7 @@ let kw_from_str = function
   | "do" -> DO
   | "match" -> MATCH
   | "switch" -> SWITCH
+  | "lam" -> LAM
   | _ -> raise Not_found
 
 (* string stuff *)
@@ -106,7 +107,6 @@ rule lex = parse
   | '{' { LBRACE }
   | '}' { RBRACE }
 
-  | '\\' { BACKSLASH }
   | "->" { ARROW }
   | "<=" { LESSEREQUAL }
   | '<' { LESSER }

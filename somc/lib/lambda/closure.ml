@@ -42,7 +42,7 @@ let rec convert_expr = function
     Expr_let (name, convert_expr value, convert_expr expr)
 
   | Expr_lambda (params, body) ->
-    let env = Lower.mangle "env" in
+    let env = Env.mangle "env" in
     let free_vars = SSet.(elements
       (diff (free_vars body) (of_list params)))
     in
@@ -58,7 +58,7 @@ let rec convert_expr = function
         get (convert_expr body, 1) free_vars)
       in
       let lam = Expr_lambda (env :: params, body) in
-      let f = Lower.mangle "f" in
+      let f = Env.mangle "f" in
       let thunk =
         let els = List.map Lower.local free_vars in
         Expr_apply (Expr_atom (Lower.local f), els)

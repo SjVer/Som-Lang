@@ -324,6 +324,15 @@ contexts:
     - match: \b_\b
       scope: constant.language.wildcard.som
 
+    - match: \((?!\))
+      scope: punctuation.section.parens.begin.som
+      push:
+        - match: \)
+          scope: punctuation.section.parens.end.som
+          pop: true
+        - include: pattern
+        - include: invalid
+
     - include: expression
 
   # EXPRESSION
@@ -383,7 +392,7 @@ contexts:
       push: type
 
   lambda:
-    - match: \\
+    - match: \blam\b
       scope: keyword.other.lambda.som
       push:
         - match: ->

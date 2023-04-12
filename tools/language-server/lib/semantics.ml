@@ -258,10 +258,10 @@ let get_tokens ast uri =
         let rec go (i: import) =
           map (fun n -> [mk n.span T.namespace []]) (i.dir @ i.path)
           @ match i.kind.item with
-            | IK_Simple n -> [mk n.span T.symbol []]
-            | IK_Glob -> [mk i.kind.span T.keyword []]
-            | IK_Rename _ -> [mk i.kind.span T.symbol []]
-            | IK_Nested is -> map go (nmapi is)
+            | Pik_simple n -> [mk n.span T.symbol []]
+            | Pik_glob -> [mk i.kind.span T.keyword []]
+            | Pik_rename _ -> [mk i.kind.span T.symbol []]
+            | Pik_nested is -> map go (nmapi is)
             | IK_Error -> [mk node.span 0 M.[deprecated]]
         in go i
       | TL_Section (n, ast) ->

@@ -9,52 +9,52 @@ let rec pow a = function
 let fold_app f es =
   let exception Cant_fold in
   try match f.item, nmapi es with
-    | EXIdentifier {span=_; item=Ident i},
-      [EXLiteral a; EXLiteral b] -> begin
+    | Pexp_ident {span=_; item=Ident i},
+      [Pexp_literal a; Pexp_literal b] -> begin
         let res = match i, a, b with
-          | "+", LIInt a, LIInt b -> LIInt (a + b)
-          | "+", LIFloat a, LIFloat b -> LIFloat (a +. b)
-          | "-", LIInt a, LIInt b -> LIInt (a - b)
-          | "-", LIFloat a, LIFloat b -> LIFloat (a -. b)
-          | "*", LIInt a, LIInt b -> LIInt (a * b)
-          | "*", LIFloat a, LIFloat b -> LIFloat (a *. b)
-          | "/", LIInt a, LIInt b -> LIInt (a / b)
-          | "/", LIFloat a, LIFloat b -> LIFloat (a /. b)
-          | "^", LIInt a, LIInt b -> LIInt (pow a b)
-          | "%", LIInt a, LIInt b -> LIInt (a mod b)
+          | "+", Pli_int a, Pli_int b -> Pli_int (a + b)
+          | "+", Pli_float a, Pli_float b -> Pli_float (a +. b)
+          | "-", Pli_int a, Pli_int b -> Pli_int (a - b)
+          | "-", Pli_float a, Pli_float b -> Pli_float (a -. b)
+          | "*", Pli_int a, Pli_int b -> Pli_int (a * b)
+          | "*", Pli_float a, Pli_float b -> Pli_float (a *. b)
+          | "/", Pli_int a, Pli_int b -> Pli_int (a / b)
+          | "/", Pli_float a, Pli_float b -> Pli_float (a /. b)
+          | "^", Pli_int a, Pli_int b -> Pli_int (pow a b)
+          | "%", Pli_int a, Pli_int b -> Pli_int (a mod b)
           | _ -> raise Cant_fold
         in
-        true, EXLiteral res
+        true, Pexp_literal res
       end
-    | EXIdentifier {span=_; item=Ident i},
-      [EXLiteral a] -> begin
+    | Pexp_ident {span=_; item=Ident i},
+      [Pexp_literal a] -> begin
         let res = match i, a with
-          | "~+", LIInt a -> LIInt (abs a)
-          | "~+", LIFloat a -> LIFloat (abs_float a)
-          | "~-", LIInt a -> LIInt (- a)
-          | "~-", LIFloat a -> LIFloat (-. a)
+          | "~+", Pli_int a -> Pli_int (abs a)
+          | "~+", Pli_float a -> Pli_float (abs_float a)
+          | "~-", Pli_int a -> Pli_int (- a)
+          | "~-", Pli_float a -> Pli_float (-. a)
           | _ -> raise Cant_fold
         in
-        true, EXLiteral res
+        true, Pexp_literal res
       end
     | _ -> raise Cant_fold
-  with Cant_fold -> false, EXApplication (f, es)
+  with Cant_fold -> false, Pexp_apply (f, es)
 
 let rec fold_expr e =
   let folded, item = match e.item with
-    | EXGrouping e -> false, EXGrouping (fold_expr e)
+    | Pexp_grouping e -> false, Pexp_grouping (fold_expr e)
     (*
-    | EXBinding
-    | EXLambda
+    | Pexp_binding
+    | Pexp_lambda
     *)
-    | EXSequence (e1, e2) -> false, EXSequence (fold_expr e1, fold_expr e2)
-    | EXConstraint (e, t) -> false, EXConstraint (fold_expr e, t)
-    | EXApplication (f, es) ->
+    | Pexp_sequence (e1, e2) -> false, Pexp_sequence (fold_expr e1, fold_expr e2)
+    | Pexp_constraint (e, t) -> false, Pexp_constraint (fold_expr e, t)
+    | Pexp_apply (f, es) ->
       let f' = fold_expr f in
       let es' = List.map fold_expr es in
       fold_app f' es'
-    | EXTuple es -> false, EXTuple (List.map fold_expr es)
-    | EXConstruct (i, es) -> false, EXConstruct (i, List.map fold_expr es)
+    | Pexp_tuple es -> false, Pexp_tuple (List.map fold_expr es)
+    | Pexp_construct (i, es) -> false, Pexp_construct (i, List.map fold_expr es)
     | _ as e -> false, e
   in
   let ghost = e.span.ghost || folded in
@@ -66,10 +66,10 @@ let rec fold_expr e =
 let rec fold_constants (ast : ast) : ast =
   let go tl =
     let item = match tl.item with
-      | TLValueDef b ->
-        TLValueDef {b with vd_expr = fold_expr b.vd_expr}
-      | TLModule (n, ast) ->
-        TLModule (n, fold_constants ast)
+      | Ptl_value_def b ->
+        Ptl_value_def {b with vd_expr = fold_expr b.vd_expr}
+      | Ptl_module (n, ast) ->
+        Ptl_module (n, fold_constants ast)
       | _ as tl -> tl
     in
     {tl with item}

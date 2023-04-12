@@ -9,7 +9,7 @@ let rec lift_expr = function
     vfuncs @ efuncs, Expr_let (name, value, expr)
 
   | Expr_lambda (params, body) ->
-    let f = Lower.mangle "lam" in
+    let f = Env.mangle "lam" in
     let funcs, body = lift_expr body in
     let expr = Expr_atom (Atom_var (Var_global f)) in
     let lam = Expr_lambda (params, body) in

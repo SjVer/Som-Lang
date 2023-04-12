@@ -2,7 +2,7 @@ open Ast
 
 type token_typ =
   (* keywords *)
-  | LET   | IN
+  | LET   | IN     | LAM
   | TYPE  | IS     | OF
   | EXT
   | USE   | FROM   | AS
@@ -17,7 +17,6 @@ type token_typ =
   | DOT
   | COMMA
   | BANG
-  | BACKSLASH
   | TILDE
   | PIPE
 
@@ -78,11 +77,11 @@ let unpack_str = function
   | t -> failwith ("unpack_str " ^ show_token_typ t)
 
 let unpack_lit = function
-  | INTEGER i -> LIInt i
-  | FLOAT f -> LIFloat f
-  | CHARACTER c -> LIChar c
-  | STRING s -> LIString s
-  | EMPTYPARENS -> LINil
+  | INTEGER i -> Pli_int i
+  | FLOAT f -> Pli_float f
+  | CHARACTER c -> Pli_char c
+  | STRING s -> Pli_string s
+  | EMPTYPARENS -> Pli_null
   | _ -> failwith "unpack_lit"
 
 let tokens_eq a b = without_arg a = without_arg b

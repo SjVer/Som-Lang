@@ -6,7 +6,7 @@ open Ast
 
 (* =========================== helpers ============================ *)
 
-(* if true produce stuff like EXGrouping *)
+(* if true produce stuff like Pexp_grouping *)
 let groups = false
 
 let mk span item = {span; item}
@@ -88,12 +88,12 @@ and toplevel_module p =
   i (consume LBRACE "\"{\"" p);
   let tls = many p (fun p -> not (check RBRACE p)) toplevel in
   i (consume RBRACE "\"}\"" p);
-  TLModule (name, tls)
+  Ptl_module (name, tls)
 
 and toplevel_import_normal p =
   i (advance p);
   let i_path = finish_import_path p in
-  TLImport { i_path; i_kind = mk_t IK_Module p.previous }
+  Ptl_import { i_path; i_kind = mk_t Pik_module p.previous }
 
 and toplevel_import_from p =
   i (advance p);
@@ -102,11 +102,11 @@ and toplevel_import_from p =
   let start_s = (current p).span in
   let kind =
     (* `use *` or `use ...` *)
-    if matsch STAR p then IK_Glob
+    if matsch STAR p then Pik_glob
     else finish_import_from p
   in
   let s = catspans start_s p.previous.span in
-  TLImport { i_path; i_kind = mk s kind}
+  Ptl_import { i_path; i_kind = mk s kind}
 
 and toplevel_value_definition p =
   i (advance p);
@@ -115,7 +115,7 @@ and toplevel_value_definition p =
   
   (* expression *)
   let (t, e) = strict_binding p expression EQUAL "=" in
-  TLValueDef {vd_name; vd_expr = wrap_type_constraint t e}
+  Ptl_value_def {vd_name; vd_expr = wrap_type_constraint t e}
 
 and toplevel_type_definition p =
   i (advance p);
@@ -140,7 +140,7 @@ and toplevel_type_definition p =
   let td_type =
     if matsch IS p then
       let t = typ p in
-      mk t.span (CTSimple t)
+      mk t.span (Pct_simple t)
     else begin
       i (consume OF "\"is\" or \"of\"" p);
       let start_s = (current p).span in
@@ -149,8 +149,8 @@ and toplevel_type_definition p =
     end
   in
 
-  (* wrap type in TYForall if there's parameters *)
-  TLTypeDef {td_params; td_name; td_type}
+  (* wrap type in Pty_forall if there's parameters *)
+  Ptl_type_def {td_params; td_name; td_type}
 
 and toplevel_extern_definition p =
   i (advance p);
@@ -166,7 +166,7 @@ and toplevel_extern_definition p =
 
   (* we don't do anything with the arguments *)
   while not (check COLON p) do
-    try_and_skip_until p pattern [COLON] PAWildcard
+    try_and_skip_until p pattern [COLON] Ppat_wildcard
     |> ignore
   done;
   
@@ -174,7 +174,7 @@ and toplevel_extern_definition p =
   i (consume COLON "\":\"" p);
   let ed_type = typ p in
 
-  TLExternDef {ed_native_name; ed_name; ed_type}
+  Ptl_extern_def {ed_native_name; ed_name; ed_type}
 
 (* ======================= toplevel helpers ====================== *)
 
@@ -188,12 +188,12 @@ and finish_import_from p =
         mk_t' p (unpack_str p.previous.typ)
       else error_at_current p (Expected "an indentifier") []
     in
-    mk_t' p (IK_Simple (path @ [ident]))
+    mk_t' p (Pik_simple (path @ [ident]))
   in
   (* at least one nested import, maybe more *)
   let first = go p in
   let other = many p (matsch COMMA) go in
-  IK_Nested (first :: other)
+  Pik_nested (first :: other)
 
 and finish_import_path p =
   let path = longident_path p in
@@ -202,7 +202,7 @@ and finish_import_path p =
 
 and finish_complex_type p =
   if matsch PIPE p || check (dummy `UPPERNAME) p then
-    CTVariant (finish_variant_type p)
+    Pct_variant (finish_variant_type p)
   else
     failwith "TODO: parse other complex types" 
 
@@ -227,7 +227,7 @@ and finish_variant_type p =
 (* ============================ binding =========================== *)
 
 and binding (p : parser) exprfn sep sepstr : value_binding =
-  let vb_patt = try_and_skip_until p pattern [sep; COLON] PAWildcard in
+  let vb_patt = try_and_skip_until p pattern [sep; COLON] Ppat_wildcard in
   let (t, e) = strict_binding p exprfn sep sepstr in
   {vb_patt; vb_expr = wrap_type_constraint t e}
 
@@ -245,32 +245,54 @@ and strict_binding p exprfn sep sepstr =
     t, e
   end else
     (* another pattern *)
-    let vb_patt = try_and_skip_until p pattern [sep; COLON] PAWildcard in
+    let vb_patt = try_and_skip_until p pattern [sep; COLON] Ppat_wildcard in
     let (t, vb_expr) = strict_binding p exprfn sep sepstr in
     let s = catnspans vb_patt vb_expr in
-    t, mk_g s (EXLambda {vb_patt; vb_expr})
+    t, mk_g s (Pexp_lambda {vb_patt; vb_expr})
 
 and wrap_type_constraint t e =
   match t with
     | Some t -> {
         span = {e.span with ghost = true};
-        item = EXConstraint (e, t);
+        item = Pexp_constraint (e, t);
       }
     | None -> e
 
 (* ============================ patterns ========================== *)
 
-and pattern p : pattern node =
-  (* TODO *)
-  atom_pattern p
+and pattern p = tuple_pattern p
 
-and atom_pattern p : pattern node =
+and tuple_pattern p =
+  let pt = atom_pattern p in
+  let pts = many p (matsch SEMICOLON) atom_pattern in
+
+  if pts <> [] then
+    let s = catnspans pt (List.hd pts) in
+    mk s (Ppat_tuple (pt :: pts))
+  else pt
+
+and atom_pattern p =
   let curr = current p in
   let mk' i = mk curr.span i in
   
-  if matsch (dummy `LOWERNAME) p then mk' (PAVariable (unpack_str curr.typ))
-  else if matsch UNDERSCORE p then mk' PAWildcard
-  else error_at_current p (Expected "a pattern") []
+  if matsch (dummy `LOWERNAME) p then mk' (Ppat_variable (unpack_str curr.typ))
+  else if matsch UNDERSCORE p then mk' Ppat_wildcard
+  else if matsch LPAREN p then
+    let start_s = p.previous.span in
+    let e = pattern p in
+    if not (matsch RPAREN p) then
+      unclosed "'('" start_s "the closing ')' here" (current p).span;
+    let s = catspans start_s p.previous.span in
+    mk s e.item
+  else
+    let mk' i = mk_t i (advance p) in
+    match current_t p with
+      | INTEGER i -> mk' (Ppat_literal (Pli_int i))
+      | FLOAT f -> mk' (Ppat_literal (Pli_float f))
+      | CHARACTER c -> mk' (Ppat_literal (Pli_char c))
+      | STRING s -> mk' (Ppat_literal (Pli_string s))
+      | EMPTYPARENS -> mk' (Ppat_literal Pli_null)
+      | _ -> error_at_current p (Expected "a pattern") []
 
 (* =========================== expression ========================= *)
 
@@ -283,20 +305,20 @@ and let_expression p =
     i (consume IN "\"in\"" p);
     let body = let_expression p in
     let s = catspans let_s body.span in 
-    mk s (EXBinding (bind, body))
+    mk s (Pexp_binding (bind, body))
   end
   else sequence_expression p
 
 and sequence_expression p =
-  let mk_seq e1 e2 s = mk s (EXSequence (e1, e2)) in
+  let mk_seq e1 e2 s = mk s (Pexp_sequence (e1, e2)) in
   left_assoc p lambda_expression COMMA mk_seq
 
 and lambda_expression p =
-  if matsch BACKSLASH p then begin
+  if matsch LAM p then begin
     let start_s = p.previous.span in
     let bind = binding p tuple_expression ARROW "->" in
     let s = catspans start_s bind.vb_expr.span in
-    mk s (EXLambda bind)
+    mk s (Pexp_lambda bind)
   end else tuple_expression p
 
 and tuple_expression p =
@@ -305,7 +327,7 @@ and tuple_expression p =
 
   if es <> [] then
     let s = catnspans e (List.hd es) in
-    mk s (EXTuple (e :: es))
+    mk s (Pexp_tuple (e :: es))
   else e
 
 and t_constr_expression p =
@@ -313,7 +335,7 @@ and t_constr_expression p =
   if matsch COLON p then
     let t = typ p in
     let s = catnspans e t in
-    mk s (EXConstraint (e, t))
+    mk s (Pexp_constraint (e, t))
   else
     e
 
@@ -325,7 +347,7 @@ and infix_expression p prec =
         let op = mk_infix_operator p.previous in
         let rhs = infix_expression p (prec - 1) in
         let s = catnspans lhs rhs in
-        go (mk_g s (EXApplication (op, [lhs; rhs])))
+        go (mk_g s (Pexp_apply (op, [lhs; rhs])))
       else
         lhs
     in
@@ -338,7 +360,7 @@ and unary_expression p =
     let op = mk_unary_operator p.previous in
     let e = unary_expression p in
     let s = catnspans op e in
-    mk_g s (EXApplication (op, [e]))
+    mk_g s (Pexp_apply (op, [e]))
   else
     application_expression p
 
@@ -356,7 +378,7 @@ and application_expression p =
         e :: es
       with Backtrack -> []
     in
-    mk ident.span (EXConstruct (ident, es))
+    mk ident.span (Pexp_construct (ident, es))
 
   end with Backtrack ->
     (* otherwise maybe application *)
@@ -364,23 +386,23 @@ and application_expression p =
     let es = many_try p (atom_expression false) in
     if es <> [] then
       let s = catnspans e (List.hd (List.rev es)) in
-      mk s (EXApplication (e, es))
+      mk s (Pexp_apply (e, es))
     else e
 
 and atom_expression must p =
   let mk' i = mk_t i (advance p) in
   match current_t p with
-    | INTEGER i -> mk' (EXLiteral (LIInt i))
-    | FLOAT f -> mk' (EXLiteral (LIFloat f))
-    | CHARACTER c -> mk' (EXLiteral (LIChar c))
-    | STRING s -> mk' (EXLiteral (LIString s))
-    | EMPTYPARENS -> mk' (EXLiteral LINil)
+    | INTEGER i -> mk' (Pexp_literal (Pli_int i))
+    | FLOAT f -> mk' (Pexp_literal (Pli_float f))
+    | CHARACTER c -> mk' (Pexp_literal (Pli_char c))
+    | STRING s -> mk' (Pexp_literal (Pli_string s))
+    | EMPTYPARENS -> mk' (Pexp_literal Pli_null)
     
     | t when tokens_eq t (dummy `MAGICNAME) ->
-      mk' (EXMagical (unpack_str t))
+      mk' (Pexp_magic (unpack_str t))
     | t when tokens_eq t (dummy `LOWERNAME) ->
       let i = lower_longident p true in
-      mk i.span (EXIdentifier i)
+      mk i.span (Pexp_ident i)
 
     | LPAREN -> begin
         let start_s = (advance p).span in
@@ -389,7 +411,7 @@ and atom_expression must p =
           unclosed "'('" start_s "the closing ')' here" (current p).span;
 
         let s = catspans start_s p.previous.span in
-        mk s (if groups then EXGrouping e else e.item)
+        mk s (if groups then Pexp_grouping e else e.item)
       end
 
     (* TODO: lists and whatnot *)
@@ -402,40 +424,46 @@ and atom_expression must p =
 
 and max_precedence = 5
 and infix_operators =
+  let open Symbols.Magic in
   [
-    [STAR, "*"; SLASH, "/"; MODULO, "%"];
-    [PLUS, "+"; MINUS, "-"];
-    [GREATER, ">"; GREATEREQUAL, ">="; LESSER, "<"; LESSEREQUAL, "<="];
-    [EQUAL, "="; NOTEQUAL, "/="];
-    [DBL_AMPERSAND, "&&"];
-    [DBL_PIPE, "||"]; 
+    [STAR, Magic_mul; SLASH, Magic_div; MODULO, Magic_rem];
+    [PLUS, Magic_add; MINUS, Magic_sub];
+    [GREATER, Magic_gt; GREATEREQUAL, Magic_gteq;
+      LESSER, Magic_lt; LESSEREQUAL, Magic_lteq];
+    [EQUAL, Magic_eq; NOTEQUAL, Magic_neq];
+    [DBL_AMPERSAND, Magic_and];
+    [DBL_PIPE, Magic_or]; 
   ]
 
 and allowed_infix_operators prec =
   List.nth infix_operators prec
   |> List.map fst
 and mk_infix_operator t =
-  let name =
+  let m =
     let rec go = function
-      | (op, (name : string)) :: _ when op = t.typ -> name
+      | (op, m) :: _ when op = t.typ -> m
       | _ :: ops -> go ops
       | [] -> failwith "mk_infix_operator"
-    in go (List.flatten infix_operators)
+    in
+    go (List.flatten infix_operators)
   in
-  let op = mk t.span (Ident.Ident name) in
-  mk t.span (EXIdentifier op)
+  mk t.span (Pexp_magic (Symbols.Magic.to_string m))
 
-and unary_operators = [BANG, "~!"; PLUS, "~+"; MINUS, "~-"]
+and unary_operators =
+  let open Symbols.Magic in [
+    BANG, Magic_not;
+    PLUS, Magic_abs;
+    MINUS, Magic_neg
+  ]
 
 and allowed_unary_operators _ = List.map fst unary_operators
 and mk_unary_operator t =
-  let name =
+  let m =
     let find_fn (tt, _) = t.typ = tt in
     try snd (List.find find_fn unary_operators)
     with Not_found -> failwith "mk_unary_operator"
   in
-  let op = mk t.span (Ident.Ident name) in
-  mk t.span (EXIdentifier op)
+  mk t.span (Pexp_magic (Symbols.Magic.to_string m))
 
 (* ============================= types ============================ *)
 
@@ -448,12 +476,12 @@ and forall_type p =
     let args = many p (matsch (dummy `PRIMENAME)) parsefn in
     if not (matsch DOT p) then backtrack ();
     let ty = forall_type p in
-    mk (catspans start_s ty.span) (TYForall (args, ty))
+    mk (catspans start_s ty.span) (Pty_forall (args, ty))
   end with Backtrack ->
     function_type p
 
 and function_type p =
-  let mk_fn lhs rhs s = mk s (TYFunction (lhs, rhs)) in
+  let mk_fn lhs rhs s = mk s (Pty_function (lhs, rhs)) in
   left_assoc p tuple_type ARROW mk_fn
 
 and tuple_type p =
@@ -462,7 +490,7 @@ and tuple_type p =
 
   if ts <> [] then
     let s = catnspans t (List.hd ts) in
-    mk s (TYTuple (t :: ts))
+    mk s (Pty_tuple (t :: ts))
   else t
 
 and constructed_type must p =
@@ -470,7 +498,7 @@ and constructed_type must p =
   let t = effect_type must p in
   try
     let i = upper_longident p false in
-    mk (catnspans t i) (TYConstruct (Some t, i))
+    mk (catnspans t i) (Pty_construct (Some t, i))
   with Backtrack -> t
 
 and effect_type must p =
@@ -478,7 +506,7 @@ and effect_type must p =
     let b_span = p.previous.span in
     let t = effect_type true p in
     let s = catspans b_span t.span in
-    mk s (TYEffect t)
+    mk s (Pty_effect t)
   else
     atom_type must p
 
@@ -490,11 +518,11 @@ and atom_type must p =
       unclosed "'('" start_s "the closing ')' here" (current p).span;
 
     let s = catspans start_s p.previous.span in
-    mk s (if groups then TYGrouping t else t.item)
+    mk s (if groups then Pty_grouping t else t.item)
   end
   else try try_parse p begin fun p ->
     let i = upper_longident p false in
-    mk i.span (TYConstruct (None, i))
+    mk i.span (Pty_construct (None, i))
   end with Backtrack ->
     if must then error_at_current p (Expected "a type") []
     else backtrack ()

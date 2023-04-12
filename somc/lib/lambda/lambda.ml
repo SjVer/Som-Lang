@@ -29,4 +29,7 @@ let convert tast =
   print_endline "\n==== Final program ====";
   prog *)
 
-  Simplify.basic_simplify_pogram prog
+  prog
+  |> Simplify.basic_simplify_pogram
+  |> Simplify.ApplyToCall.simplify_program
+  |> Uncurry.uncurry_program

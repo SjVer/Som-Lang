@@ -11,16 +11,34 @@ type var =
   | Var_global of ident
   | Var_tag of int
 
-type prim = Typing.Magicals.t
-
 type atom =
   | Atom_const of const
   | Atom_var of var
-  | Atom_magic of prim
+  | Atom_magic of Symbols.Magic.t
 
-type expr =
+type check =
+  | Check_done
+  | Check_const of const
+  | Check_tag of int
+  | Check_tuple of check list
+
+type extract =
+  | Extr_get of int
+  | Extr_tag of int
+
+type extractor = extract list
+
+type case =
+  {
+    check: check;
+    extractors: (ident * extractor) list;
+    action: expr;
+  }
+
+and expr =
   | Expr_let of ident * expr * expr
   | Expr_lambda of ident list * expr
+  | Expr_match of atom * case list
   | Expr_call of atom * atom list
   | Expr_apply of expr * atom list
   | Expr_if of atom * expr * expr
@@ -32,14 +50,8 @@ type expr =
   | Expr_eval of var
   | Expr_atom of atom
 
-(* and 'a step = ident * 'a * expr *)
-(* let [string] = ['a] in [expr] *)
-
 type statement =
-  (* always generated from TAST *)
   | Stmt_definition of ident * expr
-  (* result of lambda lifting *)
-  (* | Stmt_function of ident * ident list * expr *)
   | Stmt_external of ident * ident
 
 type program = statement list

@@ -72,19 +72,19 @@ let rec resolve_type ctx typ =
     (* | TYVariant vs ->
       let vs' = List.map (fun (n, ts) -> (canon_name' n, ts)) vs in
       TYVariant vs' *)
-    | TYGrouping t -> TYGrouping (go t)
-    | TYForall (ps, t) -> TYForall (ps, go t)
-    | TYEffect t -> TYEffect (go t) 
-    | TYFunction (t1, t2) -> TYFunction (go t1, go t2)
-    | TYTuple ts -> TYTuple (List.map (go) ts)
+    | Pty_grouping t -> Pty_grouping (go t)
+    | Pty_forall (ps, t) -> Pty_forall (ps, go t)
+    | Pty_effect t -> Pty_effect (go t) 
+    | Pty_function (t1, t2) -> Pty_function (go t1, go t2)
+    | Pty_tuple ts -> Pty_tuple (List.map (go) ts)
 
-    | TYConstruct (t, i) -> begin try
+    | Pty_construct (t, i) -> begin try
         let i' = Context.lookup_qual_type_ident ctx i.item in
         Symbols.use (`Type i') i.span;
-        TYConstruct (Option.map go t, {i with item = i'})
+        Pty_construct (Option.map go t, {i with item = i'})
       with Not_found ->
         use_of_unbound_error "type" i.item i.span;
-        TYAny
+        Pty_wildcard
       end
 
     | item -> item
@@ -93,7 +93,7 @@ let rec resolve_type ctx typ =
 
 let resolve_complex_type ctx cmplxtyp =
   let ctx', item = match cmplxtyp.item with
-    | CTVariant rows ->
+    | Pct_variant rows ->
       let rec resolve_rows ctx = function
         | (i, ts) :: rest ->
           let ts' = List.map (resolve_type ctx) ts in
@@ -104,50 +104,53 @@ let resolve_complex_type ctx cmplxtyp =
         | [] -> ctx, []
       in
       let ctx', rows' = resolve_rows ctx rows in
-      ctx', CTVariant rows'
-    | CTSimple t -> ctx, CTSimple (resolve_type ctx t)
+      ctx', Pct_variant rows'
+    | Pct_simple t -> ctx, Pct_simple (resolve_type ctx t)
   in
   ctx', {cmplxtyp with item}
 
-let bind_pattern ctx = function
-  | PAVariable n -> Context.bind_value ctx (Ident n) (Ident n)
-  | PAWildcard -> ctx
+let rec bind_pattern ctx = function
+  | Ppat_wildcard -> ctx
+  | Ppat_variable n -> Context.bind_value ctx (Ident n) (Ident n)
+  | Ppat_literal _ -> ctx
+  | Ppat_tuple patts ->
+    List.fold_left bind_pattern ctx (nmapi patts)
 
 let rec resolve_expr ctx expr =
   let go = resolve_expr ctx in
   let item = match expr.item with
-    | EXGrouping e -> EXGrouping (go e)
+    | Pexp_grouping e -> Pexp_grouping (go e)
 
-    | EXBinding (b, e) ->
+    | Pexp_binding (b, e) ->
       let vb_expr = go b.vb_expr in
       let ctx' = bind_pattern ctx b.vb_patt.item in
-      EXBinding ({b with vb_expr}, resolve_expr ctx' e)
+      Pexp_binding ({b with vb_expr}, resolve_expr ctx' e)
 
-    | EXLambda b ->
+    | Pexp_lambda b ->
       let ctx' = bind_pattern ctx b.vb_patt.item in
       let vb_expr = resolve_expr ctx' b.vb_expr in
-      EXLambda {b with vb_expr}
+      Pexp_lambda {b with vb_expr}
 
-    | EXSequence (e1, e2) -> EXSequence (go e1, go e2)
-    | EXConstraint (e, t) -> EXConstraint (go e, resolve_type ctx t)
-    | EXApplication (e, es) -> EXApplication (go e, List.map go es)
-    | EXTuple es -> EXTuple (List.map go es)
+    | Pexp_sequence (e1, e2) -> Pexp_sequence (go e1, go e2)
+    | Pexp_constraint (e, t) -> Pexp_constraint (go e, resolve_type ctx t)
+    | Pexp_apply (e, es) -> Pexp_apply (go e, List.map go es)
+    | Pexp_tuple es -> Pexp_tuple (List.map go es)
 
-    | EXConstruct (i, es) -> begin try
+    | Pexp_construct (i, es) -> begin try
         let i' = Context.lookup_qual_value_ident ctx i.item in
         Symbols.use (`Val i') i.span;
-        EXConstruct ({i with item = i'}, List.map go es)
+        Pexp_construct ({i with item = i'}, List.map go es)
       with Not_found ->
         use_of_unbound_error "constructor" i.item i.span;
-        EXError
+        Pexp_error
       end
-    | EXIdentifier i -> begin try
+    | Pexp_ident i -> begin try
         let i' = Context.lookup_qual_value_ident ctx i.item in
         Symbols.use (`Val i') i.span;
-        EXIdentifier {i with item = i'}
+        Pexp_ident {i with item = i'}
       with Not_found ->
         use_of_unbound_error "value" i.item i.span;
-        EXError
+        Pexp_error
       end
 
     | item -> item
@@ -175,7 +178,7 @@ let import_symbol ctx path dest_ident =
 
 let rec resolve_import ctx path kind =
   match kind.item with
-    | IK_Module ->
+    | Pik_module ->
       let old_ident = string_nodes_to_marked_ident path in
       let new_ident = Ident.from_list (nmapi path) in
 
@@ -191,19 +194,19 @@ let rec resolve_import ctx path kind =
       in
       ctx
 
-    | IK_Simple sym_path ->
+    | Pik_simple sym_path ->
       let path = path @ sym_path in
       let ident = Ident.Ident (List.hd (List.rev path)).item in
       import_symbol ctx path ident
 
-    | IK_Glob -> failwith "resolve IK_Glob"
+    | Pik_glob -> failwith "resolve Pik_glob"
 
-    | IK_Rename (sym_path, name) ->
+    | Pik_rename (sym_path, name) ->
       let path = path @ sym_path in
       let ident = Ident.Ident name.item in
       import_symbol ctx path ident
 
-    | IK_Nested kinds ->
+    | Pik_nested kinds ->
       let f ctx kind = resolve_import ctx path kind in
       List.fold_left f ctx kinds
 
@@ -213,7 +216,7 @@ let rec resolve_toplevel ctx tl =
   let qualnode ctx n = {n with item = Context.qualify ctx n.item} in
   let mk item = {tl with item} in
   match tl.item with
-    | TLValueDef vdef ->
+    | Ptl_value_def vdef ->
       let vdef' =
         {
           vd_name = qualnode ctx vdef.vd_name;
@@ -224,9 +227,9 @@ let rec resolve_toplevel ctx tl =
         vdef.vd_name.item
         vdef'.vd_name.item
       in
-      ctx', [mk (TLValueDef vdef')]
+      ctx', [mk (Ptl_value_def vdef')]
 
-    | TLTypeDef tdef ->
+    | Ptl_type_def tdef ->
       (* NOTE: types are always recursive now *)
       let td_name = qualnode ctx tdef.td_name in
       check_typedef_name td_name.span td_name.item;
@@ -240,9 +243,9 @@ let rec resolve_toplevel ctx tl =
           td_type = type';
         }
       in
-      ctx, [mk (TLTypeDef tdef')]
+      ctx, [mk (Ptl_type_def tdef')]
 
-    | TLExternDef edef ->
+    | Ptl_extern_def edef ->
       let edef' =
         {
           ed_native_name = edef.ed_native_name;
@@ -254,9 +257,9 @@ let rec resolve_toplevel ctx tl =
         edef.ed_name.item
         edef'.ed_name.item
       in
-      ctx, [mk (TLExternDef edef')]
+      ctx, [mk (Ptl_extern_def edef')]
 
-    | TLModule (n, ast) ->
+    | Ptl_module (n, ast) ->
       (* remove prefix '#' *)
       let name = unmark_string n.item in
       (* resolve module *)
@@ -265,7 +268,7 @@ let rec resolve_toplevel ctx tl =
       let ctx = add_subcontext_prefixed ctx subctx (Ident n.item) in
       ctx, ast
 
-    | TLImport imp ->
+    | Ptl_import imp ->
       let ctx = resolve_import ctx imp.i_path imp.i_kind in
       ctx, []
 

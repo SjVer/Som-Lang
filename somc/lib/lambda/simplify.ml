@@ -19,6 +19,7 @@ module LetAlias = struct
 
   let rec simplify_expr = function
     | Expr_let (var, Expr_atom a, expr) ->
+      let expr = simplify_expr expr in
       Hashtbl.add replaced var a;
       simplify_expr expr
     
@@ -26,14 +27,19 @@ module LetAlias = struct
       Expr_let (var, simplify_expr value, simplify_expr expr)
     | Expr_lambda (args, expr) ->
       Expr_lambda (args, simplify_expr expr)
+    | Expr_match (s, cases) ->
+      let f case =
+        {case with action = simplify_expr case.action}
+      in
+      Expr_match (s, List.map f cases)
     | Expr_call (f, args) ->
       Expr_call (check_atom f, List.map check_atom args)
     | Expr_apply (f, args) ->
       Expr_apply (simplify_expr f, List.map check_atom args)
-    | Expr_if (cond, thenexpr, elseexpr) ->
+    | Expr_if (cond, texpr, eexpr) ->
       Expr_if (check_atom cond,
-        simplify_expr thenexpr,
-        simplify_expr elseexpr)
+        simplify_expr texpr,
+        simplify_expr eexpr)
     | Expr_sequence (e1, e2) ->
       Expr_sequence (simplify_expr e1, simplify_expr e2)
     | Expr_lazy expr ->
@@ -78,6 +84,47 @@ module NestedApply = struct
       Expr_let (var, simplify_expr value, simplify_expr expr)
     | Expr_lambda (args, expr) ->
       Expr_lambda (args, simplify_expr expr)
+    | Expr_match (s, cases) ->
+      let f case =
+        {case with action = simplify_expr case.action}
+      in
+      Expr_match (s, List.map f cases)
+    | Expr_apply (f, args) ->
+      Expr_apply (simplify_expr f, args)
+    | Expr_if (cond, texpr, eexpr) ->
+      Expr_if (cond, simplify_expr texpr, simplify_expr eexpr)
+    | Expr_sequence (e1, e2) ->
+      Expr_sequence (simplify_expr e1, simplify_expr e2)
+    | Expr_lazy expr ->
+      Expr_lazy (simplify_expr expr)
+    | expr -> expr
+
+  let simplify_stmt = function
+    | Stmt_definition (i, expr) ->
+      Stmt_definition (i, simplify_expr expr)
+    | stmt -> stmt
+
+  let simplify_program =
+    _make_opt (List.map simplify_stmt) 
+end
+
+module ApplyToCall = struct
+  (* replaces stuff like `(apply #add ...)` to `(call #add ...)` *)
+
+  let rec simplify_expr = function
+    | Expr_let (var, value, expr) ->
+      Expr_let (var, simplify_expr value, simplify_expr expr)
+    | Expr_lambda (args, expr) ->
+      Expr_lambda (args, simplify_expr expr)
+    | Expr_match (s, cases) ->
+      let f case =
+        {case with action = simplify_expr case.action}
+      in
+      Expr_match (s, List.map f cases)
+
+    | Expr_apply (Expr_atom (Atom_magic m), args) ->
+      Expr_call (Atom_magic m, args)
+
     | Expr_apply (f, args) ->
       Expr_apply (simplify_expr f, args)
     | Expr_if (cond, texpr, eexpr) ->
