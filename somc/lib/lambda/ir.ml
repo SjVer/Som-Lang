@@ -17,10 +17,10 @@ type atom =
   | Atom_magic of Symbols.Magic.t
 
 type check =
-  | Check_done
+  | Check_default
   | Check_const of const
   | Check_tag of int
-  | Check_tuple of check list
+  | Check_tuple of int
 
 type extract =
   | Extr_get of int

@@ -28,17 +28,14 @@ let print_extractor' ppf =
     | Extr_tag t -> fpf ppf "%s #%d" (ex "tag") t
   in
   pp_print_list
-    ~pp_sep:(fun ppf () -> fpf ppf "@ |>@ ")
+    ~pp_sep:(fun ppf () -> fpf ppf "@ >@ ")
     go ppf
 
-let rec print_check' ppf = function
-  | Check_done -> pp_print_string ppf (ex "done")
+let print_check' ppf = function
+  | Check_default -> pp_print_string ppf "_"
   | Check_const c -> print_atom' ppf (Atom_const c)
-  | Check_tag t -> fpf ppf "%s #%d" (kw "tag") t
-  | Check_tuple checks ->
-    fpf ppf "@[<2>(%s@ %a)@]"
-      (ex "tup")
-      (pp_list print_check') checks
+  | Check_tag t -> fpf ppf "#%d" t
+  | Check_tuple arity -> fpf ppf "[%d]" arity
 
 let rec print_case' ppf case =
   fpf ppf "@[<2>(%s@ %a@ %s@ %a@ %s@ %a)@]"
@@ -48,7 +45,7 @@ let rec print_case' ppf case =
     (pp_print_list
       ~pp_sep:(fun ppf () -> fpf ppf " ;@;<1 1>")
       (fun ppf (v, e) ->
-        fpf ppf "%s <- %a" (var v) print_extractor' e)
+        fpf ppf "@[<0>%s <- %a@]" (var v) print_extractor' e)
     ) case.extractors
     (kw "in")
     print_expr' case.action

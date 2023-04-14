@@ -41,18 +41,28 @@ let lower_apply f args =
   in
   wrap_exprs_in_vars args app
 
+let rec bind_patt_vars env patt =
+  match patt.item with
+    | Tpat_wildcard -> env
+    | Tpat_variable v ->
+      let var = Env.mangle v in
+      Env.bind_local env (Ident v) var
+    | Tpat_literal _ -> env
+    | Tpat_tuple patts ->
+      List.fold_left bind_patt_vars env patts
+
 let rec lower_expr env expr =
   match expr.item with
     | Texp_grouping e -> lower_expr env e
 
     | Texp_binding (bind, expr) ->
       let value = lower_expr env bind.vb_expr in
-      let env = Matching.bind_patt_vars env bind.vb_patt in
+      let env = bind_patt_vars env bind.vb_patt in
       let expr = lower_expr env expr in
       Matching.lower_binding env bind.vb_patt value expr
 
     | Texp_lambda bind ->
-      let env = Matching.bind_patt_vars env bind.vb_patt in
+      let env = bind_patt_vars env bind.vb_patt in
       let body = lower_expr env bind.vb_expr in
       Matching.lower_lambda env bind.vb_patt body
 
