@@ -5,6 +5,7 @@ type const =
   | Const_float of float
   | Const_string of string
   | Const_nil
+  [@@deriving show]
 
 type var =
   | Var_local of ident
@@ -16,29 +17,12 @@ type atom =
   | Atom_var of var
   | Atom_magic of Symbols.Magic.t
 
-type check =
-  | Check_default
-  | Check_const of const
-  | Check_tag of int
-  | Check_tuple of int
-
-type extract =
-  | Extr_get of int
-  | Extr_tag of int
-
-type extractor = extract list
-
-type case =
-  {
-    check: check;
-    extractors: (ident * extractor) list;
-    action: expr;
-  }
+type scrutinee = int list
 
 and expr =
   | Expr_let of ident * expr * expr
   | Expr_lambda of ident list * expr
-  | Expr_match of atom * case list
+  | Expr_match of atom * (int * expr) list
   | Expr_call of atom * atom list
   | Expr_apply of expr * atom list
   | Expr_if of atom * expr * expr

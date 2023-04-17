@@ -1,1 +1,1 @@
-let foo = lam (x ; (y; z)) -> x + y + z
+let foo = lam x; y -> 1

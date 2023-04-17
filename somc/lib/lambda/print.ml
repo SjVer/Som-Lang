@@ -22,33 +22,10 @@ let print_atom' ppf = function
     let m' = Symbols.Magic.to_string m in
     fpf ppf "#%s" m'
 
-let print_extractor' ppf =
-  let go ppf = function
-    | Extr_get i -> fpf ppf "%s %d" (ex "get") i
-    | Extr_tag t -> fpf ppf "%s #%d" (ex "tag") t
-  in
-  pp_print_list
-    ~pp_sep:(fun ppf () -> fpf ppf "@ >@ ")
-    go ppf
-
-let print_check' ppf = function
-  | Check_default -> pp_print_string ppf "_"
-  | Check_const c -> print_atom' ppf (Atom_const c)
-  | Check_tag t -> fpf ppf "#%d" t
-  | Check_tuple arity -> fpf ppf "[%d]" arity
-
-let rec print_case' ppf case =
-  fpf ppf "@[<2>(%s@ %a@ %s@ %a@ %s@ %a)@]"
-    (kw "case")
-    print_check' case.check
-    (kw "with")
-    (pp_print_list
-      ~pp_sep:(fun ppf () -> fpf ppf " ;@;<1 1>")
-      (fun ppf (v, e) ->
-        fpf ppf "@[<0>%s <- %a@]" (var v) print_extractor' e)
-    ) case.extractors
-    (kw "in")
-    print_expr' case.action
+let rec print_case' ppf (tag, expr) =
+  fpf ppf "@[<2>(%s@ %d:@ %a@)@]"
+    (kw "case") tag
+    print_expr' expr
 
 and print_expr' ppf = function
   | Expr_let (v, value, expr) ->

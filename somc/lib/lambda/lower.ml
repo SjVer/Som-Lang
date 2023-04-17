@@ -83,7 +83,7 @@ let rec lower_expr env expr =
     | Texp_construct (ident, args) ->
       let tag = match Env.find env ident.item with
         | Var_tag tag -> tag
-        | _ -> failwith "EX_Constructor ident no tag"
+        | _ -> failwith "Texp_construct ident no tag"
       in
       let args' = List.map (lower_expr env) args in
       let expr args'' = Expr_object (tag, args'') in

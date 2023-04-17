@@ -28,9 +28,7 @@ module LetAlias = struct
     | Expr_lambda (args, expr) ->
       Expr_lambda (args, simplify_expr expr)
     | Expr_match (s, cases) ->
-      let f case =
-        {case with action = simplify_expr case.action}
-      in
+      let f (tag, expr) = tag, simplify_expr expr in
       Expr_match (s, List.map f cases)
     | Expr_call (f, args) ->
       Expr_call (check_atom f, List.map check_atom args)
@@ -85,9 +83,7 @@ module NestedApply = struct
     | Expr_lambda (args, expr) ->
       Expr_lambda (args, simplify_expr expr)
     | Expr_match (s, cases) ->
-      let f case =
-        {case with action = simplify_expr case.action}
-      in
+      let f (tag, expr) = tag, simplify_expr expr in
       Expr_match (s, List.map f cases)
     | Expr_apply (f, args) ->
       Expr_apply (simplify_expr f, args)
@@ -117,9 +113,7 @@ module ApplyToCall = struct
     | Expr_lambda (args, expr) ->
       Expr_lambda (args, simplify_expr expr)
     | Expr_match (s, cases) ->
-      let f case =
-        {case with action = simplify_expr case.action}
-      in
+      let f (tag, expr) = tag, simplify_expr expr in
       Expr_match (s, List.map f cases)
 
     | Expr_apply (Expr_atom (Atom_magic m), args) ->

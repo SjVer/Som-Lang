@@ -5,8 +5,6 @@ let (@.) list i = List.nth list i
 let hd, tl = List.hd, List.tl
 
 
-type scrutinee = extract list
-
 type matrix =
   {
     occurances: scrutinee list;
@@ -23,12 +21,15 @@ let initial cases =
     actions = acts;
   }
 
+let first_column mat = List.map (fun row -> hd row) mat.rows
+
 let is_irrefutable = function
   | Tpat_wildcard | Tpat_variable _ -> true
   | _ -> false
 
-let row_is_irrefutable =
-  Array.for_all is_irrefutable
+let row_is_irrefutable patts =
+  List.map (fun n -> n.item) patts
+  |> List.for_all is_irrefutable
 
 let default_of mat =
   let rows, actions =
@@ -71,5 +72,53 @@ let swap_to_refutable_column mat =
     actions = mat.actions;
   }
 
+let print mat =
+  let module B = PrintBox in
+  let open Format in
+  let occ =
+    let f scrut =
+      let s =
+        List.map (fun s -> "." ^ string_of_int s) scrut
+        |> String.concat ""
+      in
+      B.text ("e" ^ s)
+      |> B.center_h
+      |> B.pad' ~lines:0 ~col:1
+    in
+    List.map f mat.occurances
+    |> Array.of_list
+  in
+  let mat' =
+    let rows =
+      let fold_row i =
+        let f patt =
+          Span.show_span patt.span
+          |> B.text
+          |> B.center_h
+          |> B.pad' ~lines:0 ~col:1
+        in
+        List.nth mat.rows i
+        |> List.map f
+        |> Array.of_list
+      in
+      Array.init (List.length mat.rows) fold_row
+      |> Array.append (Array.make 1 occ)
+    in
+    B.grid rows
+  in
+  let act =
+    let f expr =
+      ignore (flush_str_formatter ());
+      Print.print_expr' str_formatter expr;
+      flush_str_formatter ()
+      |> B.text
+      |> B.center_h
+      |> B.pad' ~lines:0 ~col:1
+    in
+    B.text " " :: List.map f mat.actions
+  in
 
+  B.frame (B.hlist [mat'; B.vlist act])
+  |> PrintBox_text.output stdout;
+  print_newline ()
 
