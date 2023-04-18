@@ -214,8 +214,8 @@ and finish_variant_type p =
   in
   let args =
     try
-      let t = (constructed_type false) p in
-      let ts = many p (matsch SEMICOLON) (constructed_type true) in
+      let t = typ p in
+      let ts = many p (matsch SEMICOLON) typ in
       t :: ts
     with Backtrack -> []
   in
@@ -263,15 +263,29 @@ and wrap_type_constraint t e =
 and pattern p = tuple_pattern p
 
 and tuple_pattern p =
-  let pt = atom_pattern p in
-  let pts = many p (matsch SEMICOLON) atom_pattern in
+  let pt = constructor_pattern p in
+  let pts = many p (matsch SEMICOLON) constructor_pattern in
 
   if pts <> [] then
     let s = catnspans pt (List.hd pts) in
     mk s (Ppat_tuple (pt :: pts))
   else pt
 
-and atom_pattern p =
+and constructor_pattern p =
+  try try_parse p begin fun p ->
+    let ident = upper_longident p false in
+    let args, span =
+      try
+        let arg = try_parse p (atom_pattern false) in
+        let args = arg :: many p (matsch SEMICOLON) (atom_pattern true) in
+        args, catnspans ident (List.hd (List.rev args)) 
+      with Backtrack -> [], ident.span
+    in
+    mk span (Ppat_construct (ident, args))
+  end with Backtrack ->
+    atom_pattern true p
+
+and atom_pattern must p =
   let curr = current p in
   let mk' i = mk curr.span i in
   
@@ -292,22 +306,42 @@ and atom_pattern p =
       | CHARACTER c -> mk' (Ppat_literal (Pli_char c))
       | STRING s -> mk' (Ppat_literal (Pli_string s))
       | EMPTYPARENS -> mk' (Ppat_literal Pli_null)
-      | _ -> error_at_current p (Expected "a pattern") []
+      | _ ->
+        if must then error_at_current p (Expected "a pattern") []
+        else backtrack ()
 
 (* =========================== expression ========================= *)
 
-and expression p = let_expression p
+and expression p = keyword_expression p
 
-and let_expression p =
-  if matsch LET p then begin
-    let let_s = p.previous.span in
-    let bind = binding p let_expression EQUAL "=" in
-    i (consume IN "\"in\"" p);
-    let body = let_expression p in
-    let s = catspans let_s body.span in 
-    mk s (Pexp_binding (bind, body))
-  end
-  else sequence_expression p
+and keyword_expression p =
+  match current_t p with
+    | LET ->
+      let let_s = (advance p).span in
+      let bind = binding p keyword_expression EQUAL "=" in
+      i (consume IN "\"in\"" p);
+      let body = keyword_expression p in
+      let s = catspans let_s body.span in 
+      mk s (Pexp_binding (bind, body))
+
+    | MATCH ->
+      let match_s = (advance p).span in
+      let e = sequence_expression p in
+      ignore (consume PIPE "'|'" p);
+      let cases = match_cases p in
+      (* let s = *)
+      let s = match_s in
+      mk s (Pexp_match (e, cases))
+
+    | SWITCH ->
+      let switch_s = (advance p).span in
+      ignore (matsch PIPE p);
+      let cases = match_cases p in
+      (* let s = catspans switch_s  *)
+      let s = switch_s in
+      mk s (Pexp_switch cases)
+
+    | _ -> sequence_expression p
 
 and sequence_expression p =
   let mk_seq e1 e2 s = mk s (Pexp_sequence (e1, e2)) in
@@ -371,14 +405,14 @@ and application_expression p =
        is 'above' atom_expression we cannot parse
        stuff like `Nil` in `List 123 ; Nil`. *)
     let ident = upper_longident p false in
-    let es =
+    let es, span =
       try
         let e = try_parse p (atom_expression false) in
-        let es = many p (matsch SEMICOLON) (atom_expression true) in
-        e :: es
-      with Backtrack -> []
+        let es = e :: many p (matsch SEMICOLON) (atom_expression true) in
+        es, catnspans ident (List.hd (List.rev es)) 
+      with Backtrack -> [], ident.span
     in
-    mk ident.span (Pexp_construct (ident, es))
+    mk span (Pexp_construct (ident, es))
 
   end with Backtrack ->
     (* otherwise maybe application *)
@@ -421,6 +455,16 @@ and atom_expression must p =
       else backtrack ()
 
 (* ====================== expression helpers ===================== *)
+
+and match_cases p =
+  (* first '|' alraedy handled *)
+  let patt = pattern p in
+  ignore (consume ARROW "'->'" p);
+  let e = sequence_expression p in
+
+  if not (matsch END p) && matsch PIPE p then
+    (patt, e) :: match_cases p
+  else [patt, e]
 
 and max_precedence = 5
 and infix_operators =
@@ -519,7 +563,9 @@ and atom_type must p =
 
     let s = catspans start_s p.previous.span in
     mk s (if groups then Pty_grouping t else t.item)
-  end
+  end else if matsch (dummy `PRIMENAME) p then
+    let s = mk p.previous.span (unpack_str p.previous.typ) in
+    mk s.span (Pty_variable s)
   else try try_parse p begin fun p ->
     let i = upper_longident p false in
     mk i.span (Pty_construct (None, i))

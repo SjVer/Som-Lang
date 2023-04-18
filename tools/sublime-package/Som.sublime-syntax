@@ -348,7 +348,7 @@ contexts:
     - include: variable
 
   keyword:
-    - match: \b(match)\b
+    - match: \b(match|end)\b
       scope: keyword.control.switch.som
     - match: \b(if|then|else)\b
       scope: keyword.control.conditional.som
@@ -360,6 +360,14 @@ contexts:
     - match: \||switch
       scope: keyword.control.switch.som
       push:
+        - match: \bend\b
+          scope: keyword.control.end.som
+          pop: true
+
+        - match: ->
+          scope: keyword.control.end.som
+          pop: 2
+
         - match: (?=\b(if|then)\b)
           pop: true
         - include: pattern

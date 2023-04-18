@@ -54,10 +54,10 @@ typedef ui64 header;
 #define Hd_payload(h) ((ui32)(((h) & HD_P_MASK) >> 32))
 #define Hd_with_payload(h, p) (((h) & ~HD_P_MASK) | (header)(p) << 32)
 
-#define TAG_RAW_DATA 1
-#define TAG_TUPLE 2
-#define TAG_THUNK 3
-#define TAG_MIN 4
+#define TAG_MAX 251
+#define TAG_RAW_DATA 252
+#define TAG_TUPLE 253
+#define TAG_THUNK 254
 
 #pragma endregion
 

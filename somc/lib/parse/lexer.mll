@@ -41,6 +41,7 @@ let kw_from_str = function
   | "do" -> DO
   | "match" -> MATCH
   | "switch" -> SWITCH
+  | "end" -> END
   | "lam" -> LAM
   | _ -> raise Not_found
 

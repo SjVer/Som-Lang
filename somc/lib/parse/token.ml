@@ -9,7 +9,7 @@ type token_typ =
   | MOD
   | IF    | THEN   | ELSE
   | FOR   | AT     | DO
-  | MATCH | SWITCH
+  | MATCH | SWITCH | END
 
   (* single symbol *)
   | UNDERSCORE

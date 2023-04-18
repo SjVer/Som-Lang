@@ -65,6 +65,7 @@ and pattern =
   | Ppat_wildcard
   | Ppat_variable of string
   | Ppat_literal of literal
+  | Ppat_construct of Ident.t node * pattern node list
   | Ppat_tuple of pattern node list
 
 (* ===================== Expression ===================== *)
@@ -73,6 +74,8 @@ and expr =
   | Pexp_grouping of expr node
   | Pexp_binding of value_binding * expr node
   | Pexp_lambda of value_binding
+  | Pexp_match of expr node * case list
+  | Pexp_switch of case list
   | Pexp_sequence of expr node * expr node
   | Pexp_constraint of expr node * typ node
   | Pexp_apply of expr node * expr node list
@@ -82,6 +85,8 @@ and expr =
   | Pexp_ident of Ident.t node
   | Pexp_magic of string
   | Pexp_error
+
+and case = pattern node * expr node
 
 and literal =
   | Pli_int of int

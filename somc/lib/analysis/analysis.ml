@@ -5,20 +5,8 @@ module Context = Context
 module IMap = Context.IMap
 
 let add_implicit_prelude ast =
-  let open Span in
-  let open Configs in
-
-  let loc = Loc.{line = 0; col = 0; offset = 0} in
-  let span =
-    {
-      file = prelude_file;
-      start = loc;
-      end_ = loc;
-      ghost = true;
-    }
-  in
-
-  let imp_ast = !Import.get_ast_from_file prelude_file span in
+  let span = Span.dummy Configs.prelude_file in
+  let imp_ast = !Import.get_ast_from_file Configs.prelude_file span in
   imp_ast @ ast
 
 let initial_ctx = 
@@ -30,6 +18,7 @@ let initial_ctx =
   |> bind "Int"
   |> bind "Chr"
   |> bind "Flt"
+  |> bind "Str"
   |> bind "Nil"
 
 let resolve ast : ast =

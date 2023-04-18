@@ -44,6 +44,7 @@ and pattern =
   | Tpat_wildcard
   | Tpat_variable of string
   | Tpat_literal of literal
+  | Tpat_construct of Ident.t tnode * pattern tnode list
   | Tpat_tuple of pattern tnode list
 
 (* ===================== Expression ===================== *)
@@ -52,14 +53,18 @@ and expr =
   | Texp_grouping of expr tnode
   | Texp_binding of value_binding * expr tnode
   | Texp_lambda of value_binding
+  | Texp_match of expr tnode * case list
+  | Texp_switch of case list
   | Texp_sequence of expr tnode * expr tnode
   | Texp_apply of expr tnode * expr tnode list
   | Texp_tuple of expr tnode list
-  | Texp_construct of Symbols.Ident.t tnode * expr tnode list
+  | Texp_construct of Ident.t tnode * expr tnode list
   | Texp_literal of literal
-  | Texp_ident of Symbols.Ident.t tnode
+  | Texp_ident of Ident.t tnode
   | Texp_magic of Symbols.Magic.t
   | Texp_error
+
+and case = pattern tnode * expr tnode
 
 and literal =
   | Tli_int of int

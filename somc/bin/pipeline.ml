@@ -73,7 +73,7 @@ module LowerFile = Query.Make(struct
 
     let program = Lambda.convert tast in
     if !C.args.dump_ir then Lambda.Print.print_program program;
-    Lambda.convert tast
+    program
 end)
 
 module CodegenFile = Query.Make(struct

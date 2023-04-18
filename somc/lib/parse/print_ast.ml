@@ -27,6 +27,9 @@ let rec print_patt_node' i { span; item } =
     | Ppat_wildcard -> p i "Ppat_wildcard" span
     | Ppat_variable n -> p i ("Ppat_variable " ^ n) span
     | Ppat_literal l -> p i ("Ppat_literal " ^ show_literal l) span
+    | Ppat_construct (c, args) ->
+      p i ("Ppat_construct " ^ Ident.to_string c.item) span;
+      List.iter (print_patt_node' (i + 1)) args 
     | Ppat_tuple patts ->
       p i "Ppat_tuple" span;
       List.iter (print_patt_node' (i + 1)) patts
@@ -79,6 +82,11 @@ and print_complex_type_node' i { span; item } =
       p i "Pct_simple" span;
       print_type_node' (i + 1) t
 
+and print_case' i (patt, expr) =
+  p i "<case>" (Span.concat_spans patt.span expr.span);
+  print_patt_node' (i + 1) patt;
+  print_expr_node' (i + 1) expr
+
 and print_expr_node' i { span; item } =
   match item with
     | Pexp_grouping e -> 
@@ -95,6 +103,15 @@ and print_expr_node' i { span; item } =
       p i "Pexp_lambda" span;
       print_patt_node' (i + 1) vb_patt;
       print_expr_node' (i + 1) vb_expr
+
+    | Pexp_match (scrut, cases) ->
+      p i "Pexp_match" span;
+      print_expr_node' (i + 1) scrut;
+      List.iter (print_case' (i + 1)) cases
+
+    | Pexp_switch cases ->
+      p i "Pexp_switch" span;
+      List.iter (print_case' (i + 1)) cases
 
     | Pexp_sequence (e1, e2) ->
       p i "Pexp_sequence" span;

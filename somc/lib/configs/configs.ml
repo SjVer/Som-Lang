@@ -26,4 +26,4 @@ let hide_stdlib_nodes = false
 
 let tast_print_debug = true
 
-let minimum_tag = 4
+let maximum_tag = 252

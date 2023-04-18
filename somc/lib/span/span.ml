@@ -11,6 +11,15 @@ type t =
     ghost: bool;
   }
 
+let dummy file =
+  let loc = Loc.{line = 0; col = 0; offset = 0} in
+  {
+    file;
+    start = loc;
+    end_ = loc;
+    ghost = true;
+  }
+
 (** [span_length span] returns 0 if [span] covers multiple lines *)
 let span_length span =
   if span.start.line <> span.end_.line then 0

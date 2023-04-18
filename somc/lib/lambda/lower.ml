@@ -48,10 +48,12 @@ let rec bind_patt_vars env patt =
       let var = Env.mangle v in
       Env.bind_local env (Ident v) var
     | Tpat_literal _ -> env
+    | Tpat_construct (_, args) ->
+      List.fold_left bind_patt_vars env args
     | Tpat_tuple patts ->
       List.fold_left bind_patt_vars env patts
 
-let rec lower_expr env expr =
+and lower_expr env expr =
   match expr.item with
     | Texp_grouping e -> lower_expr env e
 
@@ -65,6 +67,24 @@ let rec lower_expr env expr =
       let env = bind_patt_vars env bind.vb_patt in
       let body = lower_expr env bind.vb_expr in
       Matching.lower_lambda env bind.vb_patt body
+
+    | Texp_match (scrut, cases) ->
+      let scrut' = lower_expr env scrut in
+      let cases' = List.map (fun (p, e) ->
+        let env = bind_patt_vars env p in
+        env, p, lower_expr env e) cases
+      in
+      Matching.lower_cases env scrut' cases'
+    
+    | Texp_switch cases ->
+      let r = Env.fresh () in
+      let scrut = Expr_atom (local r) in
+      let cases' = List.map (fun (p, e) ->
+        let env = bind_patt_vars env p in
+        env, p, lower_expr env e) cases
+      in
+      let match' = Matching.lower_cases env scrut cases' in
+      Expr_lambda ([r], match')
 
     | Texp_sequence (e1, e2) ->
       let e1' = lower_expr env e1 in
@@ -109,9 +129,14 @@ let lower_toplevel vars (tl : toplevel node) =
       let vars = match tdef.td_type.item with
         | TVariant rows ->
           let f (vars, tag) (ident, _) =
+            if tag > Configs.maximum_tag then begin
+              let open Report in
+              let e = Error.((Other_error (Other "constructor limit reached"))) in
+              make_error e (Some tdef.td_type.span) |> raise
+            end;
             Env.add ident (Var_tag tag) vars, tag + 1
           in
-          List.fold_left f (vars, Configs.minimum_tag) rows
+          List.fold_left f (vars, 1) rows
           |> fst
         | _ -> vars
       in

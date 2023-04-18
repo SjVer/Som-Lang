@@ -4,6 +4,17 @@ open Ir
 let (@.) list i = List.nth list i
 let hd, tl = List.hd, List.tl
 
+module Occ = struct
+  type t = scrutinee
+
+  let hash = Hashtbl.hash
+
+  let equal l1 l2 =
+    if List.length l1 = List.length l2 then
+      List.combine l1 l2
+      |> List.for_all (fun (a, b) -> a = b)
+    else false
+end
 
 type matrix =
   {
@@ -12,12 +23,41 @@ type matrix =
     actions: expr list;
   }
 
+let preprocess_patterns base_occ patts =
+  (* let module OT = Hashtbl.Make(Occ) in
+  let occurances = ref [] in
+  let occs_to_patts_map = OT.create 5 in
+
+  let add_patt occ patt =
+    OT.add occs_to_patts_map occ patt;
+    if not (List.mem occ !occurances) then
+      occurances := !occurances @ [occ]
+  in
+  let get_occs_of_patt patt =
+    match patt.item with
+      | Tpat_tuple args ->
+        let f i patt = add_patt (base_occ @ [i]) patt in
+        List.iteri f args
+      | _ -> add_patt base_occ patt
+  in
+  List.iter get_occs_of_patt patts;
+
+  (* let p scrut =
+    "e" :: List.map string_of_int scrut
+    |> String.concat "."
+    |> print_endline
+  in
+  List.iter p !occurances; *)
+  
+  !occurances, [patts] *)
+  [base_occ], List.map (fun p -> [p]) patts
 
 let initial cases =
   let patts, acts = List.split cases in
+  let occs, patts = preprocess_patterns [] patts in
   {
-    occurances = [[]];
-    rows = List.map (fun p -> [p]) patts;
+    occurances = occs;
+    rows = patts;
     actions = acts;
   }
 
@@ -71,6 +111,8 @@ let swap_to_refutable_column mat =
     rows = List.map swap mat.rows;
     actions = mat.actions;
   }
+
+
 
 let print mat =
   let module B = PrintBox in

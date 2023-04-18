@@ -33,9 +33,17 @@ let rec print_patt_node' i node =
     | Tpat_variable n -> pt i ("Tpat_variable " ^ n) typ span;
     | Tpat_literal l ->
       pt i ("Tpat_literal " ^ show_literal l) typ span;
+    | Tpat_construct (c, args) ->
+      pt i ("Ppat_construct " ^ Ident.to_string c.item) typ span;
+      List.iter (print_patt_node' (i + 1)) args 
     | Tpat_tuple patts ->
       pt i "Tpat_tuple" typ span;
       List.iter (print_patt_node' (i + 1)) patts
+
+let rec print_case' i (patt, expr) =
+  p i "<case>" (Span.concat_spans patt.span expr.span);
+  print_patt_node' (i + 1) patt;
+  print_expr_node' (i + 1) expr
 
 and print_expr_node' i node =
   let {span; item; typ} = node in
@@ -55,6 +63,15 @@ and print_expr_node' i node =
       print_patt_node' (i + 1) vb_patt;
       print_expr_node' (i + 1) vb_expr
   
+    | Texp_match (scrut, cases) ->
+      p i "Texp_match" span;
+      print_expr_node' (i + 1) scrut;
+      List.iter (print_case' (i + 1)) cases
+
+    | Texp_switch cases ->
+      p i "Texp_switch" span;
+      List.iter (print_case' (i + 1)) cases
+
     | Texp_sequence (e1, e2) ->
       pt i "Texp_sequence" typ span;
       print_expr_node' (i + 1) e1;

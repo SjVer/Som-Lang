@@ -43,7 +43,6 @@ and print_expr' ppf = function
       (kw "match")
       print_atom' scrut
       (pp_list print_case') cases
-
   | Expr_call (func, args) ->
     fpf ppf "@[<2>(%s@ %a@ %a)@]"
       (kw "call")
@@ -55,8 +54,8 @@ and print_expr' ppf = function
       print_expr' func
       (pp_list print_atom') args
   | Expr_if (cond, thenexpr, elseexpr) ->
-    fpf ppf "@[<2>(%s@ %a@ %s@ %a@ %s@ %a)@]"
-      (kw "if") print_atom' cond
+    fpf ppf "@[<2>(%s@ %a@ @[<2>%s@ %a@]@ @[<2>%s@ %a)@]@]"
+      (kw "if") print_expr' cond
       (kw "then") print_expr' thenexpr
       (kw "else") print_expr' elseexpr
   | Expr_sequence (e1, e2) ->
@@ -91,6 +90,8 @@ and print_expr' ppf = function
       (kw "eval")
       print_var' var
   | Expr_atom a -> print_atom' ppf a
+  | Expr_fail ->
+    fpf ppf "(%s)" (kw "fail")
 
 let print_stmt' ppf = function
   | Stmt_definition (name, expr) ->

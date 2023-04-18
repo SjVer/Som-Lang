@@ -18,6 +18,7 @@ let initial_env =
   |> add "Int" PInt 
   |> add "Chr" PChar
   |> add "Flt" PFloat
+  |> add "Str" PString
   |> add "Nil" PNil 
 
 let typecheck_toplevel env (node : Ast.toplevel Ast.node) =

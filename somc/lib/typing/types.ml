@@ -18,6 +18,7 @@ and prim =
   | PInt
   | PChar
   | PFloat
+  | PString
   | PNil
 
 and var =
@@ -32,6 +33,7 @@ let show_prim = function
   | PInt -> "$int"
   | PChar -> "$char"
   | PFloat -> "$float"
+  | PString -> "$string"
   | PNil -> "$nil"
 
 let show ty debug =

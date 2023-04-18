@@ -9,26 +9,15 @@ let check_alias_exists env name span =
     ignore (Env.lookup_alias env (Ident.Ident name))
   with Not_found ->
     let open Report.Error in
-    let what =
-      if String.get name 0 = '\'' then "type variable"
-      else "type alias"
-    in
-    let e = Type_error (Use_of_unbound (what, name)) in
+    let e = Type_error (Use_of_unbound ("type alias", name)) in
     Report.make_error e (Some span)
-    |> Report.report;
-    Report.exit ()
+    |> Report.report
+    (* Report.exit () *)
 
 let rec parse ?(tvars=SMap.empty) env level =
   let go = parse ~tvars env in
   function
     | Pty_forall (ps, t) ->
-      (* let add p =
-        let t = Types.new_var (level + 1) in
-        Hashtbl.add tvars p.item t
-      in
-      List.iter add ps;
-      let t' = parse env (level + 1) t.item in
-      List.iter (fun p -> Hashtbl.remove tvars p.item) ps; *)
       let f m var = SMap.add var (Types.new_var (level + 1)) m in
       let tvars = List.fold_left f tvars (nmapi ps) in
       parse ~tvars env (level + 1) t.item
@@ -36,9 +25,16 @@ let rec parse ?(tvars=SMap.empty) env level =
     | Pty_grouping t -> go level t.item
     | Pty_wildcard -> Types.new_var level
 
-    | Pty_variable n -> begin
+    | Pty_variable n ->
+      begin
         try SMap.find n.item tvars
-        with Not_found -> Types.new_var level
+        with Not_found ->
+          let open Report.Error in
+          let name = "'" ^ n.item in
+          let e = Type_error (Use_of_unbound ("type variable", name)) in
+          Report.make_error e (Some n.span)
+          |> Report.report;
+          TError
       end
 
     | Pty_effect t -> TEff (go level t.item)

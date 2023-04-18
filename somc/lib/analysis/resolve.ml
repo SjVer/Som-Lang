@@ -49,7 +49,7 @@ let report_path_invalidity ctx path =
     failwith "unreachable"
 
 let check_typedef_name span = function
-  | Ident.Ident ("Int" | "Flt" | "Nil" | "Str") ->
+  | Ident.Ident ("Int" | "Chr" | "Flt" | "Str" | "Nil") ->
     let e = Other_error (Other "cannot shadow builtin type") in
     Report.report (Report.make_error e (Some span))
   | _ -> ()
@@ -113,10 +113,20 @@ let rec bind_pattern ctx = function
   | Ppat_wildcard -> ctx
   | Ppat_variable n -> Context.bind_value ctx (Ident n) (Ident n)
   | Ppat_literal _ -> ctx
+  | Ppat_construct (_, args) ->
+    List.fold_left bind_pattern ctx (nmapi args) 
   | Ppat_tuple patts ->
     List.fold_left bind_pattern ctx (nmapi patts)
 
-let rec resolve_expr ctx expr =
+let rec resolve_cases ctx cases =
+  let resolve (patt, expr) =
+    let ctx = bind_pattern ctx patt.item in
+    let expr = resolve_expr ctx expr in
+    patt, expr
+  in
+  List.map resolve cases
+
+and resolve_expr ctx expr =
   let go = resolve_expr ctx in
   let item = match expr.item with
     | Pexp_grouping e -> Pexp_grouping (go e)
@@ -130,6 +140,11 @@ let rec resolve_expr ctx expr =
       let ctx' = bind_pattern ctx b.vb_patt.item in
       let vb_expr = resolve_expr ctx' b.vb_expr in
       Pexp_lambda {b with vb_expr}
+
+    | Pexp_match (scrut, cases) ->
+      Pexp_match (go scrut, resolve_cases ctx cases)
+    | Pexp_switch cases ->
+      Pexp_switch (resolve_cases ctx cases)
 
     | Pexp_sequence (e1, e2) -> Pexp_sequence (go e1, go e2)
     | Pexp_constraint (e, t) -> Pexp_constraint (go e, resolve_type ctx t)

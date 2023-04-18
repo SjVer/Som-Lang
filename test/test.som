@@ -1,1 +1,6 @@
-let foo = lam x; y -> 1
+type 'a Box of Box 'a
+
+let fib = switch
+  | 0 -> 0
+  | 1 -> 1
+  -- | n -> n

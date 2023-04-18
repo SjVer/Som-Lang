@@ -22,7 +22,7 @@ let free_vars =
       let vs = List.map in_atom args in
       go f @ of_list (List.map SSet.choose vs)
     | Expr_if (cond, thenexpr, elseexpr) ->
-      in_atom cond @ go thenexpr @ go elseexpr
+      go cond @ go thenexpr @ go elseexpr
     | Expr_sequence (e1, e2) -> go e1 @ go e2
     | Expr_tuple els ->
       let vs = List.map in_atom els in
@@ -68,8 +68,8 @@ let rec convert_expr = function
     else
       Expr_lambda (params, convert_expr body)
 
-  | Expr_if (cond, thenexpr, elseepxr) ->
-    Expr_if (cond, convert_expr thenexpr, convert_expr elseepxr)
+  | Expr_if (cond, texpr, eexpr) ->
+    Expr_if (convert_expr cond, convert_expr texpr, convert_expr eexpr)
   | Expr_sequence (e1, e2) ->
     Expr_sequence (convert_expr e1, convert_expr e2)
   | Expr_lazy e -> convert_expr e

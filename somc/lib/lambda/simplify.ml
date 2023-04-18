@@ -35,7 +35,7 @@ module LetAlias = struct
     | Expr_apply (f, args) ->
       Expr_apply (simplify_expr f, List.map check_atom args)
     | Expr_if (cond, texpr, eexpr) ->
-      Expr_if (check_atom cond,
+      Expr_if (simplify_expr cond,
         simplify_expr texpr,
         simplify_expr eexpr)
     | Expr_sequence (e1, e2) ->
@@ -88,7 +88,9 @@ module NestedApply = struct
     | Expr_apply (f, args) ->
       Expr_apply (simplify_expr f, args)
     | Expr_if (cond, texpr, eexpr) ->
-      Expr_if (cond, simplify_expr texpr, simplify_expr eexpr)
+      Expr_if (simplify_expr cond,
+        simplify_expr texpr,
+        simplify_expr eexpr)
     | Expr_sequence (e1, e2) ->
       Expr_sequence (simplify_expr e1, simplify_expr e2)
     | Expr_lazy expr ->
@@ -122,7 +124,9 @@ module ApplyToCall = struct
     | Expr_apply (f, args) ->
       Expr_apply (simplify_expr f, args)
     | Expr_if (cond, texpr, eexpr) ->
-      Expr_if (cond, simplify_expr texpr, simplify_expr eexpr)
+      Expr_if (simplify_expr cond,
+        simplify_expr texpr,
+        simplify_expr eexpr)
     | Expr_sequence (e1, e2) ->
       Expr_sequence (simplify_expr e1, simplify_expr e2)
     | Expr_lazy expr ->

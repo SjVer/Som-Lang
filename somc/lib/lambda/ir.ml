@@ -25,7 +25,7 @@ and expr =
   | Expr_match of atom * (int * expr) list
   | Expr_call of atom * atom list
   | Expr_apply of expr * atom list
-  | Expr_if of atom * expr * expr
+  | Expr_if of expr * expr * expr
   | Expr_sequence of expr * expr
   | Expr_tuple of atom list
   | Expr_object of int * atom list
@@ -33,6 +33,7 @@ and expr =
   | Expr_get of var * int
   | Expr_eval of var
   | Expr_atom of atom
+  | Expr_fail
 
 type statement =
   | Stmt_definition of ident * expr

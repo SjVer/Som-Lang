@@ -13,7 +13,7 @@ let set_ty typ n = {n with typ}
 
 (* inference functions *)
 
-let infer_magic =
+let infer_magic level =
   let open Symbols.Magic in
   (* TODO: expand on this *)
   let int = TName (Ident "Int") in
@@ -35,7 +35,9 @@ let infer_magic =
     | Magic_lt 
     | Magic_neq 
     | Magic_gteq
-    | Magic_lteq -> ints_fn 
+    | Magic_lteq -> ints_fn
+    | Magic_tageq ->
+      TFun (new_var level, TFun (int, int))
 
 let infer_literal =
   let name n = TName (Ident n) in
@@ -43,8 +45,17 @@ let infer_literal =
     | Pli_int i    -> Tli_int i,    name "Int"
     | Pli_char c   -> Tli_char c,   name "Chr"
     | Pli_float f  -> Tli_float f,  name "Flt"
-    | Pli_null     -> Tli_null,     name "Nil"
     | Pli_string s -> Tli_string s, name "Str"
+    | Pli_null     -> Tli_null,     name "Nil"
+
+let rec fold_application_type env span fty = function
+  | n :: ns ->
+    let param_ty, out_ty = match_fun_ty span fty in
+    unify env n.span param_ty n.typ;
+
+    let new_span = Span.concat_spans span n.span in
+    fold_application_type env new_span out_ty ns
+  | [] -> fty
 
 let rec infer_patt level env (patt : Ast.pattern node) =
   let env', item', typ = match patt.item with
@@ -56,6 +67,18 @@ let rec infer_patt level env (patt : Ast.pattern node) =
     | Ppat_literal l ->
       let l', t = infer_literal l in
       env, Tpat_literal l', t
+    
+    | Ppat_construct (i, args) ->
+      let constr_typ = instantiate level (Env.lookup_value env i.item) in
+      let f (env, patts') patt =
+        let env, patt' = infer_patt level env patt in
+        env, patts' @ [patt']
+      in
+      let env, args' = List.fold_left f (env, []) args in
+
+      let t = fold_application_type env patt.span constr_typ args' in
+      env, Tpat_construct (mk i.span constr_typ i.item, args'), t
+    
     | Ppat_tuple patts ->
       let f (env, patts') patt =
         let env, patt' = infer_patt level env patt in
@@ -67,25 +90,20 @@ let rec infer_patt level env (patt : Ast.pattern node) =
   in
   env', mk patt.span typ item'
 
-(* infer and unify the application of arguments. e.g.:
-    infer (A -> B -> C) [a, b]
-      calls infer (B -> C) [b]
-        returns C, [b']
-      returns C, [a', b'] *)
-let rec infer_and_unify_appl level env span fty = function
-  | (e : Ast.expr node) :: es ->
-    let param_ty, out_ty = match_fun_ty span fty in
-    let e' = infer_expr level env e in
-    unify env e'.span param_ty e'.typ;
+let rec infer_cases level env cases =
+  let scrut_t = new_var level in
+  let action_t = new_var level in
+  let infer (patt, expr) =
+    let env, patt' = infer_patt level env patt in
+    unify env patt'.span scrut_t patt'.typ;
 
-    let new_span = Span.concat_spans span e.span in
-    let next_out_ty, es' = infer_and_unify_appl
-      level env new_span out_ty es
-    in
-    next_out_ty, e' :: es'
-  | [] -> fty, []
+    let expr' = infer_expr level env expr in
+    unify env expr'.span action_t expr'.typ;
 
-(** infer an expression *)
+    patt', expr'
+  in
+  scrut_t, action_t, List.map infer cases
+
 and infer_expr level env exp =
   let {span = s; item = exp} : Ast.expr Ast.node = exp in
   match exp with
@@ -113,6 +131,17 @@ and infer_expr level env exp =
       let binding = {vb_patt = patt'; vb_expr = expr'} in
       mk s (TFun (patt'.typ, expr'.typ)) (Texp_lambda binding)
     
+    | Pexp_match (e, cases) ->
+      let e' = infer_expr level env e in
+      let scrut_t, action_t, cases' = infer_cases (level + 1) env cases in
+      unify env e'.span scrut_t e'.typ;
+      mk s action_t (Texp_match (e', cases'))
+    
+    | Pexp_switch cases ->
+      let scrut_t, action_t, cases' = infer_cases (level + 1) env cases in
+      let t = TFun (scrut_t, action_t) in
+      mk s t (Texp_switch cases')
+
     | Pexp_sequence (e1, e2) ->
       let e1' = infer_expr level env e1 in
       let e2' = infer_expr level env e2 in
@@ -132,7 +161,8 @@ and infer_expr level env exp =
     | Pexp_apply (f, es) ->
       assert (es <> []);
       let f' = infer_expr level env f in
-      let out_ty, es' = infer_and_unify_appl level env f'.span f'.typ es in
+      let es' = List.map (infer_expr level env) es in
+      let out_ty = fold_application_type env s f'.typ es' in
       mk s out_ty (Texp_apply (f', es'))
 
     | Pexp_tuple es ->
@@ -142,7 +172,8 @@ and infer_expr level env exp =
 
     | Pexp_construct (i, es) ->
       let constr_typ = instantiate level (Env.lookup_value env i.item) in
-      let out_ty, es' = infer_and_unify_appl level env i.span constr_typ es in
+      let es' = List.map (infer_expr level env) es in
+      let out_ty = fold_application_type env s constr_typ es' in
       mk s out_ty (Texp_construct (mk i.span constr_typ i.item, es'))
 
     | Pexp_literal l ->
@@ -156,7 +187,7 @@ and infer_expr level env exp =
     | Pexp_magic n ->
       begin try
         let m = Symbols.Magic.find n in
-        let t = infer_magic m in
+        let t = infer_magic level m in
         mk s t (Texp_magic m)
       with Not_found ->
         error (Use_of_invalid_magical n) s [] |> Report.report; 

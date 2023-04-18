@@ -15,6 +15,7 @@ type t =
   | Magic_neq
   | Magic_gteq
   | Magic_lteq
+  | Magic_tageq
 
 let names_assoc = [
   ("add",  Magic_add);
@@ -33,6 +34,7 @@ let names_assoc = [
   ("neq",  Magic_neq);
   ("gteq", Magic_gteq);
   ("lteq", Magic_lteq);
+  ("tageq",  Magic_tageq);
 ]
 
 let find str = List.assoc str names_assoc
