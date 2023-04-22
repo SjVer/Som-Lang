@@ -1,6 +1,9 @@
-type 'a Box of Box 'a
+-- type 'a Box of Box 'a
 
-let fib = switch
-  | 0 -> 0
-  | 1 -> 1
-  -- | n -> n
+-- let fib = switch
+--   | 0 -> 0
+--   | 1 -> 1
+--   -- | n -> n
+
+let foo x = x
+-- let bar = foo 1

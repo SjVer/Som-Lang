@@ -168,7 +168,9 @@ let () =
   parseargs ();
   Symbols.reset ();
   try
-    ignore (Pipeline.CodegenFile.call !C.args.file);
+    let llmod = Pipeline.CodegenFile.call !C.args.file in
+    print_newline ();
+    Codegen.print_module llmod;
     exit 0
   with
     | Report.Exit ->
@@ -177,4 +179,13 @@ let () =
     | Report.Error r ->
       Report.report r;
       failed_to_compile !C.args.file;
+      exit 1
+    | Invalid_argument msg ->
+      let msg = "an internal error occured: " ^ msg in
+      let note = 
+        "if this happens often, please open an issue at \n\
+        https://github.com/SjVer/Som-Lang/issues/new/."
+      in
+      Report.make_error Report.Error.(Other_error (Other msg)) None
+      |> Report.add_note note |> Report.report;
       exit 1

@@ -145,4 +145,5 @@ end
 let basic_simplify_pogram =
   _make_opt (fun prog -> prog
     |> LetAlias.simplify_program
-    |> NestedApply.simplify_program)
+    |> NestedApply.simplify_program
+    |> ApplyToCall.simplify_program)

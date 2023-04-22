@@ -9,6 +9,10 @@ let free_vars =
     | Atom_var (Var_local v) -> singleton v
     | _ -> empty
   in
+  let flatten setlist =
+    List.map elements setlist
+    |> List.flatten |> of_list
+  in
   let rec go = function
     | Expr_let (name, value, expr) ->
       let in_value = diff (go value) (singleton name) in
@@ -17,16 +21,16 @@ let free_vars =
       diff (go expr) (of_list params)
     | Expr_call (f, args) ->
       let vs = List.map in_atom args in
-      in_atom f @ of_list (List.map SSet.choose vs)
+      in_atom f @ flatten vs
     | Expr_apply (f, args) ->
       let vs = List.map in_atom args in
-      go f @ of_list (List.map SSet.choose vs)
+      go f @ flatten vs
     | Expr_if (cond, thenexpr, elseexpr) ->
       go cond @ go thenexpr @ go elseexpr
     | Expr_sequence (e1, e2) -> go e1 @ go e2
     | Expr_tuple els ->
       let vs = List.map in_atom els in
-      of_list (List.map SSet.choose vs)
+      flatten vs
     | Expr_lazy e -> go e
     | Expr_get (Var_local v, _)
     | Expr_eval (Var_local v) -> singleton v

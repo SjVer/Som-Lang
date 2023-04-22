@@ -4,7 +4,7 @@ type const =
   | Const_int of int
   | Const_float of float
   | Const_string of string
-  | Const_nil
+  | Const_null
   [@@deriving show]
 
 type var =

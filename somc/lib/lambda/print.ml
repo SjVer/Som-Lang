@@ -16,7 +16,7 @@ let print_atom' ppf = function
   | Atom_const (Const_int i) -> pp_print_int ppf i
   | Atom_const (Const_float f) -> pp_print_float ppf f
   | Atom_const (Const_string s) -> fpf ppf "\"%s\"" s
-  | Atom_const Const_nil -> fpf ppf "(%s)" (kw "null")
+  | Atom_const Const_null -> fpf ppf "(%s)" (kw "null")
   | Atom_var v -> print_var' ppf v
   | Atom_magic m ->
     let m' = Symbols.Magic.to_string m in

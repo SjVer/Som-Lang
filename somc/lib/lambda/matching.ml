@@ -7,7 +7,7 @@ let lower_literal = function
   | Tli_char c -> Const_int (Char.code c)
   | Tli_float f -> Const_float f
   | Tli_string s -> Const_string s
-  | Tli_null -> Const_nil
+  | Tli_null -> Const_null
 
 let find_local env v =
   match Env.find env (Ident v) with
@@ -214,10 +214,7 @@ let lower_cases env scrut cases =
   let cases = List.map f cases in
 
   let mat = initial cases in
-  print mat;
   let tree = generate_tree env mat in
-  (* pp_tree Format.std_formatter tree;
-  Format.print_newline (); *)
   compile_tree scrut tree
 
 let lower_binding env patt value body =
