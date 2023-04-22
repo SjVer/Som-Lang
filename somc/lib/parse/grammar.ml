@@ -214,8 +214,8 @@ and finish_variant_type p =
   in
   let args =
     try
-      let t = typ p in
-      let ts = many p (matsch SEMICOLON) typ in
+      let t = constructed_type true p in
+      let ts = many p (matsch SEMICOLON) (constructed_type false) in
       t :: ts
     with Backtrack -> []
   in

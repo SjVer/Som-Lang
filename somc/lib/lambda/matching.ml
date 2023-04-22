@@ -30,6 +30,13 @@ let rec preprocess_action env scrut patt expr =
       let f acc patt = preprocess_action env acc patt expr in
       List.fold_left f scrut patts
 
+let wildcard =
+  {
+    span = Span.dummy "<file>";
+    item = Tpat_wildcard;
+    typ = Typing.Types.TNever;
+  }
+
 (* generating trees
 
    sources:
@@ -69,7 +76,7 @@ let collect_signatures env mat =
   let get_signature patt =
     match [@ warning "-8"] patt.item with
       | Tpat_literal l ->
-        let m = function Tpat_literal l' when l' = l -> [] in
+        let m = function Tpat_literal l' when l' = l -> [wildcard] in
         add_sign m (Const (lower_literal l)) 0
       | Tpat_construct (i, args) ->
         let get_tag ident =
@@ -78,14 +85,15 @@ let collect_signatures env mat =
             | _ -> failwith "Tpat_construct ident no tag"
         in
         let tag = get_tag i in
-        let m =
-          function Tpat_construct (i, args)
-            when get_tag i = tag -> args
+        let m = function Tpat_construct (i, args)
+          when get_tag i = tag -> args
         in
         add_sign m (Tag tag) (List.length args)
       | Tpat_tuple args ->
         let arity = List.length args in
-        let m = function Tpat_tuple args -> args in
+        let m = function Tpat_tuple args
+          when List.length args = arity -> args
+        in
         add_sign m Default arity
       | _ -> ()
   in
@@ -96,22 +104,12 @@ let rec specialize env mat =
   (* get the relevant rows and their actions *)
   let get_rows_and_action matcher arity (row, action) =
     try
-      let wildcard =
-        {
-          span = Span.dummy "<file>";
-          item = Tpat_wildcard;
-          typ = Typing.Types.TNever;
-        }
+      let patts = match (hd row).item with
+        | Tpat_wildcard | Tpat_variable _ ->
+          List.init arity (fun _ -> wildcard)
+        | patt -> matcher patt
       in
-      if arity <> 0 then
-        let patts = match (hd row).item with
-          | Tpat_wildcard | Tpat_variable _ ->
-            List.init arity (fun _ -> wildcard)
-          | patt -> matcher patt
-        in
-        Some (patts @ tl row, action)
-      else
-        Some (wildcard :: tl row, action)
+      Some (patts @ tl row, action)
     with Match_failure _ -> None
   in
 
@@ -133,13 +131,8 @@ let rec specialize env mat =
     in
 
     let mat' = {occurances; rows; actions} in
-    print mat';
+    (* print mat'; *)
     let tree = generate_tree env mat' in
-
-    (* print mat';
-    pp_tree Format.std_formatter tree;
-    Format.print_newline ();
-    Format.print_newline (); *)
 
     check, scrut, tree
   in
