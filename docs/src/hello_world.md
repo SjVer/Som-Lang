@@ -8,8 +8,6 @@ from std::io use puts
 let main = puts "Hello, World!"
 ```
 
-[test](test.md)
-
 Let's break this down line by line.
 
 The code starts with an import statement. Since we want to output, or "print" a string, we'll need to import the function that allows us to do that. In this case, that's the function [`puts`]() from the [`io`]() module of the [standard library](standard_library.md).
