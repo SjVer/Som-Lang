@@ -86,6 +86,12 @@ and lower_expr env expr =
       let match' = Matching.lower_cases env scrut cases' in
       Expr_lambda ([r], match')
 
+    | Texp_if (cond, texp, eexp) ->
+      Expr_if (
+        lower_expr env cond,
+        lower_expr env texp,
+        lower_expr env eexp)
+
     | Texp_sequence (e1, e2) ->
       let e1' = lower_expr env e1 in
       let e2' = lower_expr env e2 in

@@ -16,18 +16,23 @@ let lltype_of_const ctx = function
 
 let llvalue_of_const ctx const =
   let lltype = lltype_of_const ctx const in
+  let open Int64 in
+  let encode_const i =
+     let i = logor (shift_left i 1) Int64.one in
+     Llvm.const_of_int64 lltype i false
+  in
   match const with
-    | Const_int i ->
-      let i = (i lsl 1) lor 0x1 in
-      Llvm.const_int lltype i
-    | Const_float f ->
-      (* let i = Int64.bits_of_float f in
-      let i = Int64.(logor (shift_left i 1) one) in 
-      Llvm.const_float lltype (Int64.float_of_bits i) *)
-      let i = (Obj.magic f lsl 1) lor 0x1 in
-      Llvm.const_float lltype (Obj.magic i)
-    | Const_string _s ->
-      failwith "TODO: llvalue_of_const Const_string"
-    | Const_null ->
-      let i = 0 lor 0x1 in
-      Llvm.const_int lltype i
+    | Const_int i -> encode_const (of_int i)
+    | Const_float f -> encode_const (bits_of_float f)
+    | Const_string s ->
+      let ptr = Llvm.build_global_stringptr s "str" ctx.builder in
+      let som_make_str =
+        let name = "_som_make_str" in
+        match Llvm.lookup_function name ctx.llmodule with
+          | None ->
+            let ty = Llvm.(function_type lltype [|type_of ptr|]) in
+            Llvm.declare_function name ty ctx.llmodule
+          | Some func -> func
+      in
+      Llvm.build_call som_make_str [|ptr|] "strval" ctx.builder
+    | Const_null -> encode_const zero

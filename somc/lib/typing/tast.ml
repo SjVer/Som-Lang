@@ -55,6 +55,7 @@ and expr =
   | Texp_lambda of value_binding
   | Texp_match of expr tnode * case list
   | Texp_switch of case list
+  | Texp_if of expr tnode * expr tnode * expr tnode
   | Texp_sequence of expr tnode * expr tnode
   | Texp_apply of expr tnode * expr tnode list
   | Texp_tuple of expr tnode list

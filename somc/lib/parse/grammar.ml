@@ -341,6 +341,17 @@ and keyword_expression p =
       let s = switch_s in
       mk s (Pexp_switch cases)
 
+    | IF ->
+      let start_s = (advance p).span in
+      let cond = sequence_expression p in
+      ignore (consume THEN "'then'" p);
+      let texp = sequence_expression p in
+      ignore (consume ELSE "'else'" p);
+      let eexp = sequence_expression p in
+      
+      let s = catspans start_s eexp.span in
+      mk s (Pexp_if (cond, texp, eexp))
+
     | _ -> sequence_expression p
 
 and sequence_expression p =

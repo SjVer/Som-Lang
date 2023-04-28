@@ -26,7 +26,11 @@ let rec codegen_expr vals ctx = function
 
   | Expr_call _ -> failwith "codegen_expr Expr_call"
   
-  | Expr_apply _ -> failwith "codegen_expr Expr_apply"
+  | Expr_apply (f, args) ->
+    let f' = codegen_expr vals ctx f in
+    (* TODO: actually make thunk *)
+    let args' = List.map (codegen_atom vals ctx) args in
+    Llvm.build_call f' (Array.of_list args') "thunk" ctx.builder
 
   | Expr_if (cond, texpr, eexpr) ->
     let curr_fn = Llvm.(block_parent (insertion_block ctx.builder)) in
@@ -49,7 +53,10 @@ let rec codegen_expr vals ctx = function
     Llvm.position_at_end pblock ctx.builder;
     Llvm.build_phi [texpr', tblock; eexpr', eblock] "phi" ctx.builder
 
-  | Expr_sequence _ -> failwith "codegen_expr Expr_sequence"
+  | Expr_sequence (e1, e2) ->
+    ignore (codegen_expr vals ctx e1);
+    codegen_expr vals ctx e2
+
   | Expr_tuple _ -> failwith "codegen_expr Expr_tuple"
   | Expr_object _ -> failwith "codegen_expr Expr_object"
   | Expr_lazy _ -> failwith "codegen_expr Expr_lazy"
@@ -82,9 +89,16 @@ let codegen_stmt vals ctx = function
     SMap.add name func vals
 
   | Stmt_definition (name, expr) ->
+    let fty = Value.function_lltype ctx 0 in
+    let func = Llvm.define_function name fty ctx.llmodule in
+    let entry = Llvm.entry_block func in
+    Llvm.position_at_end entry ctx.builder;
+
     let value = codegen_expr vals ctx expr in
-    let glob = Llvm.define_global name value ctx.llmodule in
-    SMap.add name glob vals
+    ignore (Llvm.build_ret value ctx.builder);
+    (* let glob = Llvm.define_global name value ctx.llmodule in *)
+    
+    SMap.add name func vals
 
   | Stmt_external (name, native_name) ->
     let fty = Llvm.function_type (Value.value_lltype ctx) [||] in

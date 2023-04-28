@@ -71,7 +71,13 @@ and print_expr_node' i node =
     | Texp_switch cases ->
       p i "Texp_switch" span;
       List.iter (print_case' (i + 1)) cases
-
+    
+    | Texp_if (cond, texp, eexp) ->
+      p i "Texp_if" span;
+      print_expr_node' (i + 1) cond;
+      print_expr_node' (i + 1) texp;
+      print_expr_node' (i + 1) eexp
+   
     | Texp_sequence (e1, e2) ->
       pt i "Texp_sequence" typ span;
       print_expr_node' (i + 1) e1;

@@ -113,6 +113,12 @@ and print_expr_node' i { span; item } =
       p i "Pexp_switch" span;
       List.iter (print_case' (i + 1)) cases
 
+    | Pexp_if (cond, texp, eexp) ->
+      p i "Pexp_if" span;
+      print_expr_node' (i + 1) cond;
+      print_expr_node' (i + 1) texp;
+      print_expr_node' (i + 1) eexp
+    
     | Pexp_sequence (e1, e2) ->
       p i "Pexp_sequence" span;
       print_expr_node' (i + 1) e1;

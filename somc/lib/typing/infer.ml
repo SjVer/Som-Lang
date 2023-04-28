@@ -142,6 +142,23 @@ and infer_expr level env exp =
       let t = TFun (scrut_t, action_t) in
       mk s t (Texp_switch cases')
 
+    | Pexp_if (cond, texp, eexp) ->
+      let cond' = infer_expr level env cond in
+      (* TODO: unify with boolean type? *)
+
+      let texp' = infer_expr level env texp in
+      let eexp' = infer_expr level env eexp in
+
+      begin
+        try unify ~do_raise:true env eexp.span texp'.typ eexp'.typ
+        with Report.Error r ->
+          let msg = ("if-branch has type " ^ show texp'.typ false) in
+          Report.add_related (`Note msg) texp.span r
+          |> Report.report
+      end;
+
+      mk s texp'.typ (Texp_if (cond', texp', eexp'))
+
     | Pexp_sequence (e1, e2) ->
       let e1' = infer_expr level env e1 in
       let e2' = infer_expr level env e2 in

@@ -76,6 +76,7 @@ and expr =
   | Pexp_lambda of value_binding
   | Pexp_match of expr node * case list
   | Pexp_switch of case list
+  | Pexp_if of expr node * expr node * expr node
   | Pexp_sequence of expr node * expr node
   | Pexp_constraint of expr node * typ node
   | Pexp_apply of expr node * expr node list

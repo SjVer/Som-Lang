@@ -5,7 +5,7 @@
 
 #include "str.h"
 
-value make_str(const char* str) {
+value _som_make_str(const char* str) {
 	ui32 size = strlen(str);
 	value val = (value)malloc(HEADER_SIZE + size);
 
