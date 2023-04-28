@@ -8,11 +8,9 @@ from std::io use puts
 let main = puts "Hello, World!"
 ```
 
-[test](test.md)
-
 Let's break this down line by line.
 
-The code starts with an import statement. Since we want to output, or "print" a string, we'll need to import the function that allows us to do that. In this case, that's the function [`puts`]() from the [`io`]() module of the [standard library](standard_library.md).
+The code starts with an import statement. Since we want to output, or "print" a string, we'll need to import the function that allows us to do that. In this case, that's the function [`puts`](stdlib/io.md#puts) from the [`io`](stdlib/io.md) module of the [standard library](stdlib/stdlib.md).
 
 Next is the [value binding](language/value-bindings.md) of `main`. Every Som program needs to define a value called `main`, which is where that program's execution starts. In this case, all that `main` does is use the imported `puts` function to print a string.
 
