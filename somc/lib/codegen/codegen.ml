@@ -13,7 +13,7 @@ let print_module m =
 (* from https://github.com/ocaml/ocaml/blob/trunk/lambda/translcore.ml#L191-L194 *)
 let rec cut n l =
   if n = 0 then ([],l) else
-  match l with [] -> invalid_arg "Codegen.cut"
+  match l with [] -> invalid_arg "codegen cut"
   | a::l -> let (l1,l2) = cut (n-1) l in (a::l1,l2)
 
 (* codegen stuff *)
@@ -22,7 +22,7 @@ let codegen_atom vals ctx = function
   | Atom_const c -> Value.llvalue_of_const ctx c
   | Atom_var (Var_local v)
   | Atom_var (Var_global v) -> SMap.find v vals
-  | Atom_var (Var_tag _) -> invalid_arg "codegen_atom Atom_var Var_tag"
+  | Atom_var (Var_tag _) -> invalid_arg "codegen_atom var_tag"
   | Atom_magic _ -> failwith "TODO: codegen_atom Atom_magic"
 
 let build_call_magic ctx magic args' =
@@ -51,19 +51,22 @@ let build_call_magic ctx magic args' =
       Llvm.build_call f args' "tageq"
   in
   build_f ctx.builder *)
-  let name = "_som_magic_" ^ to_string magic in 
-  let f = Value.get_ext_func ctx name (Array.map Llvm.type_of args') in
+  let f = Value.get_magic_func ctx magic in 
   Llvm.build_call f args' (to_string magic) ctx.builder 
 
 let rec codegen_expr vals ctx = function
-  | Expr_let _ -> failwith "codegen_expr Expr_let"
-  | Expr_lambda _ -> invalid_arg "codegen_expr Expr_lambda"
+  | Expr_let (v, value, expr) ->
+    let value' = codegen_expr vals ctx value in
+    let vals = SMap.add v value' vals in
+    codegen_expr vals ctx expr
+
+  | Expr_lambda _ -> invalid_arg "codegen_expr lambda"
   | Expr_match _ -> failwith "codegen_expr Expr_match"
 
   | Expr_call (Atom_magic m, args) ->
     let arity = Symbols.Magic.arity m in
     if List.length args <> arity then 
-      failwith "Codegen call magic invalid arity";
+      failwith "codegen_expr magic call invalid";
     let args' = List.map (codegen_atom vals ctx) args in
     build_call_magic ctx m args'
 
@@ -110,8 +113,8 @@ let rec codegen_expr vals ctx = function
   | Expr_lazy _ -> failwith "codegen_expr Expr_lazy"
   | Expr_get _ -> failwith "codegen_expr Expr_get"
   | Expr_eval _ -> failwith "codegen_expr Expr_eval"
-  | Expr_atom a -> codegen_atom vals ctx a
   
+  | Expr_atom a -> codegen_atom vals ctx a
   | Expr_fail ->
     let f = Value.get_ext_func ctx "_som_fail" [||] in
     Llvm.build_call f [||] "unreachable" ctx.builder

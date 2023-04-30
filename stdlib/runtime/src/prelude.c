@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "som_std.h"
+#include "std.h"
 
 value som_exit(value status) {
     exit(Val_value(status));

@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include "gc.h"
 #include "str.h"
 #include "io.h"
 
@@ -42,8 +43,8 @@ value som_openf(value path, value mode) {
     // TODO: error handling
 	int fd = open(Val_string(path), flags, 438);
 
-	value file = malloc(HEADER_SIZE + VALUE_SIZE * 3);
-	Val_field(file, FILE_PATH) = copy_str(path);
+	value file = alloc_object(3);
+	Val_field(file, FILE_PATH) = _som_copy_str(path);
 	Val_field(file, FILE_DESCR) = Unboxed_val(fd);
 	Val_field(file, FILE_MODE) = mode;
 
@@ -63,7 +64,7 @@ value som_readf(value file) {
 	char* buf = malloc(size + 1);
 	read(fd, buf, size);
 
-	value val = make_str(buf);
+	value val = _som_make_str(buf);
 	free(buf);
 
 	return val;
@@ -80,17 +81,17 @@ value som_putsf(value file, value str) {
 }
 
 CTOR() {
-	Val_field(som_stdin(), FILE_PATH) = make_str(STDIN_PATH);
+	Val_field(som_stdin(), FILE_PATH) = _som_make_str(STDIN_PATH);
 	Val_field(som_stdin(), FILE_DESCR) = Unboxed_val(STDIN_FILENO);
 	Val_field(som_stdin(), FILE_MODE) = malloc(HEADER_SIZE);
 	*Val_field(som_stdin(), FILE_MODE) = Hd_with_tag(0, IOMODE_READ);
 
-	Val_field(som_stdout(), FILE_PATH) = make_str(STDOUT_PATH);
+	Val_field(som_stdout(), FILE_PATH) = _som_make_str(STDOUT_PATH);
 	Val_field(som_stdout(), FILE_DESCR) = Unboxed_val(STDOUT_FILENO);
 	Val_field(som_stdout(), FILE_MODE) = malloc(HEADER_SIZE);
 	*Val_field(som_stdout(), FILE_MODE) = Hd_with_tag(0, IOMODE_APPEND);
 
-	Val_field(som_stderr(), FILE_PATH) = make_str(STDERR_PATH);
+	Val_field(som_stderr(), FILE_PATH) = _som_make_str(STDERR_PATH);
 	Val_field(som_stderr(), FILE_DESCR) = Unboxed_val(STDERR_FILENO);
 	Val_field(som_stderr(), FILE_MODE) = malloc(HEADER_SIZE);
 	*Val_field(som_stderr(), FILE_MODE) = Hd_with_tag(0, IOMODE_APPEND);

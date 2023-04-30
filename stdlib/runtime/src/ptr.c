@@ -1,6 +1,6 @@
 #include <malloc.h>
 
-#include "som_std.h"
+#include "std.h"
 
 value som_deref(value ptr) {
     return **(value**)Val_data_ptr(ptr);

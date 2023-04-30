@@ -3,7 +3,7 @@ let s:so_save = &g:so | let s:siso_save = &g:siso | setg so=0 siso=0 | setl so=-
 let v:this_session=expand("<sfile>:p")
 silent only
 silent tabonly
-cd ~/Coding/Languages/Som
+cd ~/Coding/Languages/Som/stdlib/runtime
 if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
@@ -13,14 +13,14 @@ if &shortmess =~ 'A'
 else
   set shortmess=aoO
 endif
-badd +20 somc/lib/codegen/value.ml
-badd +54 somc/lib/codegen/codegen.ml
-badd +28 somc/lib/symbols/magic.ml
-badd +2 somc/lib/codegen/magic.ml
+badd +60 include/som_value.h
+badd +2 include/io.h
+badd +6 src/io.c
+badd +9 include/str.h
 argglobal
 %argdel
-$argadd ./
-edit somc/lib/codegen/value.ml
+$argadd .
+edit src/io.c
 let s:save_splitbelow = &splitbelow
 let s:save_splitright = &splitright
 set splitbelow splitright
@@ -37,10 +37,10 @@ set winminheight=0
 set winheight=1
 set winminwidth=0
 set winwidth=1
-exe 'vert 1resize ' . ((&columns * 104 + 75) / 150)
-exe 'vert 2resize ' . ((&columns * 45 + 75) / 150)
+exe 'vert 1resize ' . ((&columns * 90 + 90) / 181)
+exe 'vert 2resize ' . ((&columns * 90 + 90) / 181)
 argglobal
-balt somc/lib/codegen/magic.ml
+balt include/io.h
 setlocal fdm=expr
 setlocal fde=nvim_treesitter#foldexpr()
 setlocal fmr={{{,}}}
@@ -49,35 +49,36 @@ setlocal fdl=99
 setlocal fml=1
 setlocal fdn=10
 setlocal fen
-let s:l = 20 - ((19 * winheight(0) + 18) / 37)
+let s:l = 6 - ((5 * winheight(0) + 21) / 43)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 20
-normal! 038|
-wincmd w
-argglobal
-if bufexists(fnamemodify("somc/lib/symbols/magic.ml", ":p")) | buffer somc/lib/symbols/magic.ml | else | edit somc/lib/symbols/magic.ml | endif
-if &buftype ==# 'terminal'
-  silent file somc/lib/symbols/magic.ml
-endif
-setlocal fdm=expr
-setlocal fde=nvim_treesitter#foldexpr()
-setlocal fmr={{{,}}}
-setlocal fdi=#
-setlocal fdl=99
-setlocal fml=1
-setlocal fdn=10
-setlocal fen
-let s:l = 30 - ((18 * winheight(0) + 18) / 37)
-if s:l < 1 | let s:l = 1 | endif
-keepjumps exe s:l
-normal! zt
-keepjumps 30
+keepjumps 6
 normal! 0
 wincmd w
-exe 'vert 1resize ' . ((&columns * 104 + 75) / 150)
-exe 'vert 2resize ' . ((&columns * 45 + 75) / 150)
+argglobal
+if bufexists(fnamemodify("include/str.h", ":p")) | buffer include/str.h | else | edit include/str.h | endif
+if &buftype ==# 'terminal'
+  silent file include/str.h
+endif
+balt src/io.c
+setlocal fdm=expr
+setlocal fde=nvim_treesitter#foldexpr()
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal fen
+let s:l = 9 - ((8 * winheight(0) + 21) / 43)
+if s:l < 1 | let s:l = 1 | endif
+keepjumps exe s:l
+normal! zt
+keepjumps 9
+normal! 011|
+wincmd w
+exe 'vert 1resize ' . ((&columns * 90 + 90) / 181)
+exe 'vert 2resize ' . ((&columns * 90 + 90) / 181)
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf

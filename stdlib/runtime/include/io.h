@@ -1,4 +1,4 @@
-#include "som_std.h"
+#include "std.h"
 
 #pragma once
 
@@ -21,7 +21,7 @@
 #define File_mode(v) Val_field(v, FILE_MODE)
 
 enum IOMode {
-	IOMODE_READ = TAG_MIN,
+	IOMODE_READ,
 	IOMODE_WRITE,
 	IOMODE_APPEND,
 	IOMODE_READ_WRITE,

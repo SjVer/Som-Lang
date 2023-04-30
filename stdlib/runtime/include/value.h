@@ -1,6 +1,10 @@
-#include "som_types.h"
-
 #pragma once
+
+#include <stdint.h>
+
+typedef uint8_t byte;
+typedef uint32_t ui32;
+typedef uint64_t ui64;
 
 /*
 	Value type:

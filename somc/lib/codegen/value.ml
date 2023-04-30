@@ -15,6 +15,12 @@ let get_ext_func ctx name args =
       Llvm.declare_function name ty ctx.llmodule
     | Some func -> func
 
+let get_magic_func ctx magic =
+  let open Symbols.Magic in
+  let name = "_som_magic_" ^ to_string magic in
+  let args = Array.make (arity magic) (value_lltype ctx) in
+  get_ext_func ctx name args
+
 let llvalue_of_const ctx const =
   let lltype = value_lltype ctx in
   let open Int64 in
