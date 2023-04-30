@@ -37,6 +37,20 @@ let names_assoc = [
   ("tageq",  Magic_tageq);
 ]
 
+let arity = function
+  | Magic_add | Magic_sub
+  | Magic_mul | Magic_div
+  | Magic_rem
+  | Magic_and | Magic_or
+  | Magic_eq  | Magic_neq
+  | Magic_gt  | Magic_gteq
+  | Magic_lt  | Magic_lteq
+  | Magic_tageq -> 2
+  
+  | Magic_abs | Magic_neg
+  | Magic_not -> 1
+  
+
 let find str = List.assoc str names_assoc
 
 let to_string m =
