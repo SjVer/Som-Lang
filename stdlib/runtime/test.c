@@ -22,10 +22,10 @@ int main() {
 	// printf("arr: %p\n", arr);
 
 
-	heap_alloc(1024 * 9);
-	printf("\n");
-	heap_alloc(1024);
-
+	for (int i = 0; i < 10; i++) {
+		printf("\n");
+		heap_alloc(1024);
+	}
 	
 	// som_heap_free(arr);
 

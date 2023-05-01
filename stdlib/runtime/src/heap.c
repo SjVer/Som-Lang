@@ -5,6 +5,8 @@
 #include "std.h"
 #include "heap.h"
 
+#define DEBUG_HEAP_CHECKS
+
 #ifdef DEBUG_HEAP
 #	define Debug(...) printf("=== HEAP === " __VA_ARGS__)
 #	define Check_heap() s_check_heap()
@@ -134,13 +136,20 @@ chunk_hd* s_get_best_fit(heap_bin* bin, size size) {
 void s_check_heap() {
 #ifdef DEBUG_HEAP_CHECKS
 	Debug("checking heap\n");
-	Debug("  chunks: %ld (including wilderness)\n", heap.chunk_count);
+	Debug("  chunks: %ld (including wilderness)\n", s_heap.chunk_count);
 	Debug("  used: %ld/%ld bytes (%ld free)\n",
-		heap.used, heap.end - heap.start, heap.size - heap.used);
+		s_heap.used, s_heap.end - s_heap.start, s_heap.size - s_heap.used);
 #endif
-	
-	if (s_heap.end - s_heap.start != s_heap.size) Fail(HEAP_CORR_MSG);
+#define Check(cond, what) if (! (cond)) Fail(HEAP_CORR_MSG " (invalid " what ")");
 
+	Check(s_heap.end - s_heap.start == s_heap.size, "bounds");
+	Check(s_heap.size >= HEAP_MIN_SIZE && s_heap.size <= HEAP_MAX_SIZE, "size");
+	Debug("  expecting wilderness footer at: %p\n", s_heap.end - sizeof(chunk_ft));
+	chunk* w = s_get_wilderness();
+	Debug("  wilderness at: %p\n", w);
+	Check(w && s_get_footer(w)->header == w, "wilderness");
+
+#undef Check
 #ifdef DEBUG_HEAP_CHECKS
 	Debug("  heap OK\n");
 #endif
@@ -149,14 +158,42 @@ void s_check_heap() {
 void s_grow_heap() {
 	Debug("growing heap\n");
 
+	// keep track of the wilderness bc its footer
+	// will no longer be at the end after realloc
+	chunk* wilderness = s_get_wilderness();
+
+	// check new size
 	size new_size = s_heap.size + HEAP_GROW_SIZE;
 	if (new_size > HEAP_MAX_SIZE) Fail(OUT_OF_MEM_MSG);
 
+	// reallocate heap
 	s_heap.start = (long)realloc((void*)s_heap.start, new_size);
 	if (s_heap.start == 0) Fail_errno();
-	
 	s_heap.end = s_heap.start + new_size;
 	s_heap.size = new_size;
+
+	/*
+		FIXME:
+
+			right now the new wilderness footer just isn't in
+			the correct spot (the wilderness header should not
+			have moved, so we can assume it's in its correct
+			place).
+
+			the deviation seems to have something to do with
+			the allocated size of an allocation that triggers
+			a heap growth, but i'm not sure how or why that'd be.
+
+			maybe consult the rubber duck?
+	*/
+	
+	// resize wilderness
+	printf("%p: %ld -> ", wilderness, wilderness->size);
+	wilderness->size += HEAP_GROW_SIZE;
+	s_create_footer(wilderness);
+	printf("%p: %ld\n", s_get_wilderness(), wilderness->size);
+	Debug("  new wilderness footer: %p\n", s_get_footer(wilderness));
+	Debug("  new wilderness: %p\n", s_get_footer(wilderness)->header);
 
 	Debug("  heap grown %d bytes\n", HEAP_GROW_SIZE);
 	Check_heap();
@@ -173,23 +210,25 @@ void _som_init_heap() {
 	memset(s_heap.bins, 0, sizeof(heap_bin) * HEAP_BIN_COUNT);
 
 	// initially, the heap is one big wilderness
-	chunk* init_wilderness = malloc(HEAP_INIT_SIZE);
-	if (init_wilderness == NULL) Fail_errno();
-	memset(init_wilderness, 0, HEAP_INIT_SIZE);
+	void* region = malloc(HEAP_INIT_SIZE);
+	if (region == NULL) Fail_errno();
+	memset(region, 0, HEAP_INIT_SIZE);
 
-	init_wilderness->free = true;
-	init_wilderness->size = HEAP_INIT_SIZE - OVERHEAD;
-	s_create_footer(init_wilderness);
+	chunk* wilderness = (chunk_hd*)region;
+	wilderness->free = true;
+	wilderness->size = HEAP_INIT_SIZE - OVERHEAD;
+	s_create_footer(wilderness);
 
-	s_add_to_bin(s_find_bin(init_wilderness->size), init_wilderness);
+	s_add_to_bin(s_find_bin(wilderness->size), wilderness);
 
-	s_heap.start = (long)init_wilderness;
-	s_heap.end = (long)init_wilderness + HEAP_INIT_SIZE;
+	s_heap.start = (long)region;
+	s_heap.end = (long)region + HEAP_INIT_SIZE;
 	s_heap.size = HEAP_INIT_SIZE;
 	s_heap.used = 0;
 	s_heap.chunk_count = 1;
 
 	Debug("initialized heap (%d bytes)\n", HEAP_INIT_SIZE);
+	Debug("  overhead: %ld bytes\n", OVERHEAD);
 	Check_heap();
 }
 
@@ -201,13 +240,7 @@ void _som_free_heap() {
 void* _som_heap_alloc(size size) {
 	Check_heap();
 	Debug("allocating %ld bytes\n", size);
-
-	// TEMPORARY: grow the heap if needed
-	if (s_heap.size - s_heap.used <= size) {
-		printf("=== HEAP ===" "  heap grow needed\n");
-		s_grow_heap();
-		printf("=== HEAP ===" "  heap grow done\n");
-	}
+	if (size > HEAP_MAX_ALLOC) Fail("invalid allocation size");
 
 	// find a probably correct bin
 	heap_bin* bin = s_find_bin(size);
@@ -236,6 +269,8 @@ void* _som_heap_alloc(size size) {
 		split->free = true;
 		s_create_footer(split);
 
+		Debug("  split chunk %p (%ld bytes)\n", split, split->size);
+
 		// add it to its bin
 		s_add_to_bin(s_find_bin(split->size), split);
 
@@ -250,8 +285,16 @@ void* _som_heap_alloc(size size) {
 
 	// determine if the heap should grow or shrink
 	chunk_hd* wilderness = s_get_wilderness();
-	if (wilderness->size < HEAP_MIN_WILDERNESS) s_grow_heap();
-	else if (wilderness->size > HEAP_MAX_WILDERNESS) s_shrink_heap();
+	if (wilderness->size < HEAP_MIN_WILDERNESS) {
+		Debug("  wilderness too small (%ld/%d bytes)\n",
+			wilderness->size, HEAP_MIN_WILDERNESS);
+		s_grow_heap();
+	}
+	else if (wilderness->size > HEAP_MAX_WILDERNESS) {
+		Debug("  wilderness too large (%ld/%d bytes)\n",
+			wilderness->size, HEAP_MAX_WILDERNESS);
+		s_shrink_heap();
+	}
 
 	if (chunk == wilderness) Fail(HEAP_CORR_MSG);
 	else s_heap.used += size + OVERHEAD;
