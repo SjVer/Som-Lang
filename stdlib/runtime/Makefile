@@ -1,6 +1,6 @@
 CC = /usr/bin/clang
 
-DEFS = STDIN_PATH='"/dev/stdin"' STDOUT_PATH='"/dev/stdout"' STDERR_PATH='"/dev/stderr"'
+DEFS = STDIN_PATH='"/dev/stdin"' STDOUT_PATH='"/dev/stdout"' STDERR_PATH='"/dev/stderr"' DEBUG_HEAP
 LDFLAGS = -shared
 CXXFLAGS = -fPIC $(addprefix -D,$(DEFS))
 EXT = .c
@@ -30,12 +30,21 @@ $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT) | makedirs
 	@$(CC) $(CXXFLAGS) -I$(INCDIR) -o $@ -c $< -fmodule-name=std/$(notdir $(<:$(EXT)=.som))
 	@printf "\b\b done!\n"
 
+	@# mangle som_ names
 	@for s in $$(nm $@ | grep -oP 'som_\w+'); \
 	do \
 		dest=$${s/som_/_som_std_$(notdir $(basename $<))_}; \
-		# printf "       - renaming $$s to $$dest\n"; \
+		# printf "  renaming $$s to $$dest\n"; \
 		objcopy --redefine-sym $$s="$$dest" $@; \
-	done \
+	done
+
+	@# mangle s_ names
+	@for s in $$(nm $@ | grep -oP 's_\w+'); \
+	do \
+		dest=$${s/s_/_som_std_$(notdir $(basename $<))___}; \
+		# printf "  renaming $$s to $$dest\n"; \
+		objcopy --redefine-sym $$s="$$dest" $@; \
+	done
 
 	$(eval OBJCOUNT = $(filter-out $(word 1,$(OBJCOUNT)),$(OBJCOUNT)))
 

@@ -20,7 +20,7 @@
 #define File_descr(v) Val_field(v, FILE_DESCR)
 #define File_mode(v) Val_field(v, FILE_MODE)
 
-enum IOMode {
+enum {
 	IOMODE_READ,
 	IOMODE_WRITE,
 	IOMODE_APPEND,

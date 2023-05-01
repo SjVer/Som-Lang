@@ -14,7 +14,7 @@ value _som_make_str(const char* str) {
 	return val;
 }
 
-value copy_str(value str) {
+value _som_copy_str(value str) {
 	ui32 size = Hd_payload(*str);
 	value new_str = (value)malloc(HEADER_SIZE + size);
 

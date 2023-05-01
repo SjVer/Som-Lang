@@ -16,7 +16,7 @@ typedef uint64_t ui64;
 
 	Object header structure:
 		00-07: tag (1 byte)
-		08-15: gc/value info (1 byte)
+		08-15: gc status (1 byte)
 		16-30: padding (2 bytes)
 		31-63: payload (4 bytes)
 
@@ -46,22 +46,27 @@ typedef ui64 header;
 #define HEADER_SIZE 8
 
 #define HD_T_MASK ((1ull << 8) - 1ull)
-#define HD_I_MASK (((1ull << 8) - 1ull) << 8)
+#define HD_S_MASK (((1ull << 8) - 1ull) << 8)
 #define HD_P_MASK (((1ull << 32) - 1ull) << 32)
 
 #define Hd_tag(h) ((byte)((h) & HD_T_MASK))
 #define Hd_with_tag(h, t) (((h) & ~HD_T_MASK) | (t))
 
-#define Hd_info(h) ((byte)(((h) & HD_I_MASK) >> 8))
-#define Hd_with_info(h, i) (((h) & ~HD_I_MASK) | (header)(i) << 8)
+#define Hd_status(h) ((byte)(((h) & HD_S_MASK) >> 8))
+#define Hd_with_status(h, i) (((h) & ~HD_S_MASK) | (header)(i) << 8)
 
 #define Hd_payload(h) ((ui32)(((h) & HD_P_MASK) >> 32))
 #define Hd_with_payload(h, p) (((h) & ~HD_P_MASK) | (header)(p) << 32)
 
-#define TAG_MAX 251
-#define TAG_RAW_DATA 252
+#define TAG_MAX 250
+#define TAG_RAW_DATA 251
+#define TAG_RECORD 252
 #define TAG_TUPLE 253
 #define TAG_THUNK 254
+
+#define STATUS_DEAD 0x00
+#define STATUS_DYING 0x01
+#define STATUS_ALIVE 0x02
 
 #pragma endregion
 
