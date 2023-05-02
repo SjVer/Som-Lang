@@ -1,5 +1,8 @@
 .vscode/
 
+**/.nvimrc
+**/session.vim
+
 **/_build/
 **/*.install
 **/out/
