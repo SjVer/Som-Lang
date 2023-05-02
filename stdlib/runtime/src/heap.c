@@ -139,15 +139,24 @@ void s_check_heap() {
 	Debug("  chunks: %ld (including wilderness)\n", s_heap.chunk_count);
 	Debug("  used: %ld/%ld bytes (%ld free)\n",
 		s_heap.used, s_heap.end - s_heap.start, s_heap.size - s_heap.used);
+	Debug("  overhead: %ld bytes (%ld * %ld bytes)\n",
+		s_heap.chunk_count * OVERHEAD, s_heap.chunk_count, OVERHEAD);
 #endif
 #define Check(cond, what) if (! (cond)) Fail(HEAP_CORR_MSG " (invalid " what ")");
 
+	// basic checks
 	Check(s_heap.end - s_heap.start == s_heap.size, "bounds");
 	Check(s_heap.size >= HEAP_MIN_SIZE && s_heap.size <= HEAP_MAX_SIZE, "size");
-	Debug("  expecting wilderness footer at: %p\n", s_heap.end - sizeof(chunk_ft));
-	chunk* w = s_get_wilderness();
-	Debug("  wilderness at: %p\n", w);
-	Check(w && s_get_footer(w)->header == w, "wilderness");
+
+	// wilderness footer
+	chunk_ft* wild_ft = (chunk_ft*)(s_heap.end - sizeof(chunk_ft));
+		Debug("  expecting wilderness footer at: %p\n", wild_ft);
+		Debug("  found wilderness footer at: %p\n", s_get_footer(s_get_wilderness()));
+	Check(wild_ft == s_get_footer(s_get_wilderness()), "wilderness footer");
+	chunk* wild = s_get_wilderness();
+		Debug("  wilderness at: %p (%ld bytes)\n", wild, wild->size);
+	Check(wild && wild_ft->header == wild, "wilderness");
+	Check(wild->size == s_heap.size - s_heap.used, "wilderness size");
 
 #undef Check
 #ifdef DEBUG_HEAP_CHECKS
@@ -156,7 +165,7 @@ void s_check_heap() {
 }
 
 void s_grow_heap() {
-	Debug("growing heap\n");
+	Debug("growing heap (%d bytes)\n", HEAP_GROW_SIZE);
 
 	// keep track of the wilderness bc its footer
 	// will no longer be at the end after realloc
@@ -167,40 +176,64 @@ void s_grow_heap() {
 	if (new_size > HEAP_MAX_SIZE) Fail(OUT_OF_MEM_MSG);
 
 	// reallocate heap
+	long old_start = s_heap.start;
 	s_heap.start = (long)realloc((void*)s_heap.start, new_size);
 	if (s_heap.start == 0) Fail_errno();
+
+	// THIS IS THE PROBLEM: the heap moves, invalidating pointers to it
+	Debug("  heap start: %p -> %p\n", (void*)old_start, (void*)s_heap.start);
+	if (s_heap.start != old_start) Fail("heap moved");
+
 	s_heap.end = s_heap.start + new_size;
 	s_heap.size = new_size;
+	Debug("  new heap size: %ld bytes\n", s_heap.size);
+	Debug("  now free: %ld bytes\n", s_heap.size - s_heap.used);
 
-	/*
-		FIXME:
-
-			right now the new wilderness footer just isn't in
-			the correct spot (the wilderness header should not
-			have moved, so we can assume it's in its correct
-			place).
-
-			the deviation seems to have something to do with
-			the allocated size of an allocation that triggers
-			a heap growth, but i'm not sure how or why that'd be.
-
-			maybe consult the rubber duck?
-	*/
-	
 	// resize wilderness
-	printf("%p: %ld -> ", wilderness, wilderness->size);
 	wilderness->size += HEAP_GROW_SIZE;
-	s_create_footer(wilderness);
-	printf("%p: %ld\n", s_get_wilderness(), wilderness->size);
-	Debug("  new wilderness footer: %p\n", s_get_footer(wilderness));
-	Debug("  new wilderness: %p\n", s_get_footer(wilderness)->header);
+	chunk_ft* wilderness_ft = (chunk_ft*)(s_heap.end - sizeof(chunk_ft));
+	wilderness_ft->header = wilderness;
 
-	Debug("  heap grown %d bytes\n", HEAP_GROW_SIZE);
+	Debug("  wilderness remains at %p\n", wilderness);
+	Debug("  wilderness size: %ld bytes\n", wilderness->size);
+	Debug("  new wilderness footer: %p\n", wilderness_ft);
+	Debug("                         %p\n", wilderness + sizeof(chunk_hd) + wilderness->size);
+	Debug("                         %p\n", s_get_footer(s_get_wilderness()));
+
+	// // resize wilderness
+	// wilderness->size += HEAP_GROW_SIZE;
+	// ((chunk_ft*)(s_heap.end - sizeof(chunk_ft)))->header = wilderness;
+
+	// // s_create_footer(wilderness);
+	// Debug("  new wilderness footer: %p\n", (chunk_ft*)(s_heap.end - sizeof(chunk_ft)));
+	// Debug("                         %p\n", s_get_footer(wilderness));
+
+	// Debug("  wilderness after grow: %p\n", s_get_wilderness());
+	// Debug("  new wilderness size: %ld bytes\n", s_get_wilderness()->size);
+	// Debug("                       %ld bytes\n", s_heap.end - (long)wilderness - OVERHEAD);
+	// // Debug("  new wilderness footer: %p\n", s_get_footer(wilderness));
+	// // Debug("  new wilderness: %p\n", s_get_footer(wilderness)->header);
+
 	Check_heap();
 }
 
 void s_shrink_heap() {
 	// TODO
+}
+
+void s_resize_wilderness() {
+	chunk* wilderness = s_get_wilderness();
+
+	if (wilderness->size < HEAP_MIN_WILDERNESS) {
+		Debug("wilderness too small (%ld/%d bytes)\n",
+			wilderness->size, HEAP_MIN_WILDERNESS);
+		s_grow_heap();
+	}
+	else if (wilderness->size > HEAP_MAX_WILDERNESS) {
+		Debug("wilderness too large (%ld/%d bytes)\n",
+			wilderness->size, HEAP_MAX_WILDERNESS);
+		s_shrink_heap();
+	}
 }
 
 // =========================================
@@ -224,7 +257,7 @@ void _som_init_heap() {
 	s_heap.start = (long)region;
 	s_heap.end = (long)region + HEAP_INIT_SIZE;
 	s_heap.size = HEAP_INIT_SIZE;
-	s_heap.used = 0;
+	s_heap.used = OVERHEAD; // used by wilderness
 	s_heap.chunk_count = 1;
 
 	Debug("initialized heap (%d bytes)\n", HEAP_INIT_SIZE);
@@ -280,30 +313,19 @@ void* _som_heap_alloc(size size) {
 		s_create_footer(chunk);
 	}
 
-	chunk->free = false;
 	s_remove_from_bin(bin, chunk);
-
-	// determine if the heap should grow or shrink
-	chunk_hd* wilderness = s_get_wilderness();
-	if (wilderness->size < HEAP_MIN_WILDERNESS) {
-		Debug("  wilderness too small (%ld/%d bytes)\n",
-			wilderness->size, HEAP_MIN_WILDERNESS);
-		s_grow_heap();
-	}
-	else if (wilderness->size > HEAP_MAX_WILDERNESS) {
-		Debug("  wilderness too large (%ld/%d bytes)\n",
-			wilderness->size, HEAP_MAX_WILDERNESS);
-		s_shrink_heap();
-	}
-
-	if (chunk == wilderness) Fail(HEAP_CORR_MSG);
-	else s_heap.used += size + OVERHEAD;
-
+	chunk->free = false;
 	chunk->next = NULL;
 	chunk->prev = NULL;
+	
+	if (chunk == s_get_wilderness()) Fail(HEAP_CORR_MSG);
+	else s_heap.used += size + OVERHEAD;
 
+	// keep the wilderness sized properly
+	s_resize_wilderness();
+	
 	void* ptr = (void*)chunk + sizeof(chunk_hd);
-	Debug("  returned address: %p (%ld bytes)\n", ptr, chunk->size);
+	Debug("  returned address: %p\n", ptr);
 	Debug("  done\n");
 	return ptr;
 }
