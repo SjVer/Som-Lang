@@ -1,14 +1,13 @@
-#define JEMALLOC_NO_RENAME
-#include <jemalloc/jemalloc.h>
+#include "../jemalloc/include/jemalloc/jemalloc-som.h"
 
 #include "memory.h"
 
 void* som_heap_malloc(size size) {
-	return je_malloc(size);
+	return som_je_malloc(size);
 }
 
 void som_heap_free(void* ptr) {
-	je_free(ptr);
+	som_je_free(ptr);
 }
 
 value som_heap_malloc_object(size extra_size, byte tag) {

@@ -4,16 +4,13 @@
 
 #include "value.h"
 
-#define CTOR void __attribute__((constructor)) som_CTOR
-#define DTOR void __attribute__((destructor)) som_DTOR
+#define __PASTE(a, b) a ## b
+#define _PASTE(a, b) __PASTE(a, b)
+#define _CTOR(c) void __attribute__((constructor)) _PASTE(som_CTOR_, c)
+#define _DTOR(c) void __attribute__((destructor)) _PASTE(som_CTOR_, c)
 
-// #ifdef TAG_ASSERTIONS
-// #include <assert.h>
-// #define Assert_tag(value, tag) \
-// 	assert(!Is_unboxed(value) && Hd_tag(*value) == tag)
-// #else
-// #define Assert_tag(value, tag)
-// #endif
+#define CTOR _CTOR(__COUNTER__)
+#define DTOR _DTOR(__COUNTER__)
 
 void som_fail(const char* message);
 void som_fail_errno(int errnum);
