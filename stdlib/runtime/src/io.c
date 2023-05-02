@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "heap.h"
+#include "memory.h"
 #include "str.h"
 #include "io.h"
 
@@ -11,19 +11,19 @@ object stdin_obj;
 object stdout_obj;
 object stderr_obj;
 
-value som_stdin() {
+value som_io_stdin() {
 	return Boxed_value(stdin_obj);
 }
 
-value som_stdout() {
+value som_io_stdout() {
 	return Boxed_value(stdout_obj);
 }
 
-value som_stderr() {
+value som_io_stderr() {
 	return Boxed_value(stderr_obj);
 }
 
-value som_openf(value path, value mode) {
+value som_io_openf(value path, value mode) {
     int flags;
     switch (Hd_tag(*mode)) {
         case IOMODE_READ:
@@ -43,20 +43,20 @@ value som_openf(value path, value mode) {
     // TODO: error handling
 	int fd = open(Val_string(path), flags, 438);
 
-	value file = _som_heap_alloc_object(3 * sizeof(value), TAG_RECORD);
-	Val_field(file, FILE_PATH) = _som_copy_str(path);
+	value file = som_heap_malloc_object(3 * sizeof(value), TAG_RECORD);
+	Val_field(file, FILE_PATH) = som_str_copy(path);
 	Val_field(file, FILE_DESCR) = Unboxed_val(fd);
 	Val_field(file, FILE_MODE) = mode;
 
     return file;
 }
 
-value som_closef(value file) {
+value som_io_closef(value file) {
 	close(Val_value(File_descr(file)));
 	return Null_val;
 }
 
-value som_readf(value file) {
+value som_io_readf(value file) {
 	int fd = Val_value(File_descr(file));
 	size_t size = lseek(fd, 0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
@@ -64,13 +64,13 @@ value som_readf(value file) {
 	char* buf = malloc(size + 1);
 	read(fd, buf, size);
 
-	value val = _som_make_str(buf);
+	value val = som_str_make(buf);
 	free(buf);
 
 	return val;
 }
 
-value som_putsf(value file, value str) {
+value som_io_putsf(value file, value str) {
 	int fd = Val_value(File_descr(file));
 
 	// TODO: check mode and errors
@@ -81,18 +81,18 @@ value som_putsf(value file, value str) {
 }
 
 CTOR() {
-	Val_field(som_stdin(), FILE_PATH) = _som_make_str(STDIN_PATH);
-	Val_field(som_stdin(), FILE_DESCR) = Unboxed_val(STDIN_FILENO);
-	Val_field(som_stdin(), FILE_MODE) = malloc(HEADER_SIZE);
-	*Val_field(som_stdin(), FILE_MODE) = Hd_with_tag(0, IOMODE_READ);
+	Val_field(som_io_stdin(), FILE_PATH) = som_str_make(STDIN_PATH);
+	Val_field(som_io_stdin(), FILE_DESCR) = Unboxed_val(STDIN_FILENO);
+	Val_field(som_io_stdin(), FILE_MODE) = malloc(HEADER_SIZE);
+	*Val_field(som_io_stdin(), FILE_MODE) = Hd_with_tag(0, IOMODE_READ);
 
-	Val_field(som_stdout(), FILE_PATH) = _som_make_str(STDOUT_PATH);
-	Val_field(som_stdout(), FILE_DESCR) = Unboxed_val(STDOUT_FILENO);
-	Val_field(som_stdout(), FILE_MODE) = malloc(HEADER_SIZE);
-	*Val_field(som_stdout(), FILE_MODE) = Hd_with_tag(0, IOMODE_APPEND);
+	Val_field(som_io_stdout(), FILE_PATH) = som_str_make(STDOUT_PATH);
+	Val_field(som_io_stdout(), FILE_DESCR) = Unboxed_val(STDOUT_FILENO);
+	Val_field(som_io_stdout(), FILE_MODE) = malloc(HEADER_SIZE);
+	*Val_field(som_io_stdout(), FILE_MODE) = Hd_with_tag(0, IOMODE_APPEND);
 
-	Val_field(som_stderr(), FILE_PATH) = _som_make_str(STDERR_PATH);
-	Val_field(som_stderr(), FILE_DESCR) = Unboxed_val(STDERR_FILENO);
-	Val_field(som_stderr(), FILE_MODE) = malloc(HEADER_SIZE);
-	*Val_field(som_stderr(), FILE_MODE) = Hd_with_tag(0, IOMODE_APPEND);
+	Val_field(som_io_stderr(), FILE_PATH) = som_str_make(STDERR_PATH);
+	Val_field(som_io_stderr(), FILE_DESCR) = Unboxed_val(STDERR_FILENO);
+	Val_field(som_io_stderr(), FILE_MODE) = malloc(HEADER_SIZE);
+	*Val_field(som_io_stderr(), FILE_MODE) = Hd_with_tag(0, IOMODE_APPEND);
 }

@@ -15,11 +15,11 @@
 // #define Assert_tag(value, tag)
 // #endif
 
-void _som_fail(const char* message);
-void _som_fail_errno(int errnum);
+void som_fail(const char* message);
+void som_fail_errno(int errnum);
 
 #define DEFAULT_FAIL_MSG "fatal error"
 
-#define Fail(message) (_som_fail(message))
-#define Just_fail() (_som_fail(DEFAULT_FAIL_MSG))
-#define Fail_errno() (_som_fail_errno(errno))
+#define Fail(message) (som_fail(message))
+#define Just_fail() (som_fail(DEFAULT_FAIL_MSG))
+#define Fail_errno() (som_fail_errno(errno))

@@ -1,0 +1,3 @@
+[submodule "stdlib/runtime/jemalloc"]
+	path = stdlib/runtime/jemalloc
+	url = https://github.com/jemalloc/jemalloc

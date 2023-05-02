@@ -27,10 +27,10 @@ enum {
 	IOMODE_READ_WRITE,
 };
 
-value som_stdin();
-value som_stdout();
-value som_stderr();
-value som_openf(value path, value mode);
-value som_closef(value file);
-value som_readf(value file);
-value som_putsf(value file, value str);
+value som_io_stdin();
+value som_io_stdout();
+value som_io_stderr();
+value som_io_openf(value path, value mode);
+value som_io_closef(value file);
+value som_io_readf(value file);
+value som_io_putsf(value file, value str);

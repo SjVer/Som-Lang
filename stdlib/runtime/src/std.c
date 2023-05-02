@@ -4,12 +4,12 @@
 
 #include "std.h"
 
-void _som_fail(const char* message) {
+void som_fail(const char* message) {
 	fprintf(stderr, "Fatal error: %s\n", message);
 	fflush(stderr);
 	_Exit(errno != 0 ? errno : 1);
 }
 
-void _som_fail_errno(int errnum) {
-	_som_fail(strerror(errnum));
+void som_fail_errno(int errnum) {
+	som_fail(strerror(errnum));
 }

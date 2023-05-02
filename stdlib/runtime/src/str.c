@@ -5,7 +5,7 @@
 
 #include "str.h"
 
-value _som_make_str(const char* str) {
+value som_str_make(const char* str) {
 	ui32 size = strlen(str);
 	value val = (value)malloc(HEADER_SIZE + size);
 
@@ -14,7 +14,7 @@ value _som_make_str(const char* str) {
 	return val;
 }
 
-value _som_copy_str(value str) {
+value som_str_copy(value str) {
 	ui32 size = Hd_payload(*str);
 	value new_str = (value)malloc(HEADER_SIZE + size);
 
@@ -23,12 +23,12 @@ value _som_copy_str(value str) {
 	return new_str;
 }
 
-value som_length(value str) {
+value som_str_length(value str) {
 	ui32 size = Hd_payload(*str);
 	return Unboxed_val(size);
 }
 
-value som_concat(value str1, value str2) {
+value som_str_concat(value str1, value str2) {
 	ui32 size = Hd_payload(*str1) + Hd_payload(*str2);
 	value new_str = (value)malloc(HEADER_SIZE + size);
 
