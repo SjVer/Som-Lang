@@ -69,7 +69,7 @@ module LowerFile = Query.Make(struct
   type r = Lambda.Ir.program
   let c file =
     let tast = TypecheckFile.call file in
-    if !Report.has_reported then Report.exit ();
+    if !Report.has_errored then Report.exit ();
 
     let program = Lambda.convert tast in
     if !C.args.dump_ir then Lambda.Print.print_program program;

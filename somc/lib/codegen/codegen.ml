@@ -1,6 +1,7 @@
 open Lambda.Ir
 open Context
 
+module Emit = Emit
 module Opt = Opt
 module Pass = Pass
 module SMap = Map.Make(String)
@@ -116,7 +117,7 @@ let rec codegen_expr vals ctx = function
   
   | Expr_atom a -> codegen_atom vals ctx a
   | Expr_fail ->
-    let f = Value.get_ext_func ctx "_som_fail" [||] in
+    let f = Value.get_ext_func ctx "som_fail" [||] in
     Llvm.build_call f [||] "unreachable" ctx.builder
 
 let codegen_stmt vals ctx = function

@@ -18,6 +18,10 @@ type args_t =
     force_tty: bool;
 
     file: string;
+    output: string option;
+    output_obj: bool;
+    dry_run: bool;
+
     dump_ast: bool;
     dump_rast: bool;
     dump_tast: bool;
@@ -29,7 +33,7 @@ type args_t =
 
     opt_level: [`On | `O0 | `O1 | `O2 | `O3 | `Os | `Oz];
     passes: string list;
-    
+    target: string option;
   }
 
 let args = ref {
@@ -39,6 +43,10 @@ let args = ref {
     force_tty = false;
     
     file = "";
+    output = None;
+    output_obj = false;
+    dry_run = false;
+
     dump_ast = false;
     dump_rast = false;
     dump_tast = false;
@@ -50,4 +58,5 @@ let args = ref {
 
     opt_level = `O3;
     passes = [];
+    target = None;
   }

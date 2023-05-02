@@ -65,12 +65,29 @@ let parseargs () =
     ~description:"Force TTY output behaviour"
     false in
 
-  (* output stuff *)
   let explain = optional_int
     ~long:"explain"
     ~placeholder:"CODE"
     ~description:"Explain the given error code"
     () in
+
+  (* file stuff *)
+  let output = optional_string
+    ~short:'o'
+    ~long:"output"
+    ~placeholder:"FILE"
+    ~description:"Output to FILE"
+    () in
+  let output_obj = flag
+    ~set_long:"output-obj"
+    ~description:"Output an object file"
+    false in
+  let dry_run = flag
+    ~set_long:"dry-run"
+    ~description:"Don't output any files"
+    false in
+
+  (* dump stuff *)
   let dump_ast = flag
     ~set_long:"dump-ast"
     ~description:"Dump the parsetree"
@@ -93,28 +110,33 @@ let parseargs () =
     false in
   
   (* parse stuff *)
-  let no_prelude = flag
-    ~set_long:"no-prelude"
-    ~description:"Don't implicitly include the prelude"
-    false in
   let search_dirs = list_string
     ~long:"include"
     ~short:'i'
     ~placeholder:"DIR"
     ~description:"add DIR to the search directories"
     () in
+  let no_prelude = flag
+    ~set_long:"no-prelude"
+    ~description:"Don't implicitly include the prelude"
+    false in
   
   (* codegen stuff *)
+  let opt_level = optional opt_typ
+    ~short:'O'
+    ~placeholder:"O3"
+    ~description:"Set optimization level"
+    () in
   let passes = list_string
     ~long:"pass"
     ~short:'p'
     ~placeholder:"PASS"
     ~description:"Run pass PASS on the llvm IR"
     () in
-  let opt_level = optional opt_typ
-    ~short:'O'
-    ~placeholder:"O3"
-    ~description:"Set optimization level"
+  let target = optional_string
+    ~long:"target"
+    ~placeholder:"TARGET"
+    ~description:"Target TARGET (for cross compilation)"
     () in
 
   (* unnamed args *)
@@ -144,17 +166,22 @@ let parseargs () =
     force_tty;
 
     file;
+    output;
+    output_obj;
+    dry_run;
+
     dump_ast;
     dump_rast;
     dump_tast;
     dump_ir;
     dump_llvm;
 
-    no_prelude;
     search_dirs;
+    no_prelude;
 
     opt_level=opt_level';
     passes;
+    target;
   }
 
 let failed_to_compile f =
@@ -171,6 +198,7 @@ let () =
     let llmod = Pipeline.CodegenFile.call !C.args.file in
     print_newline ();
     Codegen.print_module llmod;
+    Codegen.Emit.emit llmod;
     exit 0
   with
     | Report.Exit ->

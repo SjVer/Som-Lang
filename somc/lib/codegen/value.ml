@@ -17,7 +17,7 @@ let get_ext_func ctx name args =
 
 let get_magic_func ctx magic =
   let open Symbols.Magic in
-  let name = "_som_magic_" ^ to_string magic in
+  let name = "som_magic_" ^ to_string magic in
   let args = Array.make (arity magic) (value_lltype ctx) in
   get_ext_func ctx name args
 
@@ -33,6 +33,6 @@ let llvalue_of_const ctx const =
     | Const_float f -> encode_const (bits_of_float f)
     | Const_string s ->
       let ptr = Llvm.build_global_stringptr s "str" ctx.builder in
-      let som_make_str = get_ext_func ctx "_som_make_str" [|Llvm.type_of ptr|] in
+      let som_make_str = get_ext_func ctx "som_str_make" [|Llvm.type_of ptr|] in
       Llvm.build_call som_make_str [|ptr|] "strval" ctx.builder
     | Const_null -> encode_const zero

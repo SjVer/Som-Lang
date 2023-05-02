@@ -5,6 +5,7 @@ module Util = Util
 open ANSITerminal
 
 let has_reported = ref false
+let has_errored = ref false
 
 let enable_force_tty () = isatty := fun _ -> true
 
@@ -76,6 +77,9 @@ let report_normal r =
 
 let report r =
   has_reported := true;
+  match r.kind with
+    | `Error _ -> has_errored := true
+    | _ -> ();
   
   if Option.is_some r.span then
     reports := !reports @ [r];
@@ -84,3 +88,7 @@ let report r =
     if !Configs.Cli.args.compact then report_compact r
     else report_normal r;
   end
+
+let report_note msg =
+  make_note msg None
+  |> report
