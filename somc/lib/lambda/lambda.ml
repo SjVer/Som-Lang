@@ -9,5 +9,5 @@ let convert tast =
   |> Simplify.basic_simplify_pogram
   |> Lifting.lift_program
   |> Simplify.basic_simplify_pogram
-  |> Uncurry.uncurry_program
+  |> Simplify.Uncurry.uncurry_program
   |> Simplify.basic_simplify_pogram

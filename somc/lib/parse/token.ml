@@ -43,6 +43,15 @@ type token_typ =
   | DBL_AMPERSAND
   | EMPTYPARENS
   
+  (* operators *)
+  | INFIX_OP_1 of string
+  | INFIX_OP_2 of string
+  | INFIX_OP_3 of string
+  | INFIX_OP_4 of string
+  | INFIX_OP_5 of string
+  | INFIX_OP_6 of string
+  | UNARY_OP of string
+
   (* ambigous *)
   | UPPERNAME of string
   | LOWERNAME of string
@@ -59,6 +68,13 @@ type token_typ =
   [@@deriving show {with_path = false}, eq]
   
 let without_arg = function
+  | INFIX_OP_1 _ -> `INFIX_OP_1
+  | INFIX_OP_2 _ -> `INFIX_OP_2
+  | INFIX_OP_3 _ -> `INFIX_OP_3
+  | INFIX_OP_4 _ -> `INFIX_OP_4
+  | INFIX_OP_5 _ -> `INFIX_OP_5
+  | INFIX_OP_6 _ -> `INFIX_OP_6
+  | UNARY_OP _ -> `UNARY_OP
   | UPPERNAME _ -> `UPPERNAME
   | LOWERNAME _ -> `LOWERNAME
   | PRIMENAME _ -> `PRIMENAME
@@ -71,6 +87,9 @@ let without_arg = function
   | t -> `OTHER t
 
 let unpack_str = function
+  | INFIX_OP_1 s | INFIX_OP_2 s | INFIX_OP_3 s
+  | INFIX_OP_4 s | INFIX_OP_5 s | INFIX_OP_6 s
+  | UNARY_OP s
   | UPPERNAME s | LOWERNAME s
   | MAGICNAME s | DIRECTNAME s
   | PRIMENAME s -> s
@@ -87,6 +106,13 @@ let unpack_lit = function
 let tokens_eq a b = without_arg a = without_arg b
 
 let dummy = function
+  | `INFIX_OP_1 -> INFIX_OP_1 ""
+  | `INFIX_OP_2 -> INFIX_OP_2 ""
+  | `INFIX_OP_3 -> INFIX_OP_3 ""
+  | `INFIX_OP_4 -> INFIX_OP_4 ""
+  | `INFIX_OP_5 -> INFIX_OP_5 ""
+  | `INFIX_OP_6 -> INFIX_OP_6 ""
+  | `UNARY_OP -> UNARY_OP ""
   | `UPPERNAME -> UPPERNAME ""
   | `LOWERNAME -> LOWERNAME ""
   | `PRIMENAME -> PRIMENAME ""

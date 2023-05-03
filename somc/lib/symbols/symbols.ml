@@ -1,5 +1,5 @@
 module Ident = Ident
-module Magic = Magic
+module Primitive = Primitive
 
 type key = [`Val of Ident.t | `Type of Ident.t]
 

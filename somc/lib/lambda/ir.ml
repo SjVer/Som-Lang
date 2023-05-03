@@ -12,10 +12,12 @@ type var =
   | Var_global of ident
   | Var_tag of int
 
+type prim = Symbols.Primitive.t
+
 type atom =
   | Atom_const of const
   | Atom_var of var
-  | Atom_magic of Symbols.Magic.t
+  | Atom_prim of prim
 
 type scrutinee = int list
 

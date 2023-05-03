@@ -17,6 +17,7 @@ let initial_ctx =
   empty (Ident "")
   |> bind "Int"
   |> bind "Chr"
+  |> bind "Bln"
   |> bind "Flt"
   |> bind "Str"
   |> bind "Nil"
@@ -26,4 +27,3 @@ let resolve ast : ast =
   |> Import.include_imports
   |> Resolve.resolve_ast initial_ctx |> snd
   |> Constant_fold.fold_constants
-  |> Builtins.rename_builtins

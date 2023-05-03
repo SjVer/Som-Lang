@@ -117,7 +117,7 @@ and lower_expr env expr =
 
     | Texp_literal l -> Expr_atom (lower_literal l)
     | Texp_ident i -> Expr_atom (Atom_var (Env.find env i.item))      
-    | Texp_magic m -> Expr_atom (Atom_magic m)
+    | Texp_primitive p -> Expr_atom (Atom_prim p)
 
     | Texp_error -> invalid_arg "Pexp_error"
 

@@ -179,11 +179,11 @@ let rec compile_scrutinee expr = function
 let compile_check scrut = function
   | Default -> Expr_atom (Atom_const (Const_int 1))
   | Const c ->
-    let magic = Atom_magic Symbols.Magic.Magic_eq in
-    Expr_call (magic, [Atom_const c; scrut])
+    let prim = Atom_prim Symbols.Primitive.Prim_eq in
+    Expr_call (prim, [Atom_const c; scrut])
   | Tag t ->
-    let magic = Atom_magic Symbols.Magic.Magic_tageq in
-    Expr_call (magic, [Atom_const (Const_int t); scrut])
+    let prim = Atom_prim Symbols.Primitive.Prim_tageq in
+    Expr_call (prim, [Atom_const (Const_int t); scrut])
 
 let rec compile_tree expr = function
   | Fail -> Expr_fail

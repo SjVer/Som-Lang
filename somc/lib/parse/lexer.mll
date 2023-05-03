@@ -67,6 +67,12 @@ let prime = '\''
 let alpha = ['a'-'z' 'A'-'Z' '0'-'9' '_']
 let digit = ['0'-'9']
 
+let operator_chars =
+  [
+    '$'  '&'  '@'  '+'  '*'  '-'  '='  '>'  '<'  '?'  ':'
+    '!'  '.'  '%'  '~'  '|'  '/'  '['  ']'  '~' '^'
+  ]
+
 let lower_name = '_'* ['a'-'z'] alpha*
 let upper_name = '_'* ['A'-'Z'] alpha*
 
@@ -91,7 +97,6 @@ rule lex = parse
   | "/=" { NOTEQUAL }
   | '=' { EQUAL }
 
-  | "..." { TRP_DOT }
   | ".." { DBL_DOT }
   | '.' { DOT }
 
@@ -99,6 +104,8 @@ rule lex = parse
   | ":" { COLON }
   | ';' { SEMICOLON }
   | ',' { COMMA }
+
+  | '(' blank* (operator_chars+ as op) blank* ')' { LOWERNAME op }
 
   | "()" { EMPTYPARENS }
   | '(' { LPAREN }
@@ -124,6 +131,13 @@ rule lex = parse
   | '%' { MODULO }
   | '!' { BANG }
   | '~' { TILDE }
+
+  | ['*' '/' '%'] operator_chars+ as op { INFIX_OP_1 op }
+  | ['&' '|'] operator_chars* as op { INFIX_OP_1 op } (* TODO: is this shit? *)
+  | ['+' '-'] operator_chars+ as op { INFIX_OP_2 op }
+  | ['<' '>'] operator_chars+ as op { INFIX_OP_3 op }
+  | ("=" | "/=") operator_chars+ as op { INFIX_OP_4 op }
+  | ['!' '~'] operator_chars+ as op { UNARY_OP op }
 
   | '"' {
     let start_loc = lexbuf.lex_start_p in

@@ -62,7 +62,7 @@ and expr =
   | Texp_construct of Ident.t tnode * expr tnode list
   | Texp_literal of literal
   | Texp_ident of Ident.t tnode
-  | Texp_magic of Symbols.Magic.t
+  | Texp_primitive of Symbols.Primitive.t
   | Texp_error
 
 and case = pattern tnode * expr tnode

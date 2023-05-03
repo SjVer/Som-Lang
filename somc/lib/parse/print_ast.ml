@@ -148,7 +148,7 @@ and print_expr_node' i { span; item } =
     | Pexp_ident {span = _; item = id} ->
       p i ("Pexp_ident " ^ Ident.to_string id) span
     
-    | Pexp_magic n -> p i ("Pexp_magic " ^ n) span
+    | Pexp_primitive n -> p i ("Pexp_primitive " ^ n) span
     | Pexp_error -> p i "Pexp_error" span
 
 and print_import_kind_node' i { span; item } =

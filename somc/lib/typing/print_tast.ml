@@ -102,8 +102,8 @@ and print_expr_node' i node =
     | Texp_ident {span=_; item=id; typ=_} ->
       pt i ("Texp_ident " ^ Ident.to_string id) typ span
 
-    | Texp_magic m ->
-      pt i ("Texp_magic " ^ Symbols.Magic.to_string m) typ span
+    | Texp_primitive m ->
+      pt i ("Texp_primitive " ^ Symbols.Primitive.to_string m) typ span
 
     | Texp_error -> pt i "Texp_error" typ span
 

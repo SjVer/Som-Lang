@@ -13,32 +13,6 @@ let set_ty typ n = {n with typ}
 
 (* inference functions *)
 
-let infer_magic level =
-  let open Symbols.Magic in
-  (* TODO: expand on this *)
-  let int = TName (Ident "Int") in
-  let int_fn = TFun (int, int) in
-  let ints_fn = TFun (int, int_fn) in
-  function
-    | Magic_add
-    | Magic_sub 
-    | Magic_mul 
-    | Magic_div  -> ints_fn 
-    | Magic_rem  -> ints_fn
-    | Magic_abs
-    | Magic_neg  -> int_fn 
-    | Magic_and
-    | Magic_or   -> ints_fn
-    | Magic_not  -> int_fn
-    | Magic_eq
-    | Magic_gt 
-    | Magic_lt 
-    | Magic_neq 
-    | Magic_gteq
-    | Magic_lteq -> ints_fn
-    | Magic_tageq ->
-      TFun (new_var level, TFun (int, int))
-
 let infer_literal =
   let name n = TName (Ident n) in
   let open Ast in function
@@ -201,13 +175,12 @@ and infer_expr level env exp =
       let t = instantiate level (Env.lookup_value env item) in
       mk s t (Texp_ident (mk span t item)) 
 
-    | Pexp_magic n ->
+    | Pexp_primitive n ->
       begin try
-        let m = Symbols.Magic.find n in
-        let t = infer_magic level m in
-        mk s t (Texp_magic m)
+        let p = Symbols.Primitive.find n in
+        mk s (new_var level) (Texp_primitive p)
       with Not_found ->
-        error (Use_of_invalid_magical n) s [] |> Report.report; 
+        error (Use_of_invalid_primitive n) s [] |> Report.report; 
         mk s TError Texp_error
       end
 

@@ -30,25 +30,27 @@
 
 --- arithmetic ops ---
 
-let add = #add -- (+)
-let sub = #sub -- (-)
-let mul = #mul -- (*)
-let div = #div -- (/)
-let rem = #rem -- (%)
-let abs = #abs -- (~+)
-let neg = #neg -- (~-)
+let (+) : Int -> Int -> Int = #add_int
+let (-) : Int -> Int -> Int = #sub_int
+let (*) : Int -> Int -> Int = #mul_int
+let (/) : Int -> Int -> Int = #div_int
+let (%) : Int -> Int -> Int = #rem_int
+let (~+) : Int -> Int = #abs_int
+let (~-) : Int -> Int = #neg_int
 
 --- logical ops ---
 
-let and = #and -- (&&)
-let or  = #or  -- (||)
-let not = #not -- (~!)
+let (&&) : Bln -> Bln -> Bln = #and
+let (||) : Bln -> Bln -> Bln = #or
+let (~!) : Bln -> Bln = #not
 
 --- comparison ops ---
 
-let eq   = #eq -- (=)
-let gr   = #gt -- (>)
-let ls   = #lt -- (<)
-let neq  = #neq  -- (/=)
-let gteq = #gteq -- (>=)
-let lteq = #lteq -- (<=)
+let (=) : Int -> Int -> Bln = #eq
+let (/=) : Int -> Int -> Bln = #neq
+let (==) : 'a . 'a -> 'a -> 'a = #eq_value
+let (/==) : 'a . 'a -> 'a -> 'a = #neq_value
+let (<) : Int -> Int -> Bln = #lt_int
+let (<=) : Int -> Int -> Bln = #lteq_int
+let (>) : Int -> Int -> Bln = #gt_int
+let (>=) : Int -> Int -> Bln = #gteq_int

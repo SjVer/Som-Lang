@@ -18,9 +18,7 @@ let print_atom' ppf = function
   | Atom_const (Const_string s) -> fpf ppf "\"%s\"" s
   | Atom_const Const_null -> fpf ppf "(%s)" (kw "null")
   | Atom_var v -> print_var' ppf v
-  | Atom_magic m ->
-    let m' = Symbols.Magic.to_string m in
-    fpf ppf "#%s" m'
+  | Atom_prim p -> fpf ppf "#%s" (Symbols.Primitive.to_string p)
 
 let rec print_case' ppf (tag, expr) =
   fpf ppf "@[<2>(%s@ %d:@ %a@)@]"

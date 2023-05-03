@@ -84,7 +84,7 @@ and expr =
   | Pexp_construct of Ident.t node * expr node list
   | Pexp_literal of literal
   | Pexp_ident of Ident.t node
-  | Pexp_magic of string
+  | Pexp_primitive of string
   | Pexp_error
 
 and case = pattern node * expr node

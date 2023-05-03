@@ -49,7 +49,7 @@ let report_path_invalidity ctx path =
     failwith "unreachable"
 
 let check_typedef_name span = function
-  | Ident.Ident ("Int" | "Chr" | "Flt" | "Str" | "Nil") ->
+  | Ident.Ident ("Int" | "Chr" | "Bln" | "Flt" | "Str" | "Nil") ->
     let e = Other_error (Other "cannot shadow builtin type") in
     Report.report (Report.make_error e (Some span))
   | _ -> ()
@@ -214,7 +214,17 @@ let rec resolve_import ctx path kind =
       let ident = Ident.Ident (List.hd (List.rev path)).item in
       import_symbol ctx path ident
 
-    | Pik_glob -> failwith "resolve Pik_glob"
+    | Pik_glob ->
+      let path_ident = string_nodes_to_marked_ident path in
+      let mod_ctx = extract_subcontext ctx path_ident in
+      let ctx =
+        {
+          ctx with
+          value_map = IMap.fold IMap.add mod_ctx.value_map ctx.value_map;
+          type_map = IMap.fold  IMap.add mod_ctx.type_map ctx.type_map;
+        }
+      in
+      ctx
 
     | Pik_rename (sym_path, name) ->
       let path = path @ sym_path in

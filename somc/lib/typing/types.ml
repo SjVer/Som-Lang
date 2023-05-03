@@ -17,6 +17,7 @@ type t =
 and prim =
   | PInt
   | PChar
+  | PBool
   | PFloat
   | PString
   | PNil
@@ -32,6 +33,7 @@ let new_gen_var () = TVar (ref (VRGeneric (next_id ())))
 let show_prim = function
   | PInt -> "$int"
   | PChar -> "$char"
+  | PBool -> "$bool"
   | PFloat -> "$float"
   | PString -> "$string"
   | PNil -> "$nil"

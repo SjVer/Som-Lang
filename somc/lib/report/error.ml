@@ -37,7 +37,7 @@ type type_error =
   | Expected_function of string (*+type*)
   | Recursive_type
   | Use_of_unbound of string * string (*+symbol*)
-  | Use_of_invalid_magical of string
+  | Use_of_invalid_primitive of string
   | Has_no_symbol of string * string * string (*-module has no symbol*)
   | Cannot_private of string * string (*-cannot use private symbol*)
   | Cannot_import_from of string (*+non-module symbol*)
@@ -49,7 +49,7 @@ let get_type_error_msg = function
   | Expected_function g      -> _f "expected a function type but found type `%s`" g
   | Recursive_type           -> _f "recursive type"
   | Use_of_unbound (t, w)    -> _f "use of unbound %s `%s`" t w
-  | Use_of_invalid_magical w -> _f "use of invalid magical operator '%s'" w
+  | Use_of_invalid_primitive w -> _f "use of invalid primitive '%s'" w
   | Has_no_symbol (m, w, s)  -> _f "module `%s` has no %s named '%s'" m w s
   | Cannot_private (a, w)    -> _f "cannot %s private symbol `%s`" a w
   | Cannot_import_from w     -> _f "cannot import from non-module symbol `%s`" w

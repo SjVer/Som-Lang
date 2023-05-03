@@ -357,7 +357,7 @@ contexts:
     - match: \b(at|in)\b
       scope: keyword.other.som
 
-    - match: \||switch
+    - match: (?<!\|)\|(?!\|)|switch
       scope: keyword.control.switch.som
       push:
         - match: \bend\b

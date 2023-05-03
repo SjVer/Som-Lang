@@ -118,8 +118,8 @@ module ApplyToCall = struct
       let f (tag, expr) = tag, simplify_expr expr in
       Expr_match (s, List.map f cases)
 
-    | Expr_apply (Expr_atom (Atom_magic m), args) ->
-      Expr_call (Atom_magic m, args)
+    | Expr_apply (Expr_atom (Atom_prim p), args) ->
+      Expr_call (Atom_prim p, args)
 
     | Expr_apply (f, args) ->
       Expr_apply (simplify_expr f, args)
@@ -140,6 +140,23 @@ module ApplyToCall = struct
 
   let simplify_program =
     _make_opt (List.map simplify_stmt) 
+end
+
+module Uncurry = struct
+  let rec uncurry_expr = function
+    | Expr_lambda (params, (Expr_lambda _ as lam)) ->
+      let [@ warning "-8"] Expr_lambda (params', body) =
+        uncurry_expr lam
+      in
+      Expr_lambda (params @ params', body)
+    | expr -> expr
+
+  let uncurry_stmt = function
+    | Stmt_definition (name, value) ->
+      Stmt_definition (name, uncurry_expr value)
+    | stmt -> stmt
+
+  let uncurry_program = List.map uncurry_stmt
 end
 
 let basic_simplify_pogram =

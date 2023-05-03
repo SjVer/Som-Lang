@@ -444,7 +444,7 @@ and atom_expression must p =
     | EMPTYPARENS -> mk' (Pexp_literal Pli_null)
     
     | t when tokens_eq t (dummy `MAGICNAME) ->
-      mk' (Pexp_magic (unpack_str t))
+      mk' (Pexp_primitive (unpack_str t))
     | t when tokens_eq t (dummy `LOWERNAME) ->
       let i = lower_longident p true in
       mk i.span (Pexp_ident i)
@@ -479,46 +479,82 @@ and match_cases p =
 
 and max_precedence = 5
 and infix_operators =
-  let open Symbols.Magic in
   [
-    [STAR, Magic_mul; SLASH, Magic_div; MODULO, Magic_rem];
-    [PLUS, Magic_add; MINUS, Magic_sub];
-    [GREATER, Magic_gt; GREATEREQUAL, Magic_gteq;
-      LESSER, Magic_lt; LESSEREQUAL, Magic_lteq];
-    [EQUAL, Magic_eq; NOTEQUAL, Magic_neq];
-    [DBL_AMPERSAND, Magic_and];
-    [DBL_PIPE, Magic_or]; 
+    [
+      STAR, INFIX_OP_1 "*";
+      SLASH, INFIX_OP_1 "/";
+      MODULO, INFIX_OP_1 "%"
+    ];
+    [
+      PLUS, INFIX_OP_2 "+";
+      MINUS, INFIX_OP_2 "-";
+    ];
+    [
+      GREATER, INFIX_OP_3 ">";
+      GREATEREQUAL, INFIX_OP_3 ">=";
+      LESSER, INFIX_OP_3 "<";
+      LESSEREQUAL, INFIX_OP_3 "<="
+    ];
+    [
+      EQUAL, INFIX_OP_4 "=";
+      NOTEQUAL, INFIX_OP_4 "/="
+    ];
+    [
+      DBL_AMPERSAND, INFIX_OP_5 "&&"
+    ];
+    [
+      DBL_PIPE, INFIX_OP_6 "||"
+    ]; 
   ]
 
 and allowed_infix_operators prec =
-  List.nth infix_operators prec
-  |> List.map fst
-and mk_infix_operator t =
-  let m =
-    let rec go = function
-      | (op, m) :: _ when op = t.typ -> m
-      | _ :: ops -> go ops
-      | [] -> failwith "mk_infix_operator"
-    in
-    go (List.flatten infix_operators)
+  let ops = 
+    List.nth infix_operators prec
+    |> List.map fst
+  and other_op = List.nth [
+      `INFIX_OP_1; `INFIX_OP_2; `INFIX_OP_3;
+      `INFIX_OP_4; `INFIX_OP_5; `INFIX_OP_6
+    ] prec |> dummy
   in
-  mk t.span (Pexp_magic (Symbols.Magic.to_string m))
+  other_op :: ops
+
+and mk_infix_operator t =
+  let op =
+    match t.typ with 
+      | INFIX_OP_1 _ | INFIX_OP_2 _ | INFIX_OP_4 _
+      | INFIX_OP_3 _ | INFIX_OP_5 _ | INFIX_OP_6 _ ->
+        t.typ
+      | _ ->
+        List.flatten infix_operators
+        |> List.find (fun (typ, _) -> typ = t.typ)
+        |> snd
+  in
+  let ident = Ident.Ident (unpack_str op) in
+  mk t.span (Pexp_ident (mk t.span ident))
 
 and unary_operators =
-  let open Symbols.Magic in [
-    BANG, Magic_not;
-    PLUS, Magic_abs;
-    MINUS, Magic_neg
+  [
+    BANG, UNARY_OP "~!";
+    PLUS, UNARY_OP "~+";
+    MINUS, UNARY_OP "~-"
   ]
 
-and allowed_unary_operators _ = List.map fst unary_operators
+and allowed_unary_operators _ =
+  let ops = List.map fst unary_operators
+  and other_op = dummy `UNARY_OP in
+  other_op :: ops
+
 and mk_unary_operator t =
-  let m =
-    let find_fn (tt, _) = t.typ = tt in
-    try snd (List.find find_fn unary_operators)
-    with Not_found -> failwith "mk_unary_operator"
+  let op =
+    if tokens_eq t.typ (dummy `UNARY_OP) then
+      t.typ
+    else
+      unary_operators
+      |> List.find (fun (typ, _) -> typ = t.typ)
+      |> snd
   in
-  mk t.span (Pexp_magic (Symbols.Magic.to_string m))
+  let ident = Ident.Ident (unpack_str op) in
+  mk t.span (Pexp_ident (mk t.span ident))
 
 (* ============================= types ============================ *)
 
@@ -536,8 +572,13 @@ and forall_type p =
     function_type p
 
 and function_type p =
-  let mk_fn lhs rhs s = mk s (Pty_function (lhs, rhs)) in
-  left_assoc p tuple_type ARROW mk_fn
+  (* let mk_fn lhs rhs s = mk s (Pty_function (lhs, rhs)) in
+  left_assoc p tuple_type ARROW mk_fn *)
+  let lhs = tuple_type p in
+  if matsch ARROW p then
+    let rhs = function_type p in
+    mk (catnspans lhs rhs) (Pty_function (lhs, rhs))
+  else lhs
 
 and tuple_type p =
   let t = constructed_type true p in

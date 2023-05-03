@@ -17,6 +17,7 @@ let initial_env =
   empty
   |> add "Int" PInt 
   |> add "Chr" PChar
+  |> add "Bln" PBool
   |> add "Flt" PFloat
   |> add "Str" PString
   |> add "Nil" PNil 
@@ -71,6 +72,37 @@ let typecheck_toplevel env (node : Ast.toplevel Ast.node) =
     | Ptl_import _ -> failwith "Import node survived analysis"
     | Ptl_module _ -> failwith "Module node survived analysis"
 
+let remove_unused =
+  let warn_and_false what (ident : Ident.t node) =
+    (* if !Configs.Cli.args.verbose then begin
+      let name = Ident.to_string ident.item in
+      let msg = Printf.sprintf "unused %s `%s`" what name in
+      Report.(report (make_warning msg (Some ident.span)))
+    end; *)
+    ignore (what, ident);
+    false
+  in
+
+  let f (tl : toplevel node) =
+    if tl.span.Span.file <> !Configs.Cli.args.file then
+      match tl.item with
+      | Ttl_value_def vdef ->
+        let key = `Val vdef.vd_name.item in
+        if Symbols.get_usages key == [] then
+          warn_and_false "value" vdef.vd_name
+        else true
+
+      | Ttl_type_def tdef ->
+        let key = `Type tdef.td_name.item in
+        if Symbols.get_usages key == [] then
+          warn_and_false "type" tdef.td_name
+        else true
+
+      | _ -> true
+    else true
+  in
+  List.filter f
+
 let typecheck_ast env ast =
   let rec go env = function
     | [] -> env, []
@@ -80,5 +112,4 @@ let typecheck_ast env ast =
       env, ttl @ tast
   in
   let tast = snd (go env ast) in
-  if !Report.has_reported then Report.exit ()
-  else tast
+  remove_unused tast
