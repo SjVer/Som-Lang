@@ -25,7 +25,9 @@ let llvalue_of_const ctx const =
   let lltype = value_lltype ctx in
   let open Int64 in
   let encode_const i =
-     let i = logor (shift_left i 1) Int64.one in
+     Printf.printf "%s -> " (to_string i);
+     let i = logor (shift_left i 1) one in
+     print_endline (to_string i);
      Llvm.const_of_int64 lltype i false
   in
   match const with

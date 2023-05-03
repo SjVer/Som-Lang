@@ -5,5 +5,4 @@ let fib = switch
   | 1 -> 1
 --   -- | n -> n
 
-let foo x = x + 1
-let bar = foo 1
+let main = fib 1 + 5

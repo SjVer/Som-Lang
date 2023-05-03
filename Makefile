@@ -19,18 +19,19 @@ exec: build
 test: build
 	@$(EXE) -i test $(args) --no-prelude test/test.som -o test/test -v
 
-.PHONY: stdlib
-stdlib:
-	@cd stdlib/runtime && make stdlib
+.PHONY: runtime
+runtime:
+	@$(MAKE) -C stdlib/runtime runtime
 
-install: build stdlib
+install:
+	$(MAKE) -C stdlib/runtime install
+
 	sudo cp $(EXE) /usr/bin/somc
 
-	sudo cp stdlib/bin/libsom.so /usr/lib/
-	sudo rm -r $(SOM_INCL_DIR)/std || true
-	sudo cp -r stdlib/std $(SOM_INCL_DIR)/std
+	rm -r $(SOM_INCL_DIR)/std || true
+	cp -r stdlib/modules $(SOM_INCL_DIR)/std
 
-	sudo cp tools/bash-completion.sh /usr/share/bash-completion/completions/somc
+	cp tools/bash-completion.sh /usr/share/bash-completion/completions/somc
 	source ~/.bashrc
 
 clean:

@@ -117,7 +117,7 @@ let rec codegen_expr vals ctx = function
   
   | Expr_atom a -> codegen_atom vals ctx a
   | Expr_fail ->
-    let f = Value.get_ext_func ctx "som_fail" [||] in
+    let f = Value.get_ext_func ctx "som_fail_match" [||] in
     Llvm.build_call f [||] "unreachable" ctx.builder
 
 let codegen_stmt vals ctx = function
@@ -160,14 +160,38 @@ let codegen_stmt vals ctx = function
     let glob = Llvm.declare_function native_name fty ctx.llmodule in
     SMap.add name glob vals
 
+let codegen_entrypoint vals ctx =
+  try
+    let main_fn =
+      (* let f n = *)
+      (*   match String.split_on_char '/' n with *)
+      (*     | n :: _ -> n = "main" *)
+      (*     | [] -> false *)
+      (* in *)
+      (* snd (SMap.find_last f vals) *)
+      SMap.find "main/0" vals
+    in
+    Llvm.define_global "som_entrypoint" main_fn ctx.llmodule
+    |> ignore
+
+  with Not_found ->
+    let open Report.Error in
+    let e = Other_error (Other "no entrypoint defined") in
+    Report.raise (Report.make_error e None)
+
 let codegen_program program =
+  Llvm.enable_pretty_stacktrace ();
+
   let name = Filename.basename !Configs.Cli.args.file in
   let ctx = Context.make name in
 
   let rec go vals ctx = function
-    | [] -> ctx
+    | [] -> vals, ctx
     | stmt :: program ->
       let vals = codegen_stmt vals ctx stmt in
       go vals ctx program
   in
-  (go SMap.empty ctx program).llmodule
+  let vals, ctx = go SMap.empty ctx program in
+  codegen_entrypoint vals ctx;
+  ctx.llmodule
+

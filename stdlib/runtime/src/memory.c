@@ -1,6 +1,5 @@
 #include <stdio.h>
 
-#define JEMALLOC_NO_RENAME
 #include "../jemalloc/include/jemalloc/jemalloc-som.h"
 
 #include "memory.h"
@@ -22,13 +21,4 @@ value som_heap_malloc_object(size extra_size, byte tag) {
 	*object = Hd_with_status(*object, STATUS_ALIVE);
 
 	return object;
-}
-
-void som_print_je_stats(void* cbopaque, const char* s) {
-	char* hint = (char*)cbopaque;
-	printf("%s: %s\n", hint, s);
-}
-
-CTOR() {
-	som_je_malloc_stats_print(som_print_je_stats, "HEAP", "Jg");
 }

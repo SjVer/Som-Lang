@@ -77,10 +77,11 @@ let report_normal r =
 
 let report r =
   has_reported := true;
-  match r.kind with
+  begin match r.kind with
     | `Error _ -> has_errored := true
-    | _ -> ();
-  
+    | _ -> ()
+  end;
+
   if Option.is_some r.span then
     reports := !reports @ [r];
 

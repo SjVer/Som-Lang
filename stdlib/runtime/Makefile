@@ -13,7 +13,7 @@ BINDIR = bin
 
 OBJDIR = $(BINDIR)/obj
 RUNTIME_LIB = $(BINDIR)/libsom.so
-JEMALLOC_LIB = $(BINDIR)/libjemalloc-som.so.2
+JEMALLOC_LIB = $(BINDIR)/libsom-jemalloc.so
 
 SRC = $(wildcard $(SRCDIR)/*$(EXT))
 OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)

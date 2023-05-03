@@ -26,7 +26,7 @@ let prelude_ident = ["std"; prelude_name]
 let prelude_file = _path (include_dir :: prelude_ident) ^ ".som"
 
 let ld_path = _ocaml_config "c_compiler"
-let ld_args = ["-lsom"; "-ljemalloc-som"]
+let ld_args = ["-lsom"; "-lsom-jemalloc"]
 
 let exe_ext = _ocaml_config "ext_exe"
 let obj_ext = _ocaml_config "ext_obj"
@@ -37,4 +37,4 @@ let force_tty = true
 let in_lsp_mode = ref false
 let hide_stdlib_nodes = false
 let tast_print_debug = true
-let maximum_tag = 252
+let maximum_tag = 251

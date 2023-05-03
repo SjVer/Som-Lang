@@ -21,7 +21,9 @@ let mangle =
     str ^ "/" ^ string_of_int !c
   end
 
-let mangle_ident i = Ident.to_string i |> mangle
+let mangle_ident = function
+  | Ident.Ident ("main") -> "main/0"
+  | i -> Ident.to_string i |> mangle
 
 let fresh () = mangle "r"
 

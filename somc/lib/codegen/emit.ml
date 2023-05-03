@@ -56,10 +56,9 @@ let link_executable obj_file =
     Report.report_note ("linker: " ^ Configs.ld_path);
   end;
 
-  print_endline command;
-
   if not !C.args.dry_run then
-    ignore (Sys.command command) 
+    ignore (Sys.command command);
+  Sys.remove obj_file
 
 let emit llmodule =
   let obj_file = write_object_file llmodule in
