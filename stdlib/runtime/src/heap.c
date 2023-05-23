@@ -16,8 +16,8 @@ void* som_minor_malloc(size size) {
 		Fail("minor heap out of memory");
 		// return NULL;
 	}
-
 	som_minor_ptr -= size;
+	// memset(som_minor_ptr, 0, size);
 	return som_minor_ptr;
 }
 
