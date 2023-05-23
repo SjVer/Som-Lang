@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef uint8_t byte;
 typedef uint32_t ui32;
@@ -64,7 +65,7 @@ typedef ui64 header;
 #define TAG_TUPLE 253
 #define TAG_THUNK 254
 
-#define STATUS_DEAD 0x00
+#define STATUS_DEAD  0x00
 #define STATUS_DYING 0x01
 #define STATUS_ALIVE 0x02
 

@@ -12,9 +12,9 @@
 #define CTOR _CTOR(__COUNTER__, __LINE__)
 #define DTOR _DTOR(__COUNTER__, __LINE__)
 
-void som_fail(const char* message);
-void som_fail_match();
-void som_fail_errno(int errnum);
+void __attribute__((noreturn)) som_fail(const char* message);
+void __attribute__((noreturn)) som_fail_match();
+void __attribute__((noreturn)) som_fail_errno(int errnum);
 
 #define DEFAULT_FAIL_MSG "fatal error"
 

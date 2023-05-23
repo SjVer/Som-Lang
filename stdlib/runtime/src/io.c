@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "memory.h"
+#include "heap.h"
 #include "str.h"
 #include "io.h"
 
@@ -43,7 +43,7 @@ value som_io_openf(value path, value mode) {
     // TODO: error handling
 	int fd = open(Val_string(path), flags, 438);
 
-	value file = som_heap_malloc_object(3 * sizeof(value), TAG_RECORD);
+	value file = som_malloc_object(3 * sizeof(value), TAG_RECORD);
 	Val_field(file, FILE_PATH) = som_str_copy(path);
 	Val_field(file, FILE_DESCR) = Unboxed_val(fd);
 	Val_field(file, FILE_MODE) = mode;
