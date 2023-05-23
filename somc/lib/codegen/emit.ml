@@ -29,6 +29,8 @@ let write_object_file llmodule =
       Filename.temp_file "somc_obj_" ".o"
   in
   
+  if !C.args.output_obj or !C.args.verbose then
+    Report.report_note ("writing object file: " ^ output_file);
   if not !C.args.dry_run then
     Llvm_target.TargetMachine.emit_to_file
       llmodule Llvm_target.CodeGenFileType.ObjectFile
@@ -50,12 +52,9 @@ let link_executable obj_file =
     (String.concat " " Configs.ld_args)
   in
   
-  if !C.args.verbose then begin
-    (* Report.report_note "link command:";
-    prerr_endline ("  " ^ command); *)
+  if !C.args.verbose then
     Report.report_note ("linker: " ^ Configs.ld_path);
-  end;
-
+  Report.report_note ("linking executable: " ^ out_file);
   if not !C.args.dry_run then
     ignore (Sys.command command);
   Sys.remove obj_file
