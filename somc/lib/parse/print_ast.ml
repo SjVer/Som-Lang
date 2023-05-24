@@ -2,9 +2,9 @@ open Ast
 open ANSITerminal
 
 let p i str span =
-  print_string [] (String.make i '\t' ^ str);
-  print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
-  print_newline ()
+  prerr_string [] (String.make i '\t' ^ str);
+  prerr_string [Foreground Black] (" @" ^ Span.show_span_debug span);
+  prerr_newline ()
 
 (** show functions *)
 
@@ -199,7 +199,7 @@ and print_ast' i nodes =
     then ()
     else begin
       if !first then first := false
-      else print_newline ();
+      else prerr_newline ();
       print_toplevel_node' i tl
     end
   in

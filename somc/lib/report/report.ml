@@ -48,6 +48,8 @@ let exit () = raise Exit
 
 let raise t = raise (Error t)
 
+let last_was_compact = ref false
+
 let report_compact r =
   let msg, color = Dispatch.msg_and_color false r.kind in
   let what = match r.kind with
@@ -65,12 +67,14 @@ let report_compact r =
   prerr_newline ()
 
 let report_normal r =
-  Util.maybe_newline ();
-  let msg, color = Dispatch.msg_and_color true r.kind in
-  let do_tail = r.related <> [] || r.notes <> [] in
+  let isnt_compact = r.related <> [] || r.notes <> [] in
+  if isnt_compact || not !last_was_compact then
+    Util.maybe_newline ();
+  last_was_compact := not isnt_compact;
   
+  let msg, color = Dispatch.msg_and_color true r.kind in
   prerr_string [Bold] (": " ^ msg ^ "\n");
-  Option.iter (Dispatch.r_span color do_tail None) r.span;
+  Option.iter (Dispatch.r_span color isnt_compact None) r.span;
 
   Dispatch.r_related (r.notes <> []) r.related;
   List.iter Dispatch.r_note r.notes

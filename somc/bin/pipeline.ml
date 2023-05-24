@@ -1,6 +1,10 @@
 module Ident = Symbols.Ident
 module C = Configs.Cli
 
+let has_dumped () =
+  Report.last_was_compact := false;
+  Report.has_reported := true
+
 module ReadFile = Query.Make(struct
   type a = string * Span.t option
   type r = string
@@ -26,7 +30,13 @@ module ParseFile = Query.Make(struct
   let c (file, imp_span) =
     let source = ReadFile.call (file, imp_span) in
     let ast = Parse.parse file source imp_span in
-    if !C.args.dump_ast then Parse.Print_ast.print_ast ast;
+
+    if !C.args.dump_ast && imp_span = None then begin
+      Report.report_note "dumping parsed AST:"; 
+      Parse.Print_ast.print_ast ast;
+      has_dumped ()
+    end;
+
     ast
 end)
 
@@ -34,13 +44,15 @@ module AnalyzeFile = Query.Make(struct
   type a = string * Span.t option
   type r = Parse.Ast.ast
   let c (file, imp_span) =
-    (* if [m] ("module") is the ident of
-       the module that's importing this one.
-       [i] is an optional span of the import
-       statement. *)
     let ast = ParseFile.call (file, imp_span) in
     let ast = Analysis.resolve ast in
-    if !C.args.dump_rast then Parse.Print_ast.print_ast ast;
+    
+    if !C.args.dump_rast && imp_span = None then begin
+      Report.report_note "dumping resolved AST:";
+      Parse.Print_ast.print_ast ast;
+      has_dumped ()
+    end;
+
     ast
 end)
 
@@ -60,7 +72,13 @@ module TypecheckFile = Query.Make(struct
 
     let env = Typing.initial_env in
     let tast = Typing.typecheck_ast env ast' in
-    if !C.args.dump_tast then Typing.Print_tast.print_tast tast;
+    
+    if !C.args.dump_tast then begin
+      Report.report_note "dumping typed AST:";
+      Typing.Print_tast.print_tast tast;
+      has_dumped ()
+    end;
+    
     tast
 end)
 
@@ -72,7 +90,13 @@ module LowerFile = Query.Make(struct
     if !Report.has_errored then Report.exit ();
 
     let program = Lambda.convert tast in
-    if !C.args.dump_ir then Lambda.Print.print_program program;
+
+    if !C.args.dump_ir then begin
+      Report.report_note "dumping lambda IR:";
+      Lambda.Print.print_program program;
+      has_dumped ()
+    end;
+    
     program
 end)
 
@@ -82,7 +106,13 @@ module CodegenFile = Query.Make(struct
   let c file =
     let program = LowerFile.call file in
     let llmodule = Codegen.codegen_program program in
-    if !C.args.dump_llvm then Codegen.print_module llmodule;
+
+    if !C.args.dump_llvm then begin
+      Report.report_note "dumping LLVM IR:";
+      Codegen.print_module llmodule;
+      has_dumped ()
+    end;
+    
     llmodule
 end)
 

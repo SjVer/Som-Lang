@@ -16,20 +16,19 @@ let write_object_file llmodule =
     |> Report.report_note;
 
   let output_file =
+    let base =
+      Filename.basename !C.args.file
+      |> Filename.chop_extension
+    in
     if !C.args.output_obj then
       match !C.args.output with
-        | None ->
-          let base =
-            Filename.basename !C.args.file
-            |> Filename.chop_extension
-          in
-          base ^ Configs.obj_ext
+        | None -> base ^ Configs.obj_ext
         | Some file -> file
     else 
-      Filename.temp_file "somc_obj_" ".o"
+      Filename.temp_file ("somc_" ^ base ^ "_") ".o"
   in
   
-  if !C.args.output_obj or !C.args.verbose then
+  if !C.args.output_obj || !C.args.verbose then
     Report.report_note ("writing object file: " ^ output_file);
   if not !C.args.dry_run then
     Llvm_target.TargetMachine.emit_to_file

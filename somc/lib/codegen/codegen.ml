@@ -9,7 +9,7 @@ module SMap = Map.Make(String)
 type llmodule = Llvm.llmodule
 let print_module m =
   Llvm.string_of_llmodule m
-  |> print_endline
+  |> String.trim |> prerr_endline
 
 (* from https://github.com/ocaml/ocaml/blob/trunk/lambda/translcore.ml#L191-L194 *)
 let rec cut n l =
@@ -29,11 +29,9 @@ let codegen_atom vals ctx = function
 let build_call_primitive ctx prim args' =
   let args' = Array.of_list args' in
 
-  let box, unbox =
-    let one = Llvm.const_int (Llvm.i32_type ctx.context) 1 in
-    fun v -> Llvm.build_shl v one "box", 
-    fun v -> Llvm.build_ashr v one "unbox" ctx.builder
-  in
+  let one = Llvm.const_int (Llvm.i32_type ctx.context) 1 in
+  let box v = Llvm.build_shl v one "box" ctx.builder in 
+  let unbox v = Llvm.build_ashr v one "unbox" ctx.builder in
   let w2args f = f (unbox args'.(0)) (unbox args'.(1)) in
   
   (* TODO: the args are not unboxed, like, ever *)
@@ -91,6 +89,7 @@ let build_call_primitive ctx prim args' =
     | Prim_tageq -> failwith "TODO: codegen_prim tageq"
   in
   build_f (to_string prim) ctx.builder
+  |> box
 
 let rec codegen_expr vals ctx = function
   | Expr_let (v, value, expr) ->
@@ -165,11 +164,11 @@ let codegen_stmt vals ctx = function
     Llvm.position_at_end entry ctx.builder;
 
     let body' =
-      let f vals (p, v) =
-        Llvm.set_value_name p v;
-        SMap.add p v vals
-      in
       let vals =
+        let f vals (p, v) =
+          Llvm.set_value_name p v;
+          SMap.add p v vals
+        in
         Array.to_list (Llvm.params func)
         |> List.combine params
         |> List.fold_left f vals

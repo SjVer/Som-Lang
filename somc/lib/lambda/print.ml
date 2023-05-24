@@ -117,5 +117,5 @@ let print_program' ppf stmts =
 
 (* expose functions *)
 
-let print_stmt = print_stmt' std_formatter
-let print_program = print_program' std_formatter
+let print_stmt = print_stmt' err_formatter 
+let print_program = print_program' err_formatter

@@ -16,8 +16,11 @@ build: gen_codes_ml
 exec: build
 	@$(EXE) $(args)
 
+COMMA := ,
+EMPTY :=
+SPACE := $(EMPTY) $(EMPTY)
 test: build
-	@$(EXE) -i test $(args) --no-prelude test/test.som -o test/test -v
+	@$(EXE) -i test $(subst $(COMMA), $(SPACE), $(args)) --no-prelude test/test.som -o test/test -v
 
 .PHONY: runtime
 runtime:

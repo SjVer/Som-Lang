@@ -1,10 +1,10 @@
 open Span
 open ANSITerminal
 
-let has_reported = ref false
+let has_printed = ref false
 let maybe_newline () =
-  if !has_reported then prerr_newline ()
-  else has_reported := true
+  if !has_printed then prerr_newline ()
+  else has_printed := true
 
 let f = Printf.sprintf
 
