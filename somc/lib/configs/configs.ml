@@ -26,10 +26,11 @@ let prelude_ident = ["std"; prelude_name]
 let prelude_file = _path (include_dir :: prelude_ident) ^ ".som"
 
 let ld_path = _ocaml_config "c_compiler"
-let ld_args = ["-lsom"; "-lsom-jemalloc"]
+let ld_args = ["-lsom"]
 
 let exe_ext = _ocaml_config "ext_exe"
 let obj_ext = _ocaml_config "ext_obj"
+let asm_ext = _ocaml_config "ext_asm"
 
 (* globals *)
 

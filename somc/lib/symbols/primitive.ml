@@ -1,4 +1,5 @@
 type t =
+  (* operators *)
   | Prim_add_int
   | Prim_add_char
   | Prim_add_float
@@ -34,6 +35,9 @@ type t =
   | Prim_lteq_int
   | Prim_lteq_float
   | Prim_tageq
+  (* others *)
+  | Prim_file
+  | Prim_line
 
 let names_assoc = [
   "add_int", Prim_add_int;
@@ -71,6 +75,9 @@ let names_assoc = [
   "lteq_int", Prim_lteq_int;
   "lteq_float", Prim_lteq_float;
   "tageq", Prim_tageq;
+  
+  "file", Prim_file;
+  "line", Prim_line;
 ]
 
 let arity = function
@@ -91,6 +98,8 @@ let arity = function
   | Prim_abs_int | Prim_abs_float
   | Prim_neg_int | Prim_neg_float
   | Prim_not -> 1
+
+  | Prim_file | Prim_line -> 0
 
 let find str = List.assoc str names_assoc
 

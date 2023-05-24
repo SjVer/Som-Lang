@@ -4,16 +4,16 @@ open ANSITerminal
 module Ident = Symbols.Ident
 
 let p i str span =
-  print_string [] (String.make i '\t' ^ str);
-  print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
-  print_newline ()
+  prerr_string [] (String.make i '\t' ^ str);
+  prerr_string [Foreground Black] (" @" ^ Span.show_span_debug span);
+  prerr_newline ()
 
 let pt i str typ span =
-  print_string [] (String.make i '\t' ^ str);
+  prerr_string [] (String.make i '\t' ^ str);
   let tstr = Types.show typ Configs.tast_print_debug in
-  print_string [Foreground Cyan] (" : " ^ tstr);
-  print_string [Foreground Black] (" @" ^ Span.show_span_debug span);
-  print_newline ()
+  prerr_string [Foreground Cyan] (" : " ^ tstr);
+  prerr_string [Foreground Black] (" @" ^ Span.show_span_debug span);
+  prerr_newline ()
 
 (** show functions *)
 

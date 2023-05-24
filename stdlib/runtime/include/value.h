@@ -46,9 +46,9 @@ typedef ui64 header;
 #define VALUE_SIZE __WORDSIZE
 #define HEADER_SIZE 8
 
-#define HD_T_MASK ((1ull << 8) - 1ull)
-#define HD_S_MASK (((1ull << 8) - 1ull) << 8)
-#define HD_P_MASK (((1ull << 32) - 1ull) << 32)
+#define HD_T_MASK ((1ul << 8) - 1ul)
+#define HD_S_MASK (((1ul << 8) - 1ul) << 8)
+#define HD_P_MASK (((1ul << 32) - 1ul) << 32)
 
 #define Hd_tag(h) ((byte)((h) & HD_T_MASK))
 #define Hd_with_tag(h, t) (((h) & ~HD_T_MASK) | (t))

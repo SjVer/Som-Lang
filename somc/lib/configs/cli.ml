@@ -1,12 +1,12 @@
 (* properties *)
-
 let name = "somc"
+
 let version = "0.1.0"
 let usage_msg = name ^ " [options] files..."
 let version_msg = name ^ " " ^ version
 let description = "Official Som compiler"
 
-let explain_help_message = "For more information go to <TODO>."
+let explain_help_message = "For more information go to https://sjver.github.io/Som-Lang."
 
 (* global config struct type *)
 
@@ -19,6 +19,7 @@ type args_t =
 
     file: string;
     output: string option;
+    output_asm: bool;
     output_obj: bool;
     dry_run: bool;
 
@@ -44,6 +45,7 @@ let args = ref {
     
     file = "";
     output = None;
+    output_asm = false;
     output_obj = false;
     dry_run = false;
 

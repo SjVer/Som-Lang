@@ -75,8 +75,7 @@ module NestedApply = struct
     | Expr_let (
         var1, Expr_apply (f, args1),
         Expr_apply (Expr_atom (Atom_var (Var_local var2)), args2))
-    when var1 = var2 ->
-      Expr_apply (f, args1 @ args2)
+      when var1 = var2 -> Expr_apply (f, args1 @ args2)
 
     | Expr_let (var, value, expr) ->
       Expr_let (var, simplify_expr value, simplify_expr expr)
@@ -88,43 +87,8 @@ module NestedApply = struct
     | Expr_apply (f, args) ->
       Expr_apply (simplify_expr f, args)
     | Expr_if (cond, texpr, eexpr) ->
-      Expr_if (simplify_expr cond,
-        simplify_expr texpr,
-        simplify_expr eexpr)
-    | Expr_sequence (e1, e2) ->
-      Expr_sequence (simplify_expr e1, simplify_expr e2)
-    | Expr_lazy expr ->
-      Expr_lazy (simplify_expr expr)
-    | expr -> expr
-
-  let simplify_stmt = function
-    | Stmt_definition (i, expr) ->
-      Stmt_definition (i, simplify_expr expr)
-    | stmt -> stmt
-
-  let simplify_program =
-    _make_opt (List.map simplify_stmt) 
-end
-
-module ApplyToCall = struct
-  (* replaces stuff like `(apply #add ...)` to `(call #add ...)` *)
-
-  let rec simplify_expr = function
-    | Expr_let (var, value, expr) ->
-      Expr_let (var, simplify_expr value, simplify_expr expr)
-    | Expr_lambda (args, expr) ->
-      Expr_lambda (args, simplify_expr expr)
-    | Expr_match (s, cases) ->
-      let f (tag, expr) = tag, simplify_expr expr in
-      Expr_match (s, List.map f cases)
-
-    | Expr_apply (Expr_atom (Atom_prim p), args) ->
-      Expr_call (Atom_prim p, args)
-
-    | Expr_apply (f, args) ->
-      Expr_apply (simplify_expr f, args)
-    | Expr_if (cond, texpr, eexpr) ->
-      Expr_if (simplify_expr cond,
+      Expr_if (
+        simplify_expr cond,
         simplify_expr texpr,
         simplify_expr eexpr)
     | Expr_sequence (e1, e2) ->
@@ -162,5 +126,4 @@ end
 let basic_simplify_pogram =
   _make_opt (fun prog -> prog
     |> LetAlias.simplify_program
-    |> NestedApply.simplify_program
-    |> ApplyToCall.simplify_program)
+    |> NestedApply.simplify_program)

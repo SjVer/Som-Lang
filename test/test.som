@@ -1,3 +1,5 @@
-from modules::ops use *
+ext som_str_length : 'a . 'a -> Int
 
-let main = #add_int 1 2
+let text = "Hello, World!"
+
+let main = som_str_length text

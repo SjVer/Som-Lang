@@ -1,5 +1,4 @@
 CC = /usr/bin/clang
-AR = /usr/bin/ar
 LD = /usr/bin/ld
 
 DEFS = STDIN_PATH='"/dev/stdin"' STDOUT_PATH='"/dev/stdout"' STDERR_PATH='"/dev/stderr"' DEBUG_HEAP
@@ -37,7 +36,6 @@ clean:
 .PHONY: install
 install:
 	cp $(RUNTIME_LIB) /usr/lib/$(notdir $(RUNTIME_LIB))
-	cp $(JEMALLOC_LIB) /usr/lib/$(notdir $(JEMALLOC_LIB))
 
 # =============================
 

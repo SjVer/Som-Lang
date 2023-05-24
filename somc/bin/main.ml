@@ -78,6 +78,10 @@ let parseargs () =
     ~placeholder:"FILE"
     ~description:"Output to FILE"
     () in
+  let output_asm = flag
+    ~set_long:"output-asm"
+    ~description:"Output an assembly file"
+    false in
   let output_obj = flag
     ~set_long:"output-obj"
     ~description:"Output an object file"
@@ -167,6 +171,7 @@ let parseargs () =
 
     file;
     output;
+    output_asm;
     output_obj;
     dry_run;
 

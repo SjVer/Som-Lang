@@ -1,6 +1,12 @@
 open Typing.TAst
 open Ir
 
+(* from https://github.com/ocaml/ocaml/blob/trunk/lambda/translcore.ml#L191-L194 *)
+let rec cut n l =
+  if n = 0 then ([],l) else
+  match l with [] -> invalid_arg "codegen cut"
+  | a::l -> let (l1,l2) = cut (n-1) l in (a::l1,l2)
+
 let rec is_func_ty =
   let open Typing.Types in
   function
@@ -97,6 +103,19 @@ and lower_expr env expr =
       let e2' = lower_expr env e2 in
       Expr_sequence (e1', e2')
 
+    | Texp_apply ({ item = Texp_primitive p; _ }, args)
+      when List.length args >= Symbols.Primitive.arity p ->
+       
+      let args' = List.map (lower_expr env) args in
+      let prim_args, extra_args = cut (Symbols.Primitive.arity p) args' in
+
+      let prim_app =
+        let app args' = Expr_call (Atom_prim p, args') in
+        wrap_exprs_in_vars prim_args app
+      in
+      if extra_args = [] then prim_app
+      else lower_apply prim_app extra_args
+
     | Texp_apply (f, args) ->
       let f' = lower_expr env f in
       let args' = List.map (lower_expr env) args in
@@ -117,7 +136,28 @@ and lower_expr env expr =
 
     | Texp_literal l -> Expr_atom (lower_literal l)
     | Texp_ident i -> Expr_atom (Atom_var (Env.find env i.item))      
-    | Texp_primitive p -> Expr_atom (Atom_prim p)
+   
+    | Texp_primitive p ->
+      begin match p with
+        | Prim_file ->
+          Expr_atom (Atom_const (Const_string expr.span.file))
+        | Prim_line ->
+          Expr_atom (Atom_const (Const_int expr.span.start.line))
+        | p ->
+          (* not directly applied, so wrap in function *)
+          let args =
+            let rec f i =
+              if i = 0 then []
+              else Env.mangle "parg" :: f (i - 1)
+            in
+            f (Symbols.Primitive.arity p)
+          in
+          let call = Expr_call (
+            Atom_prim p,
+            List.map (fun a -> Atom_var (Var_local a)) args)
+          in
+          Expr_lambda (args, call)
+      end
 
     | Texp_error -> invalid_arg "Pexp_error"
 

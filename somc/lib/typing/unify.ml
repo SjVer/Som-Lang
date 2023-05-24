@@ -46,7 +46,7 @@ let instantiate level ty =
           Hashtbl.add id_var_map id var;
           var
       end
-    | TVar {contents = VRUnbound _} -> ty
+    | TVar {contents = VRUnbound _} as ty -> ty
     | TEff t -> TEff (go t)
     | TApp (a, t) -> TApp (go a, go t)
     | TFun (p, r) -> TFun (go p, go r)

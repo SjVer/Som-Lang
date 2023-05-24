@@ -10,7 +10,7 @@ gen_codes_ml:
 	@python3 gen_codes_ml.py
 
 build: gen_codes_ml
-	@clear -x
+	@clear
 	@cd somc && dune build
 
 exec: build
