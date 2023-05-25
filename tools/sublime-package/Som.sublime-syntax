@@ -21,6 +21,7 @@ variables:
   number: '{{decimal}}|{{binary}}|{{octal}}|{{hexadecimal}}'
 
   escape_seq: a|b|f|n|r|t|v|\\|\'|\"|0
+  operator_chars: \$|&|@|\+|\*|-|=|>|<?|:|!|\.|%|~|\|/|\[|\]|\^
 
   directive_prefix: \!\!\s*\.?\s*
 
@@ -375,24 +376,11 @@ contexts:
         - include: invalid
 
   operator:
-    - match: <<|>>
-      scope: keyword.operator.bitwise.shift.som
-    - match: =|/=
-      scope: keyword.operator.comparison.som
-    - match: <=|>=|<|>
-      scope: keyword.operator.relational.som
-    - match: \&\&|\|\|
-      scope: keyword.operator.logical.som
-    - match: \*|/|-|\+|\%
-      scope: keyword.operator.arithmetic.som
-
-    - match: \.\.
-      scope: keyword.operator.range.som
-    - match: \,|;
+    - match: \,
       scope: punctuation.separator.sequence.som
 
-    - match: \~|(?<!!)!(?!!)
-      scope: keyword.operator.unary.som
+    - match: '({{operator_chars}})+'
+      scope: keyword.operator.som
 
   constraint:
     - match: ':'

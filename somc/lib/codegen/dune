@@ -4,6 +4,8 @@
    report lambda
    llvm.scalar_opts llvm.ipo
    llvm.vectorize llvm.target
+   llvm.passmgr_builder
+   llvm.analysis
    llvm.all_backends
   )
 )

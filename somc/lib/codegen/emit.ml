@@ -61,8 +61,7 @@ let link_executable obj_file =
   
   if !C.args.verbose then begin
     Report.report_note ("linker: " ^ Configs.ld_path);
-    prerr_endline command;
-    Report.last_was_compact := false;
+    (* prerr_endline command; Report.last_was_compact := false; *)
   end;
 
   Report.report_note ("linking executable: " ^ out_file);

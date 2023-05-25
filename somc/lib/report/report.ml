@@ -92,7 +92,9 @@ let report r =
   if not !Configs.in_lsp_mode then begin
     if !Configs.Cli.args.compact then report_compact r
     else report_normal r;
-  end
+  end;
+
+  flush_all ()
 
 let report_note msg =
   make_note msg None

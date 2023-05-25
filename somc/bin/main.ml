@@ -135,7 +135,7 @@ let parseargs () =
     ~long:"pass"
     ~short:'p'
     ~placeholder:"PASS"
-    ~description:"Run pass PASS on the llvm IR"
+    ~description:"Run pass PASS on the LLVM IR"
     () in
   let target = optional_string
     ~long:"target"
@@ -201,8 +201,6 @@ let () =
   Symbols.reset ();
   try
     let llmod = Pipeline.CodegenFile.call !C.args.file in
-    (* print_newline (); *)
-    (* Codegen.print_module llmod; *)
     Codegen.Emit.emit llmod;
     exit 0
   with

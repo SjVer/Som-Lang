@@ -1,5 +1,6 @@
-ext som_str_length : 'a . 'a -> Int
+let (*.) : Flt -> Flt -> Flt = #mul_float
+ext print_float : Flt -> Nil
 
-let text = "Hello, World!"
-
-let main = som_str_length text
+let main =
+  print_float 2.5,
+  print_float (1.5 *. 2.0)

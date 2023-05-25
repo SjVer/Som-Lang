@@ -214,7 +214,7 @@ and finish_variant_type p =
   in
   let args =
     try
-      let t = constructed_type true p in
+      let t = constructed_type false p in
       let ts = many p (matsch SEMICOLON) (constructed_type false) in
       t :: ts
     with Backtrack -> []
@@ -416,14 +416,14 @@ and application_expression p =
        is 'above' atom_expression we cannot parse
        stuff like `Nil` in `List 123 ; Nil`. *)
     let ident = upper_longident p false in
-    let es, span =
+    let e, span =
       try
         let e = try_parse p (atom_expression false) in
-        let es = e :: many p (matsch SEMICOLON) (atom_expression true) in
-        es, catnspans ident (List.hd (List.rev es)) 
-      with Backtrack -> [], ident.span
+        [e], catnspans ident e
+      with Backtrack ->
+        [], ident.span
     in
-    mk span (Pexp_construct (ident, es))
+    mk span (Pexp_construct (ident, e))
 
   end with Backtrack ->
     (* otherwise maybe application *)
