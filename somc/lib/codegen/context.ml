@@ -1,3 +1,4 @@
+open Llvm_target
 module SMap = Map.Make(String)
 
 type ctx =
@@ -9,8 +10,13 @@ type ctx =
     values: Llvm.llvalue SMap.t;
   }
 
+let is_big_endian ctx =
+  TargetMachine.data_layout ctx.machine
+  |> DataLayout.byte_order |> function
+    | Endian.Big -> true
+    | Endian.Little -> false
+
 let make name =
-  let open Llvm_target in
   let context = Llvm.create_context () in
   
   (* we need the word size during codegen *)

@@ -19,6 +19,33 @@ let get_ext_func ctx name args =
       Llvm.declare_function name ty ctx.llmodule
     | Some func -> func
 
+let make_raw_header tag payload =
+  let open Int64 in
+  zero (* mind the endianness!! *)
+  |> logand 0xffffffffffffff00L |> logor (of_int tag)
+  |> logand 0x00000000ffffffffL |> logor (shift_left (of_int payload) 32)
+
+let make_header ctx tag payload =
+  let header = make_raw_header tag payload in
+  Llvm.const_of_int64 (header_lltype ctx) header false
+
+let make_const_obj ctx tag payload data =
+    let h = make_raw_header tag payload in
+    let hbytes = Bytes.make 8 '\x00' in
+    if is_big_endian ctx then Bytes.set_int64_be hbytes 0 h
+    else Bytes.set_int64_le hbytes 0 h;
+    let bytes = Bytes.cat hbytes data in
+      
+    let t = Llvm.i8_type ctx.context in
+    let arr =
+      Array.of_seq (Bytes.to_seq bytes)
+      |> Array.map int_of_char
+      |> Array.map (Llvm.const_int t)
+      |> Llvm.const_array (Llvm.i8_type ctx.context)
+    in
+    let obj = Llvm.define_global "obj" arr ctx.llmodule in
+    Llvm.const_bitcast obj (value_lltype ctx)  
+
 let llvalue_of_const ctx const =
   let lltype = value_lltype ctx in
   let open Int64 in
@@ -30,19 +57,12 @@ let llvalue_of_const ctx const =
     | Const_int i -> encode_const (of_int i)
     | Const_float f -> encode_const (bits_of_float f)
     | Const_string s ->
-      let ptr = Llvm.build_global_stringptr s "str" ctx.builder in
-      let som_make_str = get_ext_func ctx "som_str_make" [|Llvm.type_of ptr|] in
-      Llvm.build_call som_make_str [|ptr|] "strval" ctx.builder
+      (* let ptr = Llvm.build_global_stringptr s "str" ctx.builder in *)
+      (* let som_make_str = get_ext_func ctx "som_str_make" [|Llvm.type_of ptr|] in *)
+      (* Llvm.build_call som_make_str [|ptr|] "strval" ctx.builder *)
+      let data = Bytes.of_string s in
+      make_const_obj ctx 251 (Bytes.length data) data
     | Const_null -> encode_const zero
-
-let make_header ctx tag payload =
-  let open Int64 in
-  let header = 
-    zero (* mind the endianness!! *)
-    |> logand 0xffffffffffffff00L |> logor (of_int tag)
-    |> logand 0x00000000ffffffffL |> logor (shift_left (of_int payload) 32)
-  in
-  Llvm.const_of_int64 (header_lltype ctx) header false
     
 let make_object ctx tag fields =
   (* malloc the object *)
