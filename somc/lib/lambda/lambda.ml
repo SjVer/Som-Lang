@@ -11,3 +11,4 @@ let convert tast =
   |> Simplify.basic_simplify_pogram
   |> Simplify.Uncurry.uncurry_program
   |> Simplify.basic_simplify_pogram
+  |> Apply.convert_applications

@@ -4,7 +4,7 @@ open Ir
 (* from https://github.com/ocaml/ocaml/blob/trunk/lambda/translcore.ml#L191-L194 *)
 let rec cut n l =
   if n = 0 then ([],l) else
-  match l with [] -> invalid_arg "codegen cut"
+  match l with [] -> invalid_arg "lower cut"
   | a::l -> let (l1,l2) = cut (n-1) l in (a::l1,l2)
 
 let rec is_func_ty =
@@ -174,6 +174,7 @@ let lower_toplevel env (tl : toplevel node) =
       let open Typing.Types in
       let vars = match tdef.td_type.item with
         | TVariant rows ->
+          (* TODO: constr. of other type with same name is overwritten? *)
           let f (vars, tag) (ident, _) =
             if tag > Configs.maximum_tag then begin
               let open Report in
