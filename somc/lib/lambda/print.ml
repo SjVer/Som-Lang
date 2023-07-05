@@ -97,12 +97,12 @@ let print_stmt' ppf = function
       (kw "define")
       (var (name ^ "!"))
       print_expr' expr
-  (* | Stmt_function (name, params, expr) ->
+  | Stmt_function (name, params, expr) ->
     fpf ppf "@[<2>(%s@ %s%a@ %a@])"
       (kw "function")
       (var (name ^ "!"))
       (pp_print_list (fun f -> fpf f "@ %s")) params
-      print_expr' expr *)
+      print_expr' expr
   | Stmt_external (name, native) ->
     fpf ppf "(%s %s %s)"
       (kw "extern") (var (name ^ "!")) native

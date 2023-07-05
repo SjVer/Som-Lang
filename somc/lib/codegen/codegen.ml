@@ -32,29 +32,6 @@ let arity_of_func_ptr func =
 (* codegen stuff *)
 
 let codegen_glob_eval glob ctx =
-  (* let result_name = Llvm.value_name glob ^ ".result" in *)
-  (* match Llvm.lookup_global result_name ctx.llmodule with *)
-  (*   | Some result_glob -> *)
-  (*     let curr_fn = Llvm.(block_parent (insertion_block ctx.builder)) in *)
-  (*     let sblock = Llvm.insertion_block ctx.builder in *)
-  (*     let eblock = Llvm.append_block ctx.context "eval" curr_fn in *)
-  (*     let cblock = Llvm.append_block ctx.context "cont" curr_fn in *)
-
-  (*     (* check if there's already a result *)  *)
-  (*     let old_result = Llvm.build_load result_glob "old_result" ctx.builder in *)
-  (*     let cond' = Llvm.build_is_not_null old_result "has_result" ctx.builder in *)
-  (*     ignore (Llvm.build_cond_br cond' cblock eblock ctx.builder); *)
-
-  (*     (* eval, store and return the result *) *)
-  (*     Llvm.position_at_end eblock ctx.builder; *)
-  (*     let new_result = Llvm.build_call glob [||] "new_result" ctx.builder in *)
-  (*     ignore (Llvm.build_store new_result result_glob ctx.builder); *)
-  (*     ignore (Llvm.build_br cblock ctx.builder); *)
-
-  (*     Llvm.position_at_end cblock ctx.builder; *)
-  (*     Llvm.build_phi [old_result, sblock; new_result, eblock] "result" ctx.builder *)
-
-  (*   | None -> glob *)
   Llvm.build_call glob [||] (Llvm.value_name glob) ctx.builder
 
 let codegen_atom vals ctx = function
@@ -91,7 +68,6 @@ let cast_function_ptr ctx f argc =
 let build_call_primitive ctx prim args' =
   let name = Symbols.Primitive.to_string prim in
   let args' = Array.of_list args' in
-
   
   let rawop2 f =
     let one = Llvm.const_int (Value.value_lltype ctx) 1 in
@@ -186,7 +162,7 @@ let rec codegen_expr vals ctx = function
     let vals = SMap.add v value' vals in
     codegen_expr vals ctx expr
 
-  | Expr_lambda _ -> invalid_arg "codegen_expr lambda"
+  | Expr_lambda _ -> failwith "codegen_expr lambda"
   | Expr_match _ -> failwith "codegen_expr Expr_match"
 
   | Expr_call (Atom_prim p, args) ->
@@ -210,10 +186,20 @@ let rec codegen_expr vals ctx = function
       | Expr_atom (Atom_var (Var_global v)) -> SMap.find v vals
       | f -> codegen_expr vals ctx f
     in
-    let f' = cast_function_ptr ctx f' (List.length args) in
+    let f' = Llvm.build_bitcast
+      f' (Value.value_lltype ctx)
+      (Llvm.value_name f') ctx.builder
+    in
     let args' = List.map (codegen_atom vals ctx) args in
-    (* TODO: actually make the closure *)
-    Llvm.build_call f' (Array.of_list args') "closure" ctx.builder
+
+    (* call som_make_closure(&func, argc, args...) *)
+    let func = Value.get_ext_func ctx
+      "som_make_closure" ~vararg:true
+      [|Value.value_lltype ctx; Llvm.i32_type ctx.context|] 
+    in
+    let arity = Llvm.const_int (Llvm.i32_type ctx.context) (List.length args) in
+    let args'' = Array.append [|f'; arity|] (Array.of_list args') in
+    Llvm.build_call func args'' "closure" ctx.builder
 
   | Expr_if (cond, texpr, eexpr) ->
     let curr_fn = Llvm.(block_parent (insertion_block ctx.builder)) in
@@ -259,7 +245,24 @@ let rec codegen_expr vals ctx = function
     Llvm.build_call f [||] "unreachable" ctx.builder
 
 let codegen_stmt vals ctx = function
-  | Stmt_definition (name, Expr_lambda (params, body)) ->
+  | Stmt_definition (name, expr) ->
+    let fty = Value.function_lltype ctx 0 in
+    let func = Llvm.define_function name fty ctx.llmodule in
+
+    let entry = Llvm.entry_block func in
+    Llvm.position_at_end entry ctx.builder;
+    
+    let value = codegen_expr vals ctx expr in
+    ignore (Llvm.build_ret value ctx.builder);
+  
+    (* ignore (Llvm.define_global *)
+    (*   (name ^ ".result") *)
+    (*   (Llvm.const_null (Value.value_lltype ctx)) *)
+    (*   ctx.llmodule); *)
+
+    SMap.add name func vals
+
+  | Stmt_function (name, params, body) ->
     let fty = Value.function_lltype ctx (List.length params) in
     let func = Llvm.define_function name fty ctx.llmodule in
     let entry = Llvm.entry_block func in
@@ -278,23 +281,6 @@ let codegen_stmt vals ctx = function
       codegen_expr vals ctx body
     in
     ignore (Llvm.build_ret body' ctx.builder);
-
-    SMap.add name func vals
-
-  | Stmt_definition (name, expr) ->
-    let fty = Value.function_lltype ctx 0 in
-    let func = Llvm.define_function name fty ctx.llmodule in
-
-    let entry = Llvm.entry_block func in
-    Llvm.position_at_end entry ctx.builder;
-    
-    let value = codegen_expr vals ctx expr in
-    ignore (Llvm.build_ret value ctx.builder);
-   
-    (* ignore (Llvm.define_global *)
-    (*   (name ^ ".result") *)
-    (*   (Llvm.const_null (Value.value_lltype ctx)) *)
-    (*   ctx.llmodule); *)
 
     SMap.add name func vals
 

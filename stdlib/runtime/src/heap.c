@@ -38,7 +38,7 @@ void som_loose_free(void* ptr) {
 	free(ptr);
 }
 
-value som_malloc_object(size extra_size, byte tag) {
+value som_malloc_object(size extra_size, byte tag, ui32 payload) {
 	size size = sizeof(header) + extra_size;
 
 	// TODO: check if it fits properly in the minor heap
@@ -46,6 +46,7 @@ value som_malloc_object(size extra_size, byte tag) {
 
 	*object = Hd_with_tag(*object, tag);
 	*object = Hd_with_status(*object, STATUS_ALIVE);
+    *object = Hd_with_payload(*object, payload);
 
 	return object;
 }

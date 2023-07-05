@@ -33,12 +33,13 @@ and expr =
   | Expr_object of int * atom list
   | Expr_lazy of expr (* unused right now *)
   | Expr_get of var * int
-  | Expr_eval of var
+  | Expr_eval of var (* unused right now *)
   | Expr_atom of atom
   | Expr_fail
 
 type statement =
   | Stmt_definition of ident * expr
+  | Stmt_function of ident * ident list * expr
   | Stmt_external of ident * ident
 
 type program = statement list

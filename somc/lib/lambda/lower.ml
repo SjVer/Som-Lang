@@ -52,7 +52,7 @@ let rec bind_patt_vars env patt =
     | Tpat_wildcard -> env
     | Tpat_variable v ->
       let var = Env.mangle v in
-      Env.bind_local env (Ident v) var
+      Env.add_symbol env (Ident v) (Var_local var)
     | Tpat_literal _ -> env
     | Tpat_construct (_, args) ->
       List.fold_left bind_patt_vars env args
@@ -161,37 +161,40 @@ and lower_expr env expr =
 
     | Texp_error -> invalid_arg "Pexp_error"
 
-let lower_toplevel vars (tl : toplevel node) =
+let lower_toplevel env (tl : toplevel node) =
   match tl.item with
     | Ttl_value_def vdef ->
       let var = Env.mangle_ident vdef.vd_name.item in
-      let expr = lower_expr vars vdef.vd_expr in
+      let expr = lower_expr env vdef.vd_expr in
       let stmt = Stmt_definition (var, expr) in
-      let vars = Env.bind_global vars vdef.vd_name.item var in
+      let vars = Env.add_symbol 
+        env vdef.vd_name.item (Var_global var)
+      in
       vars, Some stmt
 
     | Ttl_type_def tdef ->
       let open Typing.Types in
       let vars = match tdef.td_type.item with
         | TVariant rows ->
+          (* TODO: constr. of other type with same name is overwritten? *)
           let f (vars, tag) (ident, _) =
             if tag > Configs.maximum_tag then begin
               let open Report in
               let e = Error.((Other_error (Other "constructor limit reached"))) in
               make_error e (Some tdef.td_type.span) |> raise
             end;
-            Env.add ident (Var_tag tag) vars, tag + 1
+            Env.add_symbol vars ident (Var_tag tag), tag + 1
           in
-          List.fold_left f (vars, 1) rows
+          List.fold_left f (env, 1) rows
           |> fst
-        | _ -> vars
+        | _ -> env
       in
       vars, None
 
     | Ttl_extern_def edef ->
       let var = Env.mangle_ident edef.ed_name.item in
       let stmt = Stmt_external (var, edef.ed_native_name.item) in
-      let vars = Env.bind_global vars edef.ed_name.item var in
+      let vars = Env.add_symbol env edef.ed_name.item (Var_global var) in
       vars, Some stmt
 
 let lower_tast tast =

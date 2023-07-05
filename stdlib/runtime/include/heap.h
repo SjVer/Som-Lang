@@ -17,4 +17,4 @@ void* som_malloc(size size);
 
 void som_loose_free(void* ptr);
 
-value som_malloc_object(size extra_size, byte tag);
+value som_malloc_object(size extra_size, byte tag, ui32 payload);

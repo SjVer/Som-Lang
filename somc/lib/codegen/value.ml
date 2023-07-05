@@ -24,10 +24,15 @@ let function_lltype ctx arity =
   Array.make arity (value_lltype ctx)
   |> Llvm.function_type (value_lltype ctx)
 
-let get_ext_func ctx name args =
+let get_ext_func ctx name ?(vararg=false) args =
   match Llvm.lookup_function name ctx.llmodule with
     | None ->
-      let ty = Llvm.(function_type (value_lltype ctx) args) in
+      let ty =
+        if vararg then 
+          Llvm.var_arg_function_type (value_lltype ctx) args
+        else
+          Llvm.function_type (value_lltype ctx) args
+      in
       Llvm.declare_function name ty ctx.llmodule
     | Some func -> func
 

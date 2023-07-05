@@ -33,16 +33,19 @@ let rec lift_expr = function
 
 let lift_stmt = function
   | Stmt_definition (name, Expr_lambda (params, body)) ->
-    (* prevent `(define lam! ...) (define name! lam!)` *)
     let funcs, body = lift_expr body in
-    funcs @ [Stmt_definition (name, Expr_lambda (params, body))]
+    funcs @ [Stmt_function (name, params, body)]
+
   | Stmt_definition (name, value) ->
     let funcs, value = lift_expr value in
     funcs @ [Stmt_definition (name, value)]
-  (* | Stmt_definition (name, value) ->
-    let funcs, value = lift_expr value in
-    funcs @ [Stmt_definition (name, value)] *)
-  | stmt -> [stmt]
+  
+  | Stmt_function (name, params, body) ->
+    let funcs, body = lift_expr body in
+    funcs @ [Stmt_function (name, params, body)]
+  
+  | Stmt_external (name, nname) ->
+    [Stmt_external (name, nname)]
 
 let lift_program program =
   List.map lift_stmt program

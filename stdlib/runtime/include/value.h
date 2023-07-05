@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 typedef uint8_t byte;
+typedef int32_t i32;
 typedef uint32_t ui32;
 typedef uint64_t ui64;
 typedef double f64;
@@ -112,3 +113,6 @@ typedef header* value;
 #define Null_val Unboxed_val(0)
 
 #pragma endregion
+
+value som_make_float(f64 f);
+value som_make_closure(void* func, i32 argc, ...);

@@ -12,7 +12,7 @@ value som_ptr_set(value ptr, value val) {
 
 value som_ptr_malloc(value size) {
     void* raw_data_ptr = som_loose_malloc(Val_value(size));
-    value val = som_malloc_object(sizeof(void*), TAG_RAW_DATA);
+    value val = som_malloc_object(sizeof(void*), TAG_RAW_DATA, Val_value(size));
     
     *(void**)Val_data_ptr(val) = raw_data_ptr;
     *val = Hd_with_tag(*val, TAG_RAW_DATA);
