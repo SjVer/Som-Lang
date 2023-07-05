@@ -3,22 +3,16 @@ open Ir
 module Ident = Typing.TAst.Ident
 module IMap = Map.Make(Ident)
 
-type t = 
-  {
-    symbols: var IMap.t;
-    arities: int IMap.t;
-  }
+type t = var IMap.t
 
-let empty =
-  {
-    symbols = IMap.empty;
-    arities = IMap.empty;
-  }
+let empty = IMap.empty
 
-let add_symbol env ident var =
-  {env with symbols = IMap.add ident var env.symbols}
+let add = IMap.add
 
-let find env ident = IMap.find ident env.symbols
+let bind_global vars ident var = IMap.add ident (Var_global var) vars
+let bind_local vars ident var = IMap.add ident (Var_local var) vars
+
+let find env ident = IMap.find ident env
 
 let mangle =
   let c = ref 0 in
