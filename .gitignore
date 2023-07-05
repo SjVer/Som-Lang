@@ -7,6 +7,8 @@
 **/*.install
 **/out/
 
+**/compile_commands.json
+
 test/test
 
 stdlib/runtime/bin/

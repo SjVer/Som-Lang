@@ -117,9 +117,17 @@ let run_passes llmodule =
     List.iter add !C.args.passes;
 
     (* run the bitch *)
+    if !C.args.verbose then
+      Report.report_note "running LLVM passes";
+
     Llvm_passmgr_builder.populate_lto_pass_manager
       pm ~internalize:true ~run_inliner:true pmbld;
     Llvm_passmgr_builder.populate_module_pass_manager pm pmbld;
-    ignore (Llvm.PassManager.run_module llmodule pm);
+
+    let iter = ref 0 in
+    while
+      Llvm.PassManager.run_module llmodule pm
+      && !iter <= 1000
+    do incr iter done
   else ()
 

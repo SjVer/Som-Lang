@@ -11,6 +11,11 @@ object stdin_obj;
 object stdout_obj;
 object stderr_obj;
 
+value print_float(value f) {
+    printf("%f (status = 0x%02x)\n", Val_float(f), Hd_status(*f));
+    return Null_val;
+}
+
 value som_io_stdin() {
 	return Boxed_value(stdin_obj);
 }

@@ -48,12 +48,6 @@ let report_path_invalidity ctx path =
   else
     failwith "unreachable"
 
-let check_typedef_name span = function
-  | Ident.Ident ("Int" | "Chr" | "Bln" | "Flt" | "Str" | "Nil") ->
-    let e = Other_error (Other "cannot shadow builtin type") in
-    Report.report (Report.make_error e (Some span))
-  | _ -> ()
-
 let string_nodes_to_marked_ident path =
   let path' = nmapi path in
   let path' = ("#" ^ List.hd path') :: List.tl path' in
@@ -257,7 +251,6 @@ let rec resolve_toplevel ctx tl =
     | Ptl_type_def tdef ->
       (* NOTE: types are always recursive now *)
       let td_name = qualnode ctx tdef.td_name in
-      check_typedef_name td_name.span td_name.item;
       let ctx = Context.bind_type ctx tdef.td_name.item td_name.item in
 
       let ctx, type' = resolve_complex_type ctx tdef.td_type in

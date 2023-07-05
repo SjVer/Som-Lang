@@ -31,12 +31,12 @@ let new_var depth = TVar (ref (VRUnbound (next_id (), depth)))
 let new_gen_var () = TVar (ref (VRGeneric (next_id ())))
 
 let show_prim = function
-  | PInt -> "$int"
-  | PChar -> "$char"
-  | PBool -> "$bool"
-  | PFloat -> "$float"
-  | PString -> "$string"
-  | PNil -> "$nil"
+  | PInt -> "#Int"
+  | PChar -> "#Chr"
+  | PBool -> "#Bln"
+  | PFloat -> "#Flt"
+  | PString -> "#Str"
+  | PNil -> "#Nil"
 
 let show ty debug =
   (* mapping id's to names starting by 'a' *)

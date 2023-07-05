@@ -14,13 +14,12 @@ let set_ty typ n = {n with typ}
 (* inference functions *)
 
 let infer_literal =
-  let name n = TName (Ident n) in
   let open Ast in function
-    | Pli_int i    -> Tli_int i,    name "Int"
-    | Pli_char c   -> Tli_char c,   name "Chr"
-    | Pli_float f  -> Tli_float f,  name "Flt"
-    | Pli_string s -> Tli_string s, name "Str"
-    | Pli_null     -> Tli_null,     name "Nil"
+    | Pli_int i    -> Tli_int i,    TPrim PInt
+    | Pli_char c   -> Tli_char c,   TPrim PChar
+    | Pli_float f  -> Tli_float f,  TPrim PFloat
+    | Pli_string s -> Tli_string s, TPrim PString
+    | Pli_null     -> Tli_null,     TPrim PNil
 
 let rec fold_application_type env span fty = function
   | n :: ns ->

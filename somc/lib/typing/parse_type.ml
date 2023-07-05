@@ -48,6 +48,21 @@ let rec parse ?(tvars=SMap.empty) env level =
       check_alias_exists env (Ident.to_string t.item) t.span;
       TApp (go level a.item, TName t.item)
 
+    | Pty_primitive s ->
+      begin match s.item with
+        | "Int" -> TPrim PInt
+        | "Chr" -> TPrim PChar
+        | "Bln" -> TPrim PBool
+        | "Flt" -> TPrim PFloat
+        | "Str" -> TPrim PString
+        | "Nil" -> TPrim PNil
+        | _ ->
+          let open Report.Error in
+          let e = Type_error (Use_of_invalid_primitive s.item) in
+          Report.make_error e (Some s.span) |> Report.report;
+          TError
+      end
+
 let parse_complex env params ident cmplxtyp =
   (* create tvars for params *)
   let f m var = SMap.add var (Types.new_var 1) m in

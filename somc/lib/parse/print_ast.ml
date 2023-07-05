@@ -70,6 +70,9 @@ and print_type_node' i { span; item } =
       if Option.is_some a
       then print_type_node' (i + 1) (Option.get a);
 
+    | Pty_primitive s ->
+      p i ("Pty_primitive " ^ s.item) span
+
 and print_complex_type_node' i { span; item } =
   match item with
     | Pct_variant rows ->

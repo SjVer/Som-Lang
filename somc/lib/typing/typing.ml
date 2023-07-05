@@ -8,20 +8,6 @@ open TAst
 open Infer
 open Unify
 
-let initial_env =
-  let open Env in
-  let open Types in
-  let add name typ env =
-    add_alias env (Ident name) (TPrim typ)
-  in
-  empty
-  |> add "Int" PInt 
-  |> add "Chr" PChar
-  |> add "Bln" PBool
-  |> add "Flt" PFloat
-  |> add "Str" PString
-  |> add "Nil" PNil 
-
 let typecheck_toplevel env (node : Ast.toplevel Ast.node) =
   let mk item = {span = node.span; item} in
   match node.item with

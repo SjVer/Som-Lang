@@ -89,79 +89,96 @@ let cast_function_ptr ctx f argc =
   Llvm.build_bitcast f (Llvm.pointer_type ft) "fncast" ctx.builder
 
 let build_call_primitive ctx prim args' =
+  let name = Symbols.Primitive.to_string prim in
   let args' = Array.of_list args' in
 
-  let one = Llvm.const_int (Value.value_lltype ctx) 1 in
-  let box v = Llvm.build_shl v one "box" ctx.builder in 
-  let unbox v = Llvm.build_ashr v one "unbox" ctx.builder in
   
-  let rawop2 f = f (unbox args'.(0)) (unbox args'.(1)) in
-  let shortop2 t f name bld =
+  let rawop2 f =
+    let one = Llvm.const_int (Value.value_lltype ctx) 1 in
+    let unbox v = Llvm.build_ashr v one "unbox" ctx.builder in
+    let r = f (unbox args'.(0)) (unbox args'.(1)) name ctx.builder in
+    Llvm.build_shl r one "box" ctx.builder 
+  in
+  let chrop2 f =
+    let t = Llvm.i8_type ctx.context in
     let arg1 = cast_value_to_short_t ctx args'.(0) t in
     let arg2 = cast_value_to_short_t ctx args'.(1) t in
-    let result = f arg1 arg2 name bld in
+    let result = f arg1 arg2 name ctx.builder in
     cast_short_t_to_value ctx result
   in
-  let floatop2 = shortop2 (Llvm.float_type ctx.context) in
+  let fltop2 name =
+    let fname = "som_prim_" ^ name ^ "_float" in
+    let t = Value.value_lltype ctx in
+    let f = Value.get_ext_func ctx fname [|t; t|] in
+    Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+  in
 
-  (* TODO: the args are not unboxed, like, ever *)
   let open Symbols.Primitive in
-  let build_f = match prim with
-    | Prim_add_int
-    | Prim_add_char  -> rawop2 Llvm.build_add
-    | Prim_add_float -> rawop2 Llvm.build_add
+  match prim with
+    | Prim_add_int   -> rawop2 Llvm.build_add
+    | Prim_add_char  -> chrop2 Llvm.build_add
+    | Prim_add_float -> fltop2 "add"
     | Prim_add_string ->
       let sty = Value.value_lltype ctx in
       let f = Value.get_ext_func ctx "som_prim_add_string" [|sty; sty|] in
-      Llvm.build_call f [|args'.(0)|]
-    | Prim_sub_int
-    | Prim_sub_char  -> rawop2 Llvm.build_sub
+      Llvm.build_call f [|args'.(0)|] name ctx.builder
+
+    | Prim_sub_int   -> rawop2 Llvm.build_sub
+    | Prim_sub_char  -> chrop2 Llvm.build_sub
     | Prim_sub_float -> rawop2 Llvm.build_fsub
-    | Prim_mul_int
-    | Prim_mul_char  -> rawop2 Llvm.build_mul
-    | Prim_mul_float -> floatop2 Llvm.build_fmul
+
+    | Prim_mul_int   -> rawop2 Llvm.build_mul
+    | Prim_mul_char  -> chrop2 Llvm.build_mul
+    | Prim_mul_float -> fltop2 "mul"
+
     | Prim_div_int   -> rawop2 Llvm.build_sdiv
-    | Prim_div_char  -> rawop2 Llvm.build_udiv
-    | Prim_div_float -> rawop2 Llvm.build_fdiv
+    | Prim_div_char  -> chrop2 Llvm.build_udiv
+    | Prim_div_float -> fltop2 "div"
+
     | Prim_rem_int   -> rawop2 Llvm.build_srem 
-    | Prim_rem_float -> rawop2 Llvm.build_frem
+    | Prim_rem_float -> fltop2 "rem"
+
     | Prim_abs_int   ->
       let ity = Llvm.integer_type ctx.context 32 in
       let f = Value.get_ext_func ctx "som_prim_abs_int" [|ity; ity|] in
-      Llvm.build_call f [|args'.(0); args'.(1)|]
+      Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
     | Prim_abs_float ->
       let fty = Llvm.double_type ctx.context in
       let f = Value.get_ext_func ctx "som_prim_abs_float" [|fty; fty|] in
-      Llvm.build_call f [|args'.(0); args'.(1)|]
-    | Prim_neg_int   -> Llvm.build_neg args'.(0)
-    | Prim_neg_float -> Llvm.build_fneg args'.(0)
+      Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+
+    | Prim_neg_int   -> Llvm.build_neg args'.(0) name ctx.builder
+    | Prim_neg_float -> Llvm.build_fneg args'.(0) name ctx.builder
+
     | Prim_and       -> rawop2 Llvm.build_and
     | Prim_or        -> rawop2 Llvm.build_or
-    | Prim_not       -> Llvm.build_not args'.(0)
+    | Prim_not       -> Llvm.build_not args'.(0) name ctx.builder
+
     | Prim_eq        -> rawop2 (Llvm.build_icmp Llvm.Icmp.Eq)
     | Prim_eq_value ->
       let vty = Value.value_lltype ctx in
       let f = Value.get_ext_func ctx "som_prim_eq_value" [|vty; vty|] in
-      Llvm.build_call f [|args'.(0); args'.(1)|]
+      Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+
     | Prim_gt_int   -> rawop2 (Llvm.build_icmp Llvm.Icmp.Sgt)
-    | Prim_gt_float -> rawop2 (Llvm.build_fcmp Llvm.Fcmp.Ogt)
+    | Prim_gt_float -> fltop2 "gt"
     | Prim_lt_int   -> rawop2 (Llvm.build_icmp Llvm.Icmp.Slt)
-    | Prim_lt_float -> rawop2 (Llvm.build_fcmp Llvm.Fcmp.Olt)
+    | Prim_lt_float -> fltop2 "lt"
+
     | Prim_neq      -> rawop2 (Llvm.build_icmp Llvm.Icmp.Ne)
     | Prim_neq_value ->
       let vty = Value.value_lltype ctx in
       let f = Value.get_ext_func ctx "som_prim_neq_value" [|vty; vty|] in
-      Llvm.build_call f [|args'.(0); args'.(1)|]
+      Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+
     | Prim_gteq_int   -> rawop2 (Llvm.build_icmp Llvm.Icmp.Sge)
-    | Prim_gteq_float -> rawop2 (Llvm.build_fcmp Llvm.Fcmp.Oge)
+    | Prim_gteq_float -> fltop2 "gteq"
     | Prim_lteq_int   -> rawop2 (Llvm.build_icmp Llvm.Icmp.Sle)
-    | Prim_lteq_float -> rawop2 (Llvm.build_fcmp Llvm.Fcmp.Ole)
+    | Prim_lteq_float -> fltop2 "lteq"
+
     | Prim_tageq -> failwith "TODO: codegen_prim tageq"
     
     | _ -> failwith ("codegen_prim " ^ (to_string prim))
-  in
-  build_f (to_string prim) ctx.builder
-  |> box
 
 let rec codegen_expr vals ctx = function
   | Expr_let (v, value, expr) ->
@@ -227,10 +244,10 @@ let rec codegen_expr vals ctx = function
 
   | Expr_tuple els ->
     let els' = List.map (codegen_atom vals ctx) els in
-    Value.make_object ctx 253 els'
+    Value.make_fields_obj ctx Value.Tag.tuple els'
   | Expr_object (tag, els) ->
     let els' = List.map (codegen_atom vals ctx) els in
-    Value.make_object ctx tag els' 
+    Value.make_fields_obj ctx tag els' 
   
   | Expr_lazy _ -> failwith "codegen_expr Expr_lazy"
   | Expr_get _ -> failwith "codegen_expr Expr_get"
@@ -324,7 +341,9 @@ let codegen_program program =
       go vals ctx program
   in
   let vals, ctx = go SMap.empty ctx program in
+
   codegen_entrypoint vals ctx;
+  
   Pass.run_passes ctx.llmodule;
   ctx
 

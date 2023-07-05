@@ -6,6 +6,7 @@
 typedef uint8_t byte;
 typedef uint32_t ui32;
 typedef uint64_t ui64;
+typedef double f64;
 
 /*
 	Value type:
@@ -21,6 +22,10 @@ typedef uint64_t ui64;
 		16-30: padding (2 bytes)
 		31-63: payload (4 bytes)
 
+    Float objects:
+        payload: unused
+        following data: 8 byte float
+
 	Raw data objects:
 		payload: data size in bytes
 		following data: data as array
@@ -29,7 +34,7 @@ typedef uint64_t ui64;
 		payload: element count
 		following data: array of values
 	
-	Thunk objects:
+	Closure objects:
 		payload: argument count
 		following data: function pointer and values
 
@@ -60,14 +65,16 @@ typedef ui64 header;
 #define Hd_with_payload(h, p) (((h) & ~HD_P_MASK) | (header)(p) << 32)
 
 #define TAG_MAX 250
-#define TAG_RAW_DATA 251
-#define TAG_RECORD 252
-#define TAG_TUPLE 253
-#define TAG_THUNK 254
+#define TAG_FLOAT 251
+#define TAG_RAW_DATA 252
+#define TAG_RECORD 253
+#define TAG_TUPLE 254
+#define TAG_CLOSURE 255
 
 #define STATUS_DEAD  0x00
 #define STATUS_DYING 0x01
 #define STATUS_ALIVE 0x02
+#define STATUS_CONST 0x03
 
 #pragma endregion
 
@@ -100,6 +107,7 @@ typedef header* value;
 #pragma region
 
 #define Val_data_ptr(v) (v + 1)
+#define Val_float(v) (*Obj_data_ptr(f64*, *(v)))
 #define Val_field(v, i) (Obj_data_ptr(value*, *(v))[i])
 #define Null_val Unboxed_val(0)
 

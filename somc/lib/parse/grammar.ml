@@ -612,15 +612,21 @@ and atom_type must p =
     let t = typ p in
     if not (matsch RPAREN p) then
       unclosed "'('" start_s "the closing ')' here" (current p).span;
-
     let s = catspans start_s p.previous.span in
     mk s (if groups then Pty_grouping t else t.item)
+
   end else if matsch (dummy `PRIMENAME) p then
     let s = mk p.previous.span (unpack_str p.previous.typ) in
     mk s.span (Pty_variable s)
+
+  else if matsch (dummy `MAGICTYPE) p then
+    let s = mk p.previous.span (unpack_str p.previous.typ) in
+    mk s.span (Pty_primitive s)
+  
   else try try_parse p begin fun p ->
     let i = upper_longident p false in
     mk i.span (Pty_construct (None, i))
+  
   end with Backtrack ->
     if must then error_at_current p (Expected "a type") []
     else backtrack ()

@@ -120,6 +120,7 @@ and typ =
   | Pty_function of typ node * typ node
   | Pty_tuple of typ node list
   | Pty_construct of typ node option * Ident.t node
+  | Pty_primitive of string node
 
 (* ===================== Directive ===================== *)
 

@@ -92,6 +92,7 @@ rule lex = parse
   | "--" { simple_comment lexbuf; lex lexbuf }
 
   | "#" (lower_name as ident) { MAGICNAME ident }
+  | "#" (upper_name as ident) { MAGICTYPE ident }
   | "!!" (lower_name as ident) { DIRECTNAME ident }
 
   | "/=" { NOTEQUAL }

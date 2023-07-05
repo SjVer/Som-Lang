@@ -58,6 +58,7 @@ type token_typ =
   | PRIMENAME of string
   | DIRECTNAME of string
   | MAGICNAME of string
+  | MAGICTYPE of string
   | INTEGER of int
   | FLOAT of float
   | CHARACTER of char
@@ -80,6 +81,7 @@ let without_arg = function
   | PRIMENAME _ -> `PRIMENAME
   | DIRECTNAME _ -> `DIRECTNAME
   | MAGICNAME _ -> `MAGICNAME
+  | MAGICTYPE _ -> `MAGICTYPE
   | INTEGER _ -> `INTEGER
   | FLOAT _ -> `FLOAT
   | CHARACTER _ -> `CHARACTER
@@ -91,7 +93,7 @@ let unpack_str = function
   | INFIX_OP_4 s | INFIX_OP_5 s | INFIX_OP_6 s
   | UNARY_OP s
   | UPPERNAME s | LOWERNAME s
-  | MAGICNAME s | DIRECTNAME s
+  | MAGICNAME s | MAGICTYPE s | DIRECTNAME s
   | PRIMENAME s -> s
   | t -> failwith ("unpack_str " ^ show_token_typ t)
 
@@ -118,6 +120,7 @@ let dummy = function
   | `PRIMENAME -> PRIMENAME ""
   | `DIRECTNAME -> DIRECTNAME ""
   | `MAGICNAME -> MAGICNAME ""
+  | `MAGICTYPE -> MAGICTYPE ""
   | `INTEGER -> INTEGER 0
   | `FLOAT -> FLOAT 0.0
   | `CHARACTER -> CHARACTER '\x00'
