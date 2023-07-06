@@ -45,12 +45,12 @@ and print_expr' ppf = function
     fpf ppf "@[<2>(%s@ %a@ %a)@]"
       (kw "call")
       print_atom' func
-      (pp_list print_atom') args
+      (pp_list print_expr') args
   | Expr_apply (func, args) ->
     fpf ppf "@[<2>(%s@ %a@ %a)@]"
       (kw "apply")
       print_expr' func
-      (pp_list print_atom') args
+      (pp_list print_expr') args
   | Expr_if (cond, thenexpr, elseexpr) ->
     fpf ppf "@[<2>(%s@ %a@ @[<2>%s@ %a@]@ @[<2>%s@ %a)@]@]"
       (kw "if") print_expr' cond

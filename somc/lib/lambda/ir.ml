@@ -25,8 +25,8 @@ and expr =
   | Expr_let of ident * expr * expr
   | Expr_lambda of ident list * expr
   | Expr_match of atom * (int * expr) list
-  | Expr_call of atom * atom list
-  | Expr_apply of expr * atom list
+  | Expr_call of atom * expr list
+  | Expr_apply of expr * expr list
   | Expr_if of expr * expr * expr
   | Expr_sequence of expr * expr
   | Expr_tuple of atom list

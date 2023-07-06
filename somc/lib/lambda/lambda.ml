@@ -41,7 +41,7 @@ let convert tast =
 
   let prog =
     Lower.lower_tast tast
-    |> Simplify.basic_simplify_pogram
+    (* |> Simplify.basic_simplify_pogram *)
   in
   if !Configs.Cli.args.dump_raw_ir then begin
     Report.report_note "dumping raw IR:";

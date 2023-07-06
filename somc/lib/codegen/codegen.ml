@@ -73,7 +73,8 @@ let build_call_primitive ctx prim args' =
     let one = Llvm.const_int (Value.value_lltype ctx) 1 in
     let unbox v = Llvm.build_ashr v one "unbox" ctx.builder in
     let r = f (unbox args'.(0)) (unbox args'.(1)) name ctx.builder in
-    Llvm.build_shl r one "box" ctx.builder 
+    let r = Llvm.build_shl r one "box" ctx.builder in
+    Llvm.build_or r one "box" ctx.builder
   in
   let chrop2 f =
     let t = Llvm.i8_type ctx.context in
@@ -169,7 +170,7 @@ let rec codegen_expr vals ctx = function
     let arity = Symbols.Primitive.arity p in
     if List.length args <> arity then 
       failwith "codegen_expr primitive call invalid";
-    let args' = List.map (codegen_atom vals ctx) args in
+    let args' = List.map (codegen_expr vals ctx) args in
     build_call_primitive ctx p args'
 
   | Expr_call (f, args) ->
@@ -178,7 +179,7 @@ let rec codegen_expr vals ctx = function
       | atom -> codegen_atom vals ctx atom
     in
     let f' = cast_function_ptr ctx f' (List.length args) in
-    let args' = List.map (codegen_atom vals ctx) args in
+    let args' = List.map (codegen_expr vals ctx) args in
     Llvm.build_call f' (Array.of_list args') "call" ctx.builder
   
   | Expr_apply (f, args) ->
@@ -190,7 +191,7 @@ let rec codegen_expr vals ctx = function
       f' (Value.value_lltype ctx)
       (Llvm.value_name f') ctx.builder
     in
-    let args' = List.map (codegen_atom vals ctx) args in
+    let args' = List.map (codegen_expr vals ctx) args in
 
     (* call som_make_closure(&func, argc, args...) *)
     let func = Value.get_ext_func ctx

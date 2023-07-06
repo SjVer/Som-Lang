@@ -31,9 +31,9 @@ module LetAlias = struct
       let f (tag, expr) = tag, simplify_expr expr in
       Expr_match (s, List.map f cases)
     | Expr_call (f, args) ->
-      Expr_call (check_atom f, List.map check_atom args)
+      Expr_call (check_atom f, List.map simplify_expr args)
     | Expr_apply (f, args) ->
-      Expr_apply (simplify_expr f, List.map check_atom args)
+      Expr_apply (simplify_expr f, List.map simplify_expr args)
     | Expr_if (cond, texpr, eexpr) ->
       Expr_if (simplify_expr cond,
         simplify_expr texpr,

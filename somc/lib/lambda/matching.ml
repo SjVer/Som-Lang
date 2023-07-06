@@ -180,10 +180,10 @@ let compile_check scrut = function
   | Default -> Expr_atom (Atom_const (Const_int 1))
   | Const c ->
     let prim = Atom_prim Symbols.Primitive.Prim_eq in
-    Expr_call (prim, [Atom_const c; scrut])
+    Expr_call (prim, [Expr_atom (Atom_const c); scrut])
   | Tag t ->
     let prim = Atom_prim Symbols.Primitive.Prim_tageq in
-    Expr_call (prim, [Atom_const (Const_int t); scrut])
+    Expr_call (prim, [Expr_atom (Atom_const (Const_int t)); scrut])
 
 let rec compile_tree expr = function
   | Fail -> Expr_fail
@@ -195,7 +195,7 @@ let rec compile_tree expr = function
         let tree' = compile_tree expr tree in
         if check <> Default then
           wrap_in_let scrut' (fun scrut' ->
-            let cond = compile_check (Atom_var scrut') check in
+            let cond = compile_check (Expr_atom (Atom_var scrut')) check in
             let rest' = f rest in
             Expr_if (cond, tree', rest'))
         else

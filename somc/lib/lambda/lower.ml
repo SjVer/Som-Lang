@@ -45,14 +45,6 @@ let wrap_exprs_in_vars exprs cont =
 let lower_literal l =
   Atom_const (Matching.lower_literal l)
 
-let lower_apply f args =
-  let app args' =
-    let r = Env.fresh () in
-    let app = Expr_apply (Expr_atom (local r), args') in
-    Expr_let (r, f, app)
-  in
-  wrap_exprs_in_vars args app
-
 let rec bind_patt_vars env patt =
   match patt.item with
     | Tpat_wildcard -> env
@@ -115,17 +107,14 @@ and lower_expr env expr =
       let args' = List.map (lower_expr env) args in
       let prim_args, extra_args = cut (Symbols.Primitive.arity p) args' in
 
-      let prim_app =
-        let app args' = Expr_call (Atom_prim p, args') in
-        wrap_exprs_in_vars prim_args app
-      in
+      let prim_app = Expr_call (Atom_prim p, prim_args) in
       if extra_args = [] then prim_app
-      else lower_apply prim_app extra_args
+      else Expr_apply (prim_app, extra_args)
 
     | Texp_apply (f, args) ->
       let f' = lower_expr env f in
       let args' = List.map (lower_expr env) args in
-      lower_apply f' args'
+      Expr_apply (f', args')
 
     | Texp_tuple es ->
       let es' = List.map (lower_expr env) es in
@@ -160,7 +149,7 @@ and lower_expr env expr =
           in
           let call = Expr_call (
             Atom_prim p,
-            List.map (fun a -> Atom_var (Var_local a)) args)
+            List.map (fun a -> Expr_atom (local a)) args)
           in
           Expr_lambda (args, call)
       end

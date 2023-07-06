@@ -20,10 +20,10 @@ let free_vars =
     | Expr_lambda (params, expr) ->
       diff (go expr) (of_list params)
     | Expr_call (f, args) ->
-      let vs = List.map in_atom args in
+      let vs = List.map go args in
       in_atom f @ flatten vs
     | Expr_apply (f, args) ->
-      let vs = List.map in_atom args in
+      let vs = List.map go args in
       go f @ flatten vs
     | Expr_if (cond, thenexpr, elseexpr) ->
       go cond @ go thenexpr @ go elseexpr
@@ -64,7 +64,7 @@ let rec convert_expr = function
       let lam = Expr_lambda (env :: params, body) in
       let f = Env.mangle "f" in
       let thunk =
-        let els = List.map Lower.local free_vars in
+        let els = List.map (fun v -> Expr_atom (Lower.local v)) free_vars in
         Expr_apply (Expr_atom (Lower.local f), els)
       in
       (* let f = \env vars -> ... in (f, vars) *)
