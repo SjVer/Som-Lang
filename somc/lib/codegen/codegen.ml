@@ -284,8 +284,8 @@ let codegen_stmt vals ctx = function
 
     SMap.add name func vals
 
-  | Stmt_external (name, native_name) ->
-    let fty = Llvm.function_type (Value.value_lltype ctx) [||] in
+  | Stmt_external (name, native_name, arity) ->
+    let fty = Value.function_lltype ctx arity in
     let glob = Llvm.declare_function native_name fty ctx.llmodule in
     SMap.add name glob vals
 

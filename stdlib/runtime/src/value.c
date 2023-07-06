@@ -18,6 +18,7 @@ value som_make_closure(void* func, i32 argc, ...) {
     va_start(args, argc);
     for (int i = 0; i < argc; i++)
         Val_field(v, i + 1) = va_arg(args, value);
+    va_end(args);
 
     return v;
 }

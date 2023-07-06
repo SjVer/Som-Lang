@@ -103,9 +103,9 @@ let print_stmt' ppf = function
       (var (name ^ "!"))
       (pp_print_list (fun f -> fpf f "@ %s")) params
       print_expr' expr
-  | Stmt_external (name, native) ->
-    fpf ppf "(%s %s %s)"
-      (kw "extern") (var (name ^ "!")) native
+  | Stmt_external (name, native, arity) ->
+      fpf ppf "(%s %s %s [%d])"
+      (kw "extern") (var (name ^ "!")) native arity
 
 let print_program' ppf stmts =
   let f i stmt =

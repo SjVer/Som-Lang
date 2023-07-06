@@ -1,5 +1,5 @@
 (library
   (name lambda)
   (preprocess (pps ppx_deriving.show))
-  (libraries symbols typing ANSITerminal printbox printbox-text)
+  (libraries configs symbols typing ANSITerminal printbox printbox-text)
 )

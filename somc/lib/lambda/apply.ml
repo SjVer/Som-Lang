@@ -13,7 +13,7 @@ let rec convert_expr amap = function
   | Expr_apply (Expr_atom (Atom_var (Var_global f)), args) as e ->
     let arity = match SMap.find_opt f amap with
       | Some arity -> arity
-      | None -> 0
+      | None -> Int.max_int (* TODO: wrong? *)
     in
     if List.length args = arity then
       Expr_call (Atom_var (Var_global f), args)
@@ -24,6 +24,28 @@ let rec convert_expr amap = function
     else
       e
 
+  | Expr_apply (f, args) ->
+    Expr_apply (convert_expr amap f, args) 
+
+  | Expr_match (scrut, cases) ->
+    let do_case (int, expr) = int, convert_expr amap expr in
+    let cases = List.map do_case cases in
+    Expr_match (scrut, cases)
+
+  | Expr_if (cond, iexpr, eexpr) ->
+    Expr_if (
+      convert_expr amap cond,
+      convert_expr amap iexpr,
+      convert_expr amap eexpr)
+
+  | Expr_sequence (lexpr, rexpr) ->
+    Expr_sequence (
+      convert_expr amap lexpr,
+      convert_expr amap rexpr)
+
+  | Expr_lazy expr ->
+    Expr_lazy (convert_expr amap expr)
+
   | expr -> expr
 
 let convert_stmt amap = function
@@ -32,10 +54,21 @@ let convert_stmt amap = function
   | Stmt_function (name, params, body) ->
     let amap = SMap.add name (List.length params) amap in
     amap, Stmt_function (name, params, convert_expr amap body)
-  | Stmt_external (name, nname) ->
-    amap, Stmt_external (name, nname)
+  | Stmt_external (name, _, arity) as stmt ->
+    SMap.add name arity amap, stmt
 
-let convert_applications program =
+let rec convert_statements = function
+  | [] -> []
+  | Stmt_definition (name, Expr_lambda (params, body)) :: stmts ->
+    let stmt = Stmt_function (name, params, body) in
+    convert_statements (stmt :: stmts)
+  | Stmt_function (name, fparams, Expr_lambda (lparams, body)) :: stmts ->
+    let stmt = Stmt_function (name, fparams @ lparams, body) in
+    convert_statements (stmt :: stmts)
+  | stmt :: stmts ->
+    stmt :: convert_statements stmts
+
+let convert_program program =
   let rec go amap program = function
     | [] -> program
     | stmt :: stmts ->

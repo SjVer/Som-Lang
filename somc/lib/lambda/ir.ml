@@ -40,6 +40,6 @@ and expr =
 type statement =
   | Stmt_definition of ident * expr
   | Stmt_function of ident * ident list * expr
-  | Stmt_external of ident * ident
+  | Stmt_external of ident * ident * int
 
 type program = statement list

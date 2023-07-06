@@ -108,6 +108,10 @@ let parseargs () =
     ~set_long:"dump-ir"
     ~description:"Dump the intermediate representation"
     false in
+  let dump_raw_ir = flag
+    ~set_long:"dump-raw-ir"
+    ~description:"Dump the raw intermediate representation"
+    false in
   let dump_llvm = flag
     ~set_long:"dump-llvm"
     ~description:"Dump the LLVM IR"
@@ -179,6 +183,7 @@ let parseargs () =
     dump_rast;
     dump_tast;
     dump_ir;
+    dump_raw_ir;
     dump_llvm;
 
     search_dirs;
@@ -211,7 +216,7 @@ let () =
       Report.report r;
       failed_to_compile !C.args.file;
       exit 1
-    | Invalid_argument msg ->
+    | Invalid_argument msg | Failure msg ->
       let open Report in
       let msg = "an internal error occured: " ^ msg in
       let note = 

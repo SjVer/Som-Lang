@@ -12,8 +12,7 @@ let rec lift_expr = function
     let f = Env.mangle "lam" in
     let funcs, body = lift_expr body in
     let expr = Expr_atom (Atom_var (Var_global f)) in
-    let lam = Expr_lambda (params, body) in
-    funcs @ [Stmt_definition (f, lam)], expr
+    funcs @ [Stmt_function (f, params, body)], expr
 
   | Expr_if (cond, texpr, eexpr) ->
     let tfuncs, texpr = lift_expr texpr in
@@ -44,8 +43,7 @@ let lift_stmt = function
     let funcs, body = lift_expr body in
     funcs @ [Stmt_function (name, params, body)]
   
-  | Stmt_external (name, nname) ->
-    [Stmt_external (name, nname)]
+  | Stmt_external _ as stmt -> [stmt]
 
 let lift_program program =
   List.map lift_stmt program

@@ -20,6 +20,12 @@ let rec is_func_ty =
       true
     | _ -> false
 
+let rec arity_of_type =
+  (* TODO: try a less naive approach? *)
+  let open Typing.Types in function
+    | TFun (_, t) -> 1 + arity_of_type t
+    | _ -> 0
+
 let local r = Atom_var (Var_local r)
 
 let wrap_exprs_in_vars exprs cont =
@@ -191,8 +197,9 @@ let lower_toplevel env (tl : toplevel node) =
 
     | Ttl_extern_def edef ->
       let var = Env.mangle_ident edef.ed_name.item in
-      let stmt = Stmt_external (var, edef.ed_native_name.item) in
       let vars = Env.bind_global env edef.ed_name.item var in
+      let arity = arity_of_type edef.ed_type.item in
+      let stmt = Stmt_external (var, edef.ed_native_name.item, arity) in
       vars, Some stmt
 
 let lower_tast tast =

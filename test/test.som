@@ -1,7 +1,9 @@
-let (*.) : #Flt -> #Flt -> #Flt = #mul_float
-ext print_float : #Flt -> !#Nil
+let (+) : #Int -> #Int -> #Int = #add_int
 
-let main = print_float (0.5 *. 2.5)
+let foo x y = x + y
 
--- ext som_str_length : Str -> Int
--- let main = som_str_length "Hello, World!"
+let foo_1 = foo 1
+
+let foo_2 = foo 1 2
+
+let main = foo_2

@@ -54,9 +54,12 @@ module LetAlias = struct
     | expr -> expr
 
   let simplify_stmt = function
-    | Stmt_definition (i, expr) ->
+    | Stmt_definition (name, expr) ->
       Hashtbl.reset replaced;
-      Stmt_definition (i, simplify_expr expr)
+      Stmt_definition (name, simplify_expr expr)
+    | Stmt_function (name, params, expr) ->
+      Hashtbl.reset replaced;
+      Stmt_function (name, params, simplify_expr expr)
     | stmt -> stmt
 
   let simplify_program =
@@ -98,8 +101,10 @@ module NestedApply = struct
     | expr -> expr
 
   let simplify_stmt = function
-    | Stmt_definition (i, expr) ->
-      Stmt_definition (i, simplify_expr expr)
+    | Stmt_definition (name, expr) ->
+      Stmt_definition (name, simplify_expr expr)
+    | Stmt_function (name, params, expr) ->
+      Stmt_function (name, params, simplify_expr expr)
     | stmt -> stmt
 
   let simplify_program =
@@ -118,6 +123,8 @@ module Uncurry = struct
   let uncurry_stmt = function
     | Stmt_definition (name, value) ->
       Stmt_definition (name, uncurry_expr value)
+    | Stmt_function (name, params, value) ->
+      Stmt_function (name, params, uncurry_expr value)
     | stmt -> stmt
 
   let uncurry_program = List.map uncurry_stmt
