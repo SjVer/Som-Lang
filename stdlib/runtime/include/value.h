@@ -10,38 +10,38 @@ typedef uint64_t ui64;
 typedef double f64;
 
 /*
-	Value type:
-		type `value` is either a 8-bit aligned
-		pointer to an allocated object or an
-		unboxed primitive of less than 64 bits,
-		indicated by the 64'th bit (or 32 bits
-		in case of a 32-bit architecture)
+    Value type:
+        type `value` is either a 8-bit aligned
+        pointer to an allocated object or an
+        unboxed primitive of less than 64 bits,
+        indicated by the 64'th bit (or 32 bits
+        in case of a 32-bit architecture)
 
-	Object header structure:
-		00-07: tag (1 byte)
-		08-15: gc status (1 byte)
-		16-30: padding (2 bytes)
-		31-63: payload (4 bytes)
+    Object header structure:
+        00-07: tag (1 byte)
+        08-15: gc status (1 byte)
+        16-30: padding (2 bytes)
+        31-63: payload (4 bytes)
 
     Float objects:
         payload: unused
         following data: 8 byte float
 
-	Raw data objects:
-		payload: data size in bytes
-		following data: data as array
+    Raw data objects:
+        payload: data size in bytes
+        following data: data as array
 
-	Tuple objects:
-		payload: element count
-		following data: array of values
-	
-	Closure objects:
-		payload: argument count
-		following data: function pointer and values
+    Tuple objects:
+        payload: element count
+        following data: array of values
+    
+    Closure objects:
+        payload: argument count
+        following data: function pointer, arity and arguments
 
-	Tagged objects:
-		payload: element count
-		following data: array of values
+    Tagged objects:
+        payload: element count
+        following data: array of values
 */
 
 // header definitions
@@ -115,4 +115,4 @@ typedef header* value;
 #pragma endregion
 
 value som_make_float(f64 f);
-value som_make_closure(void* func, i32 argc, ...);
+value som_make_closure(void* func, i32 arity, i32 argc, ...);

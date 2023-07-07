@@ -13,12 +13,13 @@ module Status = struct
   let const = 0x03
 end
 
-let header_lltype ctx = Llvm.integer_type ctx.context 64
-let value_lltype ctx =
+let word_size ctx =
   Llvm_target.TargetMachine.data_layout ctx.machine
   |> Llvm_target.DataLayout.pointer_size
   |> ( * ) 8
-  |> Llvm.integer_type ctx.context
+
+let header_lltype ctx = Llvm.integer_type ctx.context 64
+let value_lltype ctx = Llvm.integer_type ctx.context (word_size ctx)
 
 let function_lltype ctx arity =
   Array.make arity (value_lltype ctx)

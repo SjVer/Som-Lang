@@ -183,23 +183,28 @@ let rec codegen_expr vals ctx = function
     Llvm.build_call f' (Array.of_list args') "call" ctx.builder
   
   | Expr_apply (f, args) ->
-    let f' = match f with
-      | Expr_atom (Atom_var (Var_global v)) -> SMap.find v vals
-      | f -> codegen_expr vals ctx f
+    let f', arity = match f with
+      | Expr_atom (Atom_var (Var_global v)) ->
+        let f' = SMap.find v vals in
+        f', Array.length (Llvm.params f')
+      | f -> codegen_expr vals ctx f, 0
     in
+
     let f' = Llvm.build_bitcast
       f' (Value.value_lltype ctx)
       (Llvm.value_name f') ctx.builder
     in
     let args' = List.map (codegen_expr vals ctx) args in
 
-    (* call som_make_closure(&func, argc, args...) *)
+    (* call som_apply(&func, arity, argc, args...) *)
+    let ity = Llvm.i32_type ctx.context in
     let func = Value.get_ext_func ctx
       "som_make_closure" ~vararg:true
-      [|Value.value_lltype ctx; Llvm.i32_type ctx.context|] 
+      [|Value.value_lltype ctx; ity; ity|] 
     in
-    let arity = Llvm.const_int (Llvm.i32_type ctx.context) (List.length args) in
-    let args'' = Array.append [|f'; arity|] (Array.of_list args') in
+    let arity' = Llvm.const_int ity arity in
+    let argc = Llvm.const_int ity (List.length args) in
+    let args'' = Array.append [|f'; arity'; argc|] (Array.of_list args') in
     Llvm.build_call func args'' "closure" ctx.builder
 
   | Expr_if (cond, texpr, eexpr) ->
@@ -237,7 +242,13 @@ let rec codegen_expr vals ctx = function
     Value.make_fields_obj ctx tag els' 
   
   | Expr_lazy _ -> failwith "codegen_expr Expr_lazy"
-  | Expr_get _ -> failwith "codegen_expr Expr_get"
+
+  | Expr_get (expr, index) ->
+    let expr' = codegen_atom vals ctx (Atom_var expr) in
+    let offset = 8 + index * Value.word_size ctx in
+    let offset' = Llvm.const_int (Llvm.i64_type ctx.context) offset in
+    Llvm.build_gep expr' [|offset'|] "get" ctx.builder
+  
   | Expr_eval _ -> failwith "codegen_expr Expr_eval"
   
   | Expr_atom a -> codegen_atom vals ctx a

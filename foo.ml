@@ -1,5 +1,3 @@
-let (+) : #Int -> #Int -> #Int = #add_int
-
 let foo x y = x + y
 
 let foo_1 = foo 1

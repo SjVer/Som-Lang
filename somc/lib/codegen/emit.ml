@@ -65,10 +65,11 @@ let link_executable obj_file =
   end;
 
   Report.report_note ("linking executable: " ^ out_file);
-  if not !C.args.dry_run then
+  if not !C.args.dry_run then begin
     if Sys.command command <> 0 then
       let e = Report.Error.(Other_error (Other "linker failed")) in
-      Report.make_error e None |> Report.report;
+      Report.make_error e None |> Report.report
+  end;
 
   Sys.remove obj_file
 
