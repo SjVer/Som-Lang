@@ -4,8 +4,6 @@ EXE = somc/_build/default/bin/main.exe
 
 SOM_INCL_DIR = /usr/share/som/include
 
-.DEFAULT_GOAL := build
-
 gen_codes_ml:
 	@python3 gen_codes_ml.py
 
