@@ -128,7 +128,7 @@ and print_expr_node' i { span; item } =
       print_expr_node' (i + 1) e2
 
     | Pexp_constraint (e, t) ->
-      p i "EXContstraint" span;
+      p i "Pexp_contstraint" span;
       print_expr_node' (i + 1) e;
       print_type_node' (i + 1) t;
 
