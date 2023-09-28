@@ -107,9 +107,25 @@ module CodegenFile = Query.Make(struct
     let program = LowerFile.call file in
     let ctx = Codegen.codegen_program program in
 
+    if !C.args.dump_raw_llvm then begin
+      Report.report_note "dumping raw LLVM IR:";
+      Codegen.print_module ctx.Codegen.Context.llmodule;
+      has_dumped ()
+    end;
+
+    ctx
+end)
+
+module OptimizeFile = Query.Make(struct
+  type a = string
+  type r = Codegen.Context.ctx
+  let c file =
+    let ctx = CodegenFile.call file in
+    let ctx' = Codegen.optimize_module ctx in
+
     if !C.args.dump_llvm then begin
       Report.report_note "dumping LLVM IR:";
-      Codegen.print_module ctx.Codegen.Context.llmodule;
+      Codegen.print_module ctx'.Codegen.Context.llmodule;
       has_dumped ()
     end;
     

@@ -104,13 +104,17 @@ let parseargs () =
     ~set_long:"dump-tast"
     ~description:"Dump the typed parsetree"
     false in
+    let dump_raw_ir = flag
+      ~set_long:"dump-raw-ir"
+      ~description:"Dump the raw intermediate representation"
+      false in
   let dump_ir = flag
     ~set_long:"dump-ir"
     ~description:"Dump the intermediate representation"
     false in
-  let dump_raw_ir = flag
-    ~set_long:"dump-raw-ir"
-    ~description:"Dump the raw intermediate representation"
+  let dump_raw_llvm = flag
+    ~set_long:"dump-raw-llvm"
+    ~description:"Dump the raw LLVM IR"
     false in
   let dump_llvm = flag
     ~set_long:"dump-llvm"
@@ -182,8 +186,9 @@ let parseargs () =
     dump_ast;
     dump_rast;
     dump_tast;
-    dump_ir;
     dump_raw_ir;
+    dump_ir;
+    dump_raw_llvm;
     dump_llvm;
 
     search_dirs;
@@ -205,7 +210,7 @@ let () =
   parseargs ();
   Symbols.reset ();
   try
-    let llmod = Pipeline.CodegenFile.call !C.args.file in
+    let llmod = Pipeline.OptimizeFile.call !C.args.file in
     Codegen.Emit.emit llmod;
     exit 0
   with

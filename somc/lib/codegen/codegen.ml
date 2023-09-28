@@ -1,5 +1,6 @@
 open Lambda.Ir
 open Context
+open Value
 
 module Context = Context
 module Emit = Emit
@@ -32,10 +33,10 @@ let arity_of_func_ptr func =
 (* codegen stuff *)
 
 let codegen_glob_eval glob ctx =
-  Llvm.build_call glob [||] (Llvm.value_name glob) ctx.builder
+  Llvm.build_call2 (value_lltype ctx) glob [||] (Llvm.value_name glob) ctx.builder
 
 let codegen_atom vals ctx = function
-  | Atom_const c -> Value.llvalue_of_const ctx c
+  | Atom_const c -> llvalue_of_const ctx c
   | Atom_var (Var_local v) -> SMap.find v vals
   | Atom_var (Var_global v) ->
     (* assume we need to call non-function globals *)
@@ -57,24 +58,16 @@ let cast_short_t_to_value ctx v =
     "cast" ctx.builder
   in
   Llvm.build_zext 
-    v' (Value.value_lltype ctx)
+    v' (value_lltype ctx)
     "zext" ctx.builder 
-
-let cast_function_ptr ctx f argc =
-  let vt = Value.value_lltype ctx in
-  let ft = Llvm.function_type vt (Array.make argc vt) in
-  Llvm.build_bitcast f (Llvm.pointer_type ft) "fncast" ctx.builder
 
 let build_call_primitive ctx prim args' =
   let name = Symbols.Primitive.to_string prim in
   let args' = Array.of_list args' in
   
   let rawop2 f =
-    let one = Llvm.const_int (Value.value_lltype ctx) 1 in
-    let unbox v = Llvm.build_ashr v one "unbox" ctx.builder in
-    let r = f (unbox args'.(0)) (unbox args'.(1)) name ctx.builder in
-    let r = Llvm.build_shl r one "box" ctx.builder in
-    Llvm.build_or r one "box" ctx.builder
+    let r = f (unbox args'.(0) ctx) (unbox args'.(1) ctx) name ctx.builder in
+    box r ctx
   in
   let chrop2 f =
     let t = Llvm.i8_type ctx.context in
@@ -85,9 +78,9 @@ let build_call_primitive ctx prim args' =
   in
   let fltop2 name =
     let fname = "som_prim_" ^ name ^ "_float" in
-    let t = Value.value_lltype ctx in
-    let f = Value.get_ext_func ctx fname [|t; t|] in
-    Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+    let t = value_lltype ctx in
+    let f = get_ext_func ctx fname [|t; t|] in
+    build_call f [|args'.(0); args'.(1)|] name ctx
   in
 
   let open Symbols.Primitive in
@@ -96,9 +89,9 @@ let build_call_primitive ctx prim args' =
     | Prim_add_char  -> chrop2 Llvm.build_add
     | Prim_add_float -> fltop2 "add"
     | Prim_add_string ->
-      let sty = Value.value_lltype ctx in
-      let f = Value.get_ext_func ctx "som_prim_add_string" [|sty; sty|] in
-      Llvm.build_call f [|args'.(0)|] name ctx.builder
+      let sty = value_lltype ctx in
+      let f = get_ext_func ctx "som_prim_add_string" [|sty; sty|] in
+      build_call f [|args'.(0)|] name ctx
 
     | Prim_sub_int   -> rawop2 Llvm.build_sub
     | Prim_sub_char  -> chrop2 Llvm.build_sub
@@ -117,12 +110,12 @@ let build_call_primitive ctx prim args' =
 
     | Prim_abs_int   ->
       let ity = Llvm.integer_type ctx.context 32 in
-      let f = Value.get_ext_func ctx "som_prim_abs_int" [|ity; ity|] in
-      Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+      let f = get_ext_func ctx "som_prim_abs_int" [|ity; ity|] in
+      build_call f [|args'.(0); args'.(1)|] name ctx
     | Prim_abs_float ->
       let fty = Llvm.double_type ctx.context in
-      let f = Value.get_ext_func ctx "som_prim_abs_float" [|fty; fty|] in
-      Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+      let f = get_ext_func ctx "som_prim_abs_float" [|fty; fty|] in
+      build_call f [|args'.(0); args'.(1)|] name ctx
 
     | Prim_neg_int   -> Llvm.build_neg args'.(0) name ctx.builder
     | Prim_neg_float -> Llvm.build_fneg args'.(0) name ctx.builder
@@ -133,9 +126,9 @@ let build_call_primitive ctx prim args' =
 
     | Prim_eq        -> rawop2 (Llvm.build_icmp Llvm.Icmp.Eq)
     | Prim_eq_value ->
-      let vty = Value.value_lltype ctx in
-      let f = Value.get_ext_func ctx "som_prim_eq_value" [|vty; vty|] in
-      Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+      let vty = value_lltype ctx in
+      let f = get_ext_func ctx "som_prim_eq_value" [|vty; vty|] in
+      build_call f [|args'.(0); args'.(1)|] name ctx
 
     | Prim_gt_int   -> rawop2 (Llvm.build_icmp Llvm.Icmp.Sgt)
     | Prim_gt_float -> fltop2 "gt"
@@ -144,9 +137,9 @@ let build_call_primitive ctx prim args' =
 
     | Prim_neq      -> rawop2 (Llvm.build_icmp Llvm.Icmp.Ne)
     | Prim_neq_value ->
-      let vty = Value.value_lltype ctx in
-      let f = Value.get_ext_func ctx "som_prim_neq_value" [|vty; vty|] in
-      Llvm.build_call f [|args'.(0); args'.(1)|] name ctx.builder
+      let vty = value_lltype ctx in
+      let f = get_ext_func ctx "som_prim_neq_value" [|vty; vty|] in
+      build_call f [|args'.(0); args'.(1)|] name ctx
 
     | Prim_gteq_int   -> rawop2 (Llvm.build_icmp Llvm.Icmp.Sge)
     | Prim_gteq_float -> fltop2 "gteq"
@@ -178,9 +171,8 @@ let rec codegen_expr vals ctx = function
       | Atom_var (Var_global v) -> SMap.find v vals
       | atom -> codegen_atom vals ctx atom
     in
-    let f' = cast_function_ptr ctx f' (List.length args) in
     let args' = List.map (codegen_expr vals ctx) args in
-    Llvm.build_call f' (Array.of_list args') "call" ctx.builder
+    build_call f' (Array.of_list args') "call" ctx
   
   | Expr_apply (f, args) ->
     let f', arity = match f with
@@ -191,21 +183,21 @@ let rec codegen_expr vals ctx = function
     in
 
     let f' = Llvm.build_bitcast
-      f' (Value.value_lltype ctx)
+      f' (value_lltype ctx)
       (Llvm.value_name f') ctx.builder
     in
     let args' = List.map (codegen_expr vals ctx) args in
 
     (* call som_apply(&func, arity, argc, args...) *)
     let ity = Llvm.i32_type ctx.context in
-    let func = Value.get_ext_func ctx
+    let func = get_ext_func ctx
       "som_make_closure" ~vararg:true
-      [|Value.value_lltype ctx; ity; ity|] 
+      [|value_lltype ctx; ity; ity|] 
     in
     let arity' = Llvm.const_int ity arity in
     let argc = Llvm.const_int ity (List.length args) in
     let args'' = Array.append [|f'; arity'; argc|] (Array.of_list args') in
-    Llvm.build_call func args'' "closure" ctx.builder
+    build_call func args'' "closure" ctx
 
   | Expr_if (cond, texpr, eexpr) ->
     let curr_fn = Llvm.(block_parent (insertion_block ctx.builder)) in
@@ -236,29 +228,29 @@ let rec codegen_expr vals ctx = function
 
   | Expr_tuple els ->
     let els' = List.map (codegen_atom vals ctx) els in
-    Value.make_fields_obj ctx Value.Tag.tuple els'
+    make_fields_obj ctx Tag.tuple els'
   | Expr_object (tag, els) ->
     let els' = List.map (codegen_atom vals ctx) els in
-    Value.make_fields_obj ctx tag els' 
+    make_fields_obj ctx tag els' 
   
   | Expr_lazy _ -> failwith "codegen_expr Expr_lazy"
 
   | Expr_get (expr, index) ->
     let expr' = codegen_atom vals ctx (Atom_var expr) in
-    let offset = 8 + index * Value.word_size ctx in
+    let offset = 8 + index * word_size ctx in
     let offset' = Llvm.const_int (Llvm.i64_type ctx.context) offset in
-    Llvm.build_gep expr' [|offset'|] "get" ctx.builder
+    Llvm.build_gep2 (value_lltype ctx) expr' [|offset'|] "get" ctx.builder
   
   | Expr_eval _ -> failwith "codegen_expr Expr_eval"
   
   | Expr_atom a -> codegen_atom vals ctx a
   | Expr_fail ->
-    let f = Value.get_ext_func ctx "som_fail_match" [||] in
-    Llvm.build_call f [||] "unreachable" ctx.builder
+    let f = get_ext_func ctx "som_fail_match" [||] in
+    build_call f [||] "unreachable" ctx
 
 let codegen_stmt vals ctx = function
   | Stmt_definition (name, expr) ->
-    let fty = Value.function_lltype ctx 0 in
+    let fty = function_lltype ctx 0 in
     let func = Llvm.define_function name fty ctx.llmodule in
 
     let entry = Llvm.entry_block func in
@@ -269,17 +261,17 @@ let codegen_stmt vals ctx = function
   
     (* ignore (Llvm.define_global *)
     (*   (name ^ ".result") *)
-    (*   (Llvm.const_null (Value.value_lltype ctx)) *)
+    (*   (Llvm.const_null (value_lltype ctx)) *)
     (*   ctx.llmodule); *)
 
     SMap.add name func vals
 
   | Stmt_function (name, params, body) ->
-    let fty = Value.function_lltype ctx (List.length params) in
+    let fty = function_lltype ctx (List.length params) in
     let func = Llvm.define_function name fty ctx.llmodule in
+    
     let entry = Llvm.entry_block func in
     Llvm.position_at_end entry ctx.builder;
-
     let body' =
       let vals =
         let f vals (p, v) =
@@ -292,12 +284,13 @@ let codegen_stmt vals ctx = function
       in
       codegen_expr vals ctx body
     in
+    print_endline ("=== " ^ name ^ " : " ^ Llvm.string_of_lltype (Llvm.type_of body') ^ " = " ^ Llvm.string_of_llvalue body');
     ignore (Llvm.build_ret body' ctx.builder);
 
     SMap.add name func vals
 
   | Stmt_external (name, native_name, arity) ->
-    let fty = Value.function_lltype ctx arity in
+    let fty = function_lltype ctx arity in
     let glob = Llvm.declare_function native_name fty ctx.llmodule in
     SMap.add name glob vals
 
@@ -341,7 +334,9 @@ let codegen_program program =
   let vals, ctx = go SMap.empty ctx program in
 
   codegen_entrypoint vals ctx;
-  
-  Pass.run_passes ctx.llmodule;
+
   ctx
 
+let optimize_module ctx =
+  Pass.run_passes ctx.llmodule;
+  ctx

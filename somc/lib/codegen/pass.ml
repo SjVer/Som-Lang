@@ -2,44 +2,46 @@ module C = Configs.Cli
 
 let get_scalar_opts_pass =
   let open Llvm_scalar_opts in function
-    | "aggressive-dce" -> Some add_aggressive_dce
-    | "alignment-from-assumptions" -> Some add_alignment_from_assumptions
-    | "basic-alias-analysis" -> Some add_basic_alias_analysis
-    | "cfg-simplification" -> Some add_cfg_simplification
-    | "correlated-value-propagation" -> Some add_correlated_value_propagation
-    | "dce" -> Some add_dce
-    | "dead-store-elimination" -> Some add_dead_store_elimination
-    | "early-cse" -> Some add_early_cse
-    | "gvn" -> Some add_gvn
-    | "ind-var-simplification" -> Some add_ind_var_simplification
-    | "instruction-combination" -> Some add_instruction_combination
-    | "jump-threading" -> Some add_jump_threading
-    | "lib-call-simplification" -> Some add_lib_call_simplification
-    | "licm" -> Some add_licm
-    | "loop-deletion" -> Some add_loop_deletion
-    | "loop-idiom" -> Some add_loop_idiom
-    | "loop-reroll" -> Some add_loop_reroll
-    | "loop-rotation" -> Some add_loop_rotation
-    | "loop-unroll" -> Some add_loop_unroll
-    | "loop-unswitch" -> Some add_loop_unswitch
-    | "lower-atomic" -> Some add_lower_atomic
-    | "lower-expect-intrinsic" -> Some add_lower_expect_intrinsic
-    | "lower-switch" -> Some add_lower_switch
-    | "memcpy-opt" -> Some add_memcpy_opt
-    | "memory-to-register-demotion" -> Some add_memory_to_register_demotion
-    | "memory-to-register-promotion" -> Some add_memory_to_register_promotion
-    | "merged-load-store-motion" -> Some add_merged_load_store_motion
-    | "partially-inline-lib-calls" -> Some add_partially_inline_lib_calls
-    | "reassociation" -> Some add_reassociation
-    | "scalar-repl-aggregation" -> Some add_scalar_repl_aggregation
-    | "scalar-repl-aggregation-ssa" -> Some add_scalar_repl_aggregation_ssa
-    (* | "scalar-repl-aggregation-with-threshold" -> Some add_scalar_repl_aggregation_with_threshold  *)
-    | "scalarizer" -> Some add_scalarizer
-    | "sccp" -> Some add_sccp
-    | "scoped-no-alias-alias-analysis" -> Some add_scoped_no_alias_alias_analysis
-    | "tail-call-elimination" -> Some add_tail_call_elimination
-    | "type-based-alias-analysis" -> Some add_type_based_alias_analysis
-    | "unify-function-exit-nodes" -> Some add_unify_function_exit_nodes
+    | "add-aggressive-dce" -> Some add_aggressive_dce
+    | "add-dce" -> Some add_dce
+    | "add-alignment-from-assumptions" -> Some add_alignment_from_assumptions
+    | "add-cfg-simplification" -> Some add_cfg_simplification
+    | "add-dead-store-elimination" -> Some add_dead_store_elimination
+    | "add-scalarizer" -> Some add_scalarizer
+    | "add-merged-load-store-motion" -> Some add_merged_load_store_motion
+    | "add-gvn" -> Some add_gvn
+    | "add-ind-var-simplification" -> Some add_ind_var_simplification
+    | "add-instruction-combination" -> Some add_instruction_combination
+    | "add-jump-threading" -> Some add_jump_threading
+    | "add-licm" -> Some add_licm
+    | "add-loop-deletion" -> Some add_loop_deletion
+    | "add-loop-idiom" -> Some add_loop_idiom
+    | "add-loop-rotation" -> Some add_loop_rotation
+    | "add-loop-reroll" -> Some add_loop_reroll
+    | "add-loop-unroll" -> Some add_loop_unroll
+    | "add-memcpy-opt" -> Some add_memcpy_opt
+    | "add-partially-inline-lib-calls" -> Some add_partially_inline_lib_calls
+    | "add-lower-atomic" -> Some add_lower_atomic
+    | "add-lower-switch" -> Some add_lower_switch
+    | "add-memory-to-register-promotion" -> Some add_memory_to_register_promotion
+    | "add-reassociation" -> Some add_reassociation
+    | "add-sccp" -> Some add_sccp
+    | "add-scalar-repl-aggregation" -> Some add_scalar_repl_aggregation
+    | "add-scalar-repl-aggregation-ssa" -> Some add_scalar_repl_aggregation_ssa
+    (* | "add-scalar-repl-aggregation-with-threshold" -> Some add_scalar_repl_aggregation_with_threshold *)
+    | "add-lib-call-simplification" -> Some add_lib_call_simplification
+    | "add-tail-call-elimination" -> Some add_tail_call_elimination
+    | "add-memory-to-register-demotion" -> Some add_memory_to_register_demotion
+    | "add-verifier" -> Some add_verifier
+    | "add-correlated-value-propagation" -> Some add_correlated_value_propagation
+    | "add-early-cse" -> Some add_early_cse
+    | "add-lower-expect-intrinsic" -> Some add_lower_expect_intrinsic
+    | "add-lower-constant-intrinsics" -> Some add_lower_constant_intrinsics
+    | "add-type-based-alias-analysis" -> Some add_type_based_alias_analysis
+    | "add-scoped-no-alias-alias-analysis" -> Some add_scoped_no_alias_alias_analysis
+    | "add-basic-alias-analysis" -> Some add_basic_alias_analysis
+    | "add-unify-function-exit-nodes" -> Some add_unify_function_exit_nodes
+
     | "verifier" -> Some add_verifier
     | _ -> None
 
@@ -51,7 +53,6 @@ let get_vectorize_pass =
 
 let get_ipo_pass =
   let open Llvm_ipo in function
-    | "argument-promotion" -> Some add_argument_promotion
     | "constant-merge" -> Some add_constant_merge
     | "merge-functions" -> Some add_merge_functions
     | "dead_arg-elimination" -> Some add_dead_arg_elimination
@@ -120,8 +121,9 @@ let run_passes llmodule =
     if !C.args.verbose then
       Report.report_note "running LLVM passes";
 
-    Llvm_passmgr_builder.populate_lto_pass_manager
-      pm ~internalize:true ~run_inliner:true pmbld;
+    (* Llvm_passmgr_builder.populate_lto_pass_manager
+      pm ~internalize:true ~run_inliner:true pmbld; *)
+    Llvm_passmgr_builder.use_inliner_with_threshold 225 pmbld;
     Llvm_passmgr_builder.populate_module_pass_manager pm pmbld;
 
     let iter = ref 0 in

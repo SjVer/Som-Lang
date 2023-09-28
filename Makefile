@@ -7,6 +7,9 @@ SOM_INCL_DIR = /usr/share/som/include
 gen_codes_ml:
 	@python3 gen_codes_ml.py
 
+watch:
+	@cd somc && dune build --watch
+
 build: gen_codes_ml
 	@clear
 	@cd somc && dune build

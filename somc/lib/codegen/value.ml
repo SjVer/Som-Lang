@@ -21,6 +21,17 @@ let word_size ctx =
 let header_lltype ctx = Llvm.integer_type ctx.context 64
 let value_lltype ctx = Llvm.integer_type ctx.context (word_size ctx)
 
+let one ctx = Llvm.const_int (value_lltype ctx) 1
+
+let unbox value ctx =
+  let name = "unbox " ^ Llvm.value_name value in
+   Llvm.build_ashr value (one ctx) name ctx.builder 
+
+let box value ctx = 
+  let name = "box " ^ Llvm.value_name value in
+  let value' = Llvm.build_shl value (one ctx) ("_" ^ name) ctx.builder in
+  Llvm.build_or value' (one ctx) name ctx.builder
+
 let function_lltype ctx arity =
   Array.make arity (value_lltype ctx)
   |> Llvm.function_type (value_lltype ctx)
@@ -89,6 +100,9 @@ let llvalue_of_const ctx const =
       make_const_obj ctx Tag.raw_data (Bytes.length data) data
     | Const_null ->
       Llvm.const_null lltype
+
+let build_call fn args name ctx = 
+  Llvm.build_call2 (Llvm.type_of fn) fn args name ctx.builder
     
 let make_fields_obj ctx tag fields =
   (* malloc the object *)
@@ -99,7 +113,7 @@ let make_fields_obj ctx tag fields =
     Llvm.const_int (Llvm.i32_type ctx.context) size
   in
   let malloc_fn = get_ext_func ctx "som_malloc" [|Llvm.type_of size|] in
-  let value = Llvm.build_call malloc_fn [|size|] "value" ctx.builder in
+  let value = build_call malloc_fn [|size|] "value" ctx in
   
   (* write the header *)
   let header = make_header ctx tag (List.length fields) in
@@ -107,7 +121,7 @@ let make_fields_obj ctx tag fields =
 
   (* write the fields *)
   let object_addr =
-    Llvm.pointer_type (Llvm.i8_type ctx.context)
+    Llvm.pointer_type2 ctx.context
     |> Llvm.const_inttoptr value
   in
   let store_field i v =
@@ -119,7 +133,7 @@ let make_fields_obj ctx tag fields =
     in
     let addr = Llvm.build_add object_addr offset "field_addr" ctx.builder in
     let ptr = Llvm.build_inttoptr addr
-      (Llvm.pointer_type (value_lltype ctx))
+      (Llvm.pointer_type2 ctx.context)
       "field_ptr" ctx.builder
     in 
     ignore (Llvm.build_store v ptr ctx.builder)
