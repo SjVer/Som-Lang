@@ -1,8 +1,4 @@
 type t =
-  (* internals *)
-  | Prim_box
-  | Prim_unbox
-  (* operators *)
   | Prim_add_int
   | Prim_add_char
   | Prim_add_float
@@ -78,8 +74,6 @@ let names_assoc = [
 ]
 
 let arity = function
-  | Prim_box | Prim_unbox -> 1
-
   | Prim_add_int | Prim_add_char | Prim_add_float | Prim_add_string
   | Prim_sub_int | Prim_sub_char | Prim_sub_float
   | Prim_mul_int | Prim_mul_char | Prim_mul_float
@@ -101,10 +95,6 @@ let arity = function
 let find str = List.assoc str names_assoc
 
 let to_string p =
-  match p with
-    | Prim_box -> "box"
-    | Prim_unbox -> "unbox"
-    | p ->
-      let ns, ps = List.split names_assoc in
-      List.combine ps ns |> List.assoc p
+  let ns, ps = List.split names_assoc in
+  List.combine ps ns |> List.assoc p
   

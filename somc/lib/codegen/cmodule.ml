@@ -12,7 +12,10 @@ type cexpr =
   | Cexpr_prim of prim * atom list
   | Cexpr_call of ident * atom list
 
-type cstmt = ident option * cexpr
+type cstmt =
+  | Cstmt_expr of cexpr
+  | Cstmt_assign of ident * cexpr
+  | Cstmt_return of cexpr
 
 type cblock = cstmt list
 

@@ -211,7 +211,7 @@ let () =
   Symbols.reset ();
   try
     let cmodule = Pipeline.CodegenFile.call !C.args.file in
-    ignore cmodule;
+    Codegen.Write.write_cmodule cmodule;
     exit 0
   with
     | Report.Exit ->

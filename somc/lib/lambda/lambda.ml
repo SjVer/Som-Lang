@@ -2,6 +2,8 @@ module Ir = Ir
 module Lower = Lower
 module Print = Print
 
+let fresh = Env.fresh
+
 let convert tast =
   (* let p = Lower.lower_tast tast in *)
   (* Report.report_note "LOWERED:"; *)

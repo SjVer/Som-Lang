@@ -1,6 +1,4 @@
 open Cmodule
-open Lambda.Ir
-open Symbols.Primitive
 
 module Tag = struct
   let max = 250
@@ -13,10 +11,6 @@ end
 module Status = struct
   let const = 0x03
 end
-
-let one = Latom_const (Lconst_int 1)
-let unbox value = Cexpr_prim (Prim_unbox, [value])
-let box value = Cexpr_prim (Prim_box, [value])
 
 let add_builtin m name args =
   match lookup_builtin m name with

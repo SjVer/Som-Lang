@@ -2,12 +2,14 @@ open Cmodule
 open Lambda.Print
 open Format
 
+let comma_sep ppf _ = pp_print_string ppf ", "
+
 let print_cexpr' ppf = function
   | Cexpr_atom atom -> print_atom' ppf atom
   | Cexpr_prim (prim, args) ->
-    fpf ppf "@[<2>(%s@ %s@ %a)@]"
+    fpf ppf "@[<2>(%s@ #%s@ %a)@]"
       (kw "prim")
-      (kw (Symbols.Primitive.to_string prim))
+      (Symbols.Primitive.to_string prim)
       (pp_list print_atom') args
   | Cexpr_call (callee, args) ->
     fpf ppf "@[<2>(%s@ %s@ %a)@]"
@@ -15,18 +17,19 @@ let print_cexpr' ppf = function
       (var callee)
       (pp_list print_atom') args
 
-let print_cstmt' ppf (ident, expr) =
-  match ident with
-    | Some ident -> 
-      fpf ppf "@[<2>%s@ = %a@];"
-        (var ident) print_cexpr' expr
-    | None ->
-      fpf ppf "@[<2>%a@];" print_cexpr' expr
+let print_cstmt' ppf = function
+  | Cstmt_expr expr ->
+    fpf ppf "@[<2>%a@];" print_cexpr' expr
+  | Cstmt_assign (ident, expr) -> 
+    fpf ppf "@[<2>%s@ = %a@];"
+      (var ident) print_cexpr' expr
+  | Cstmt_return expr ->
+    fpf ppf "@[<2>%s@ %a@];" 
+      (kw "return")
+      print_cexpr' expr
 
 let print_cblock' ppf block =
-    fpf ppf "@[<2>{@,";
-    List.iter (print_cstmt' ppf) block;
-    fpf ppf "@,}@]"
+    List.iter (print_cstmt' ppf) block
 
 let print_cdecl' ppf = function
   | Cdecl_global (name, expr) ->
@@ -35,10 +38,10 @@ let print_cdecl' ppf = function
       (var name)
       print_cexpr' expr
   | Cdecl_function (name, params, block) ->
-    fpf ppf "@[<2>%s@ %s%a@ %a@];"
+    fpf ppf "@[<2>@[%s %s (%a) {@]@ %a@]@ };"
       (kw "function")
       (var name)
-      (pp_print_list (fun f -> fpf f "@ %s")) params
+      (pp_print_list ~pp_sep:comma_sep pp_print_string) params
       print_cblock' block
   | Cdecl_external (name, arity) ->
       fpf ppf "%s %s [%d];"
