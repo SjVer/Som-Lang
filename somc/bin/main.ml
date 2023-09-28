@@ -210,8 +210,8 @@ let () =
   parseargs ();
   Symbols.reset ();
   try
-    let llmod = Pipeline.OptimizeFile.call !C.args.file in
-    Codegen.Emit.emit llmod;
+    let cmodule = Pipeline.CodegenFile.call !C.args.file in
+    ignore cmodule;
     exit 0
   with
     | Report.Exit ->

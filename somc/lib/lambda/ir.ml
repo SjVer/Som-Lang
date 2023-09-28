@@ -1,45 +1,45 @@
 type ident = string
 
 type const =
-  | Const_int of int
-  | Const_float of float
-  | Const_string of string
-  | Const_null
+  | Lconst_int of int
+  | Lconst_float of float
+  | Lconst_string of string
+  | Lconst_null
   [@@deriving show]
 
 type var =
-  | Var_local of ident
-  | Var_global of ident
-  | Var_tag of int
+  | Lvar_local of ident
+  | Lvar_global of ident
+  | Lvar_tag of int
 
 type prim = Symbols.Primitive.t
 
 type atom =
-  | Atom_const of const
-  | Atom_var of var
-  | Atom_prim of prim
+  | Latom_const of const
+  | Latom_var of var
+  | Latom_prim of prim
 
 type scrutinee = int list
 
 and expr =
-  | Expr_let of ident * expr * expr
-  | Expr_lambda of ident list * expr
-  | Expr_match of atom * (int * expr) list
-  | Expr_call of atom * expr list
-  | Expr_apply of expr * expr list
-  | Expr_if of expr * expr * expr
-  | Expr_sequence of expr * expr
-  | Expr_tuple of atom list
-  | Expr_object of int * atom list
-  | Expr_lazy of expr (* unused right now *)
-  | Expr_get of var * int
-  | Expr_eval of var (* unused right now *)
-  | Expr_atom of atom
-  | Expr_fail
+  | Lexpr_let of ident * expr * expr
+  | Lexpr_lambda of ident list * expr
+  | Lexpr_match of atom * (int * expr) list
+  | Lexpr_call of atom * expr list
+  | Lexpr_apply of expr * expr list
+  | Lexpr_if of expr * expr * expr
+  | Lexpr_sequence of expr * expr
+  | Lexpr_tuple of atom list
+  | Lexpr_object of int * atom list
+  | Lexpr_lazy of expr (* unused right now *)
+  | Lexpr_get of var * int
+  | Lexpr_eval of var (* unused right now *)
+  | Lexpr_atom of atom
+  | Lexpr_fail
 
 type statement =
-  | Stmt_definition of ident * expr
-  | Stmt_function of ident * ident list * expr
-  | Stmt_external of ident * ident * int
+  | Lstmt_definition of ident * expr
+  | Lstmt_function of ident * ident list * expr
+  | Lstmt_external of ident * ident * int
 
 type program = statement list

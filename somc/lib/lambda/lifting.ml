@@ -3,47 +3,47 @@ open Ir
 (* lambda lifting stuff *)
 
 let rec lift_expr = function
-  | Expr_let (name, value, expr) ->
+  | Lexpr_let (name, value, expr) ->
     let vfuncs, value = lift_expr value in
     let efuncs, expr = lift_expr expr in
-    vfuncs @ efuncs, Expr_let (name, value, expr)
+    vfuncs @ efuncs, Lexpr_let (name, value, expr)
 
-  | Expr_lambda (params, body) ->
+  | Lexpr_lambda (params, body) ->
     let f = Env.mangle "lam" in
     let funcs, body = lift_expr body in
-    let expr = Expr_atom (Atom_var (Var_global f)) in
-    funcs @ [Stmt_function (f, params, body)], expr
+    let expr = Lexpr_atom (Latom_var (Lvar_global f)) in
+    funcs @ [Lstmt_function (f, params, body)], expr
 
-  | Expr_if (cond, texpr, eexpr) ->
+  | Lexpr_if (cond, texpr, eexpr) ->
     let tfuncs, texpr = lift_expr texpr in
     let efuncs, eexpr = lift_expr eexpr in
-    tfuncs @ efuncs, Expr_if (cond, texpr, eexpr)
+    tfuncs @ efuncs, Lexpr_if (cond, texpr, eexpr)
 
-  | Expr_sequence (e1, e2) ->
+  | Lexpr_sequence (e1, e2) ->
     let funcs1, e1 = lift_expr e1 in
     let funcs2, e2 = lift_expr e2 in
-    funcs1 @ funcs2, Expr_sequence (e1, e2)
+    funcs1 @ funcs2, Lexpr_sequence (e1, e2)
 
-  | Expr_lazy e ->
+  | Lexpr_lazy e ->
     let funcs, e = lift_expr e in
-    funcs, Expr_lazy e
+    funcs, Lexpr_lazy e
 
   | expr -> [], expr
 
 let lift_stmt = function
-  | Stmt_definition (name, Expr_lambda (params, body)) ->
+  | Lstmt_definition (name, Lexpr_lambda (params, body)) ->
     let funcs, body = lift_expr body in
-    funcs @ [Stmt_function (name, params, body)]
+    funcs @ [Lstmt_function (name, params, body)]
 
-  | Stmt_definition (name, value) ->
+  | Lstmt_definition (name, value) ->
     let funcs, value = lift_expr value in
-    funcs @ [Stmt_definition (name, value)]
+    funcs @ [Lstmt_definition (name, value)]
   
-  | Stmt_function (name, params, body) ->
+  | Lstmt_function (name, params, body) ->
     let funcs, body = lift_expr body in
-    funcs @ [Stmt_function (name, params, body)]
+    funcs @ [Lstmt_function (name, params, body)]
   
-  | Stmt_external _ as stmt -> [stmt]
+  | Lstmt_external _ as stmt -> [stmt]
 
 let lift_program program =
   List.map lift_stmt program

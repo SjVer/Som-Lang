@@ -9,8 +9,8 @@ let empty = IMap.empty
 
 let add = IMap.add
 
-let bind_global vars ident var = IMap.add ident (Var_global var) vars
-let bind_local vars ident var = IMap.add ident (Var_local var) vars
+let bind_global vars ident var = IMap.add ident (Lvar_global var) vars
+let bind_local vars ident var = IMap.add ident (Lvar_local var) vars
 
 let find env ident = IMap.find ident env
 

@@ -102,34 +102,18 @@ end)
 
 module CodegenFile = Query.Make(struct
   type a = string
-  type r = Codegen.Context.ctx
+  type r = Codegen.cmodule
   let c file =
     let program = LowerFile.call file in
-    let ctx = Codegen.codegen_program program in
-
-    if !C.args.dump_raw_llvm then begin
-      Report.report_note "dumping raw LLVM IR:";
-      Codegen.print_module ctx.Codegen.Context.llmodule;
-      has_dumped ()
-    end;
-
-    ctx
-end)
-
-module OptimizeFile = Query.Make(struct
-  type a = string
-  type r = Codegen.Context.ctx
-  let c file =
-    let ctx = CodegenFile.call file in
-    let ctx' = Codegen.optimize_module ctx in
-
-    if !C.args.dump_llvm then begin
-      Report.report_note "dumping LLVM IR:";
-      Codegen.print_module ctx'.Codegen.Context.llmodule;
-      has_dumped ()
-    end;
+    let cmodule = Codegen.codegen_program program in
     
-    ctx
+    if !C.args.dump_raw_llvm then begin
+      Report.report_note "dumping C module:";
+      Codegen.Print.print_cmodule cmodule;
+      has_dumped ()
+    end;
+
+    cmodule
 end)
 
 (* export functions bc otherwise i'd somehow

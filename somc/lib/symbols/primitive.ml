@@ -1,4 +1,7 @@
 type t =
+  (* internals *)
+  | Prim_box
+  | Prim_unbox
   (* operators *)
   | Prim_add_int
   | Prim_add_char
@@ -35,9 +38,6 @@ type t =
   | Prim_lteq_int
   | Prim_lteq_float
   | Prim_tageq
-  (* others *)
-  | Prim_file
-  | Prim_line
 
 let names_assoc = [
   "add_int", Prim_add_int;
@@ -75,12 +75,11 @@ let names_assoc = [
   "lteq_int", Prim_lteq_int;
   "lteq_float", Prim_lteq_float;
   "tageq", Prim_tageq;
-  
-  "file", Prim_file;
-  "line", Prim_line;
 ]
 
 let arity = function
+  | Prim_box | Prim_unbox -> 1
+
   | Prim_add_int | Prim_add_char | Prim_add_float | Prim_add_string
   | Prim_sub_int | Prim_sub_char | Prim_sub_float
   | Prim_mul_int | Prim_mul_char | Prim_mul_float
@@ -99,11 +98,13 @@ let arity = function
   | Prim_neg_int | Prim_neg_float
   | Prim_not -> 1
 
-  | Prim_file | Prim_line -> 0
-
 let find str = List.assoc str names_assoc
 
 let to_string p =
-  let ns, ps = List.split names_assoc in
-  List.combine ps ns |> List.assoc p
+  match p with
+    | Prim_box -> "box"
+    | Prim_unbox -> "unbox"
+    | p ->
+      let ns, ps = List.split names_assoc in
+      List.combine ps ns |> List.assoc p
   

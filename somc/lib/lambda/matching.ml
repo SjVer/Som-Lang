@@ -3,15 +3,15 @@ open Matrix
 open Ir
 
 let lower_literal = function
-  | Tli_int i -> Const_int i
-  | Tli_char c -> Const_int (Char.code c)
-  | Tli_float f -> Const_float f
-  | Tli_string s -> Const_string s
-  | Tli_null -> Const_null
+  | Tli_int i -> Lconst_int i
+  | Tli_char c -> Lconst_int (Char.code c)
+  | Tli_float f -> Lconst_float f
+  | Tli_string s -> Lconst_string s
+  | Tli_null -> Lconst_null
 
 let find_local env v =
   match Env.find env (Ident v) with
-    | Var_local var -> var
+    | Lvar_local var -> var
     | _ -> invalid_arg "lower_binding Tpat_variable"
 
 let rec preprocess_action env scrut patt expr =
@@ -20,7 +20,7 @@ let rec preprocess_action env scrut patt expr =
 
     | Tpat_variable v ->
       let var = find_local env v in
-      Expr_let (var, scrut, expr)
+      Lexpr_let (var, scrut, expr)
 
     | Tpat_construct (_, args) ->
       let f acc patt = preprocess_action env acc patt expr in
@@ -81,7 +81,7 @@ let collect_signatures env mat =
       | Tpat_construct (i, args) ->
         let get_tag ident =
           match Env.find env ident.item with
-            | Var_tag tag -> tag
+            | Lvar_tag tag -> tag
             | _ -> failwith "Tpat_construct ident no tag"
         in
         let tag = get_tag i in
@@ -167,26 +167,26 @@ and generate_tree env mat =
 
 let wrap_in_let var body_fn =
   let r = Env.fresh () in
-  Expr_let (r, var, body_fn (Var_local r))
+  Lexpr_let (r, var, body_fn (Lvar_local r))
 
 let rec compile_scrutinee expr = function
   | [] -> expr
   | i :: rest ->
     wrap_in_let expr (fun expr -> 
-      let expr = Expr_get (expr, i) in
+      let expr = Lexpr_get (expr, i) in
       compile_scrutinee expr rest)
 
 let compile_check scrut = function
-  | Default -> Expr_atom (Atom_const (Const_int 1))
+  | Default -> Lexpr_atom (Latom_const (Lconst_int 1))
   | Const c ->
-    let prim = Atom_prim Symbols.Primitive.Prim_eq in
-    Expr_call (prim, [Expr_atom (Atom_const c); scrut])
+    let prim = Latom_prim Symbols.Primitive.Prim_eq in
+    Lexpr_call (prim, [Lexpr_atom (Latom_const c); scrut])
   | Tag t ->
-    let prim = Atom_prim Symbols.Primitive.Prim_tageq in
-    Expr_call (prim, [Expr_atom (Atom_const (Const_int t)); scrut])
+    let prim = Latom_prim Symbols.Primitive.Prim_tageq in
+    Lexpr_call (prim, [Lexpr_atom (Latom_const (Lconst_int t)); scrut])
 
 let rec compile_tree expr = function
-  | Fail -> Expr_fail
+  | Fail -> Lexpr_fail
   | Leaf action -> action
   | Node cases ->
     let rec f = function
@@ -195,13 +195,13 @@ let rec compile_tree expr = function
         let tree' = compile_tree expr tree in
         if check <> Default then
           wrap_in_let scrut' (fun scrut' ->
-            let cond = compile_check (Expr_atom (Atom_var scrut')) check in
+            let cond = compile_check (Lexpr_atom (Latom_var scrut')) check in
             let rest' = f rest in
-            Expr_if (cond, tree', rest'))
+            Lexpr_if (cond, tree', rest'))
         else
           tree'
 
-      | [] -> Expr_fail
+      | [] -> Lexpr_fail
     in
     f cases
 
@@ -219,19 +219,19 @@ let lower_cases env scrut cases =
 
 let lower_binding env patt value body =
   match patt.item with
-    | Tpat_wildcard -> Expr_sequence (value, body)
+    | Tpat_wildcard -> Lexpr_sequence (value, body)
     | Tpat_variable v ->
       let var = find_local env v in
-      Expr_let (var, value, body)
+      Lexpr_let (var, value, body)
     | _ ->
       failwith "lower_binding"
 
 let lower_lambda env patt body =
   match patt.item with
     | Tpat_wildcard ->
-      Expr_lambda ([Env.mangle "_"], body)
+      Lexpr_lambda ([Env.mangle "_"], body)
     | Tpat_variable v ->
       let var = find_local env v in
-      Expr_lambda ([var], body)
+      Lexpr_lambda ([var], body)
     | _ ->
       failwith "lower_lambda"
