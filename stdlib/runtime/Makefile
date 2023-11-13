@@ -1,4 +1,4 @@
-CC = /usr/bin/clang
+CC = /usr/bin/clang-15
 LD = /usr/bin/ld
 
 DEFS = STDIN_PATH='"/dev/stdin"' STDOUT_PATH='"/dev/stdout"' STDERR_PATH='"/dev/stderr"' DEBUG_HEAP

@@ -116,3 +116,4 @@ typedef header* value;
 
 value som_make_float(f64 f);
 value som_make_closure(void* func, i32 arity, i32 argc, ...);
+value som_eval_closure(value val);

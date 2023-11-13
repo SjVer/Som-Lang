@@ -21,7 +21,9 @@ COMMA := ,
 EMPTY :=
 SPACE := $(EMPTY) $(EMPTY)
 test: build
-	@$(EXE) -i test $(subst $(COMMA), $(SPACE), $(args)) --no-prelude test/test.som -o test/test -v
+	@$(EXE) -i test $(subst $(COMMA), $(SPACE), $(args)) --no-prelude test/test.som -o test/test.c -v
+	@bat test/test.c
+	@clang -lsom -Lstdlib/runtime/bin test/test.c -o test/test
 
 .PHONY: runtime
 runtime:

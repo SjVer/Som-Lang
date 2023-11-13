@@ -33,18 +33,18 @@ let print_cblock' ppf block =
 
 let print_cdecl' ppf = function
   | Cdecl_global (name, expr) ->
-    fpf ppf "@[<2>%s@ %s@ =@ %a@];"
+    fpf ppf "@[<2>%s@ %s!@ =@ %a@];"
       (kw "global")
       (var name)
       print_cexpr' expr
   | Cdecl_function (name, params, block) ->
-    fpf ppf "@[<2>@[%s %s (%a) {@]@ %a@]@ };"
+    fpf ppf "@[<2>@[%s %s! (%a) {@]@ %a@]@ };"
       (kw "function")
       (var name)
       (pp_print_list ~pp_sep:comma_sep pp_print_string) params
       print_cblock' block
   | Cdecl_external (name, arity) ->
-      fpf ppf "%s %s [%d];"
+      fpf ppf "%s %s! [%d];"
       (kw "extern") (var name) arity
 
 let print_cmodule' ppf cmodule =

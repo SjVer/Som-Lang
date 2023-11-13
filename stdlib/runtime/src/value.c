@@ -23,3 +23,29 @@ value som_make_closure(void* func, i32 arity, i32 argc, ...) {
 
     return v;
 }
+
+value som_eval_closure(value val) {
+    object closure = Val_object(val);
+    ui32 argc = Hd_payload(closure);
+    void* fptr = Val_field(val, 0);
+
+    switch (argc) {
+        case 1: 
+            return ((value (*)(value))fptr)(
+                Val_field(val, 1)
+            );
+        case 2: 
+            return ((value (*)(value, value))fptr)(
+                Val_field(val, 1),
+                Val_field(val, 2)
+            );
+        case 3: 
+            return ((value (*)(value, value, value))fptr)(
+                Val_field(val, 1),
+                Val_field(val, 2),
+                Val_field(val, 3)
+            );
+        default: 
+            Fail("INVALID COLSURE ARGC");
+    }
+}
