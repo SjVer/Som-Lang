@@ -12,18 +12,13 @@ value foo$2f4 (value x$2f5, value y$2f6) {
 }
 
 // global `two/7`
-static value two$2f7;
+value two$2f7 () {
+  return Unboxed_val(2); 
+}
 
 // global `main/8`
-static value main$2f8;
-
-void __attribute__((constructor)) _som_GLOBALS_CTOR () {
-  two$2f7 = Unboxed_val(2);
-  main$2f8 = foo$2f4 (two$2f7, Unboxed_val(3));
+value main$2f8 () {
+  return foo$2f4 (two$2f7(), Unboxed_val(3)); 
 }
 
-value som_entrypoint_fn(value argc) {
-  return main$2f8;
-}
-
-value (*som_entrypoint)(value) = &som_entrypoint_fn;
+value (*som_entrypoint)(value) = &main$2f8;

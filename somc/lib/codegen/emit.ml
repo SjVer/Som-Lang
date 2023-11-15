@@ -25,7 +25,7 @@ let emit_atom f = function
   | Latom_const (Lconst_string _) -> failwith "emit atom string"
   | Latom_const Lconst_null -> fps f "Null_val"
   | Latom_var (Lvar_local v) -> fps f (mangle v)
-  | Latom_var (Lvar_global v) -> fps f (mangle v)
+  | Latom_var (Lvar_global v) -> fpf f "%s()" (mangle v)
   | Latom_var (Lvar_tag _) -> failwith "emit atom tag"
   | Latom_prim _ -> failwith "emit atom prim"
 
@@ -99,11 +99,13 @@ let emit_cdecl f decl =
   pp_print_newline f ();
   pp_print_newline f ();
   match decl with
-  | Cdecl_global (name, _) ->
+  | Cdecl_global (name, cexpr) ->
     fpf f "// global `%s`@." name;
     (* fpf f "@[<2>value@ %s@ =@ %a@];"
       (mangle name) emit_cexpr expr *)
-    fpf f "static value %s;" (mangle name);
+    (* fpf f "value %s;" (mangle name); *)
+    fpf f "value %s () {@.@[<2>  return %a;@;@.}"
+      (mangle name) emit_cexpr cexpr
   | Cdecl_function (name, params, block) ->
     fpf f "// function `%s`@." name;
     let params' = List.map (fun s -> "value " ^ mangle s) params in
@@ -113,28 +115,37 @@ let emit_cdecl f decl =
       emit_cblock block
   | Cdecl_external (name, arity) ->
     let args = 
-      Array.make arity "value"
+      Array.make arity "arg"
       |> Array.to_list
       |> String.concat ", "
     in
     fpf f "// external `%s`@." name;
     fpf f "extern value %s (%s);" (mangle name) args
 
-let emit_ctors m f =
-  pp_print_newline f ();
-  pp_print_newline f ();
-  fps f "value som_entrypoint() { return }\n";
-  fps f "void __attribute__((constructor)) _som_GLOBALS_CTOR () {\n";
-  let emit_ctor = function
-  | Cdecl_global (name, cexpr) ->
-      fpf f "  @[<2>%s = %a;@]@." (mangle name) emit_cexpr cexpr;
-    | _ -> ()
-  in
-  List.iter emit_ctor m.decls;
-  fpf f "}@."
-    
 let emit_entrypoint m f =
-  ignore m; ignore f
+  try
+    let names = List.filter_map 
+      (function 
+        | Cdecl_function (n, _, _) 
+        | Cdecl_global (n, _) -> Some n
+        | _ -> None)
+      m.decls
+    in
+    let filter n =
+      match String.split_on_char '/' n with
+        | n :: _ -> n = "main"
+        | [] -> false
+    in
+    let main_fn = List.find filter names in
+
+    pp_print_newline f ();
+    pp_print_newline f ();
+    fpf f "value (*som_entrypoint)(value) = &%s;\n" (mangle main_fn);
+
+  with Not_found ->
+    let open Report.Error in
+    let e = Other_error (Other "no entrypoint defined") in
+    Report.raise (Report.make_error e None)
 
 let emit_cmodule m =
   ignore (flush_str_formatter ());
@@ -143,7 +154,6 @@ let emit_cmodule m =
   fps f Configs.c_header;
 
   List.iter (emit_cdecl f) m.decls;
-  emit_ctors m f;
   emit_entrypoint m f;
 
   flush_str_formatter ()

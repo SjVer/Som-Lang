@@ -24,6 +24,8 @@ test: build
 	@$(EXE) -i test $(subst $(COMMA), $(SPACE), $(args)) --no-prelude test/test.som -o test/test.c -v
 	@bat test/test.c
 	@clang -lsom -Lstdlib/runtime/bin test/test.c -o test/test
+	@LD_LIBRARY_PATH=$$(realpath stdlib/runtime/bin) test/test
+	@printf "test/test finished with code $$?\n"
 
 .PHONY: runtime
 runtime:
