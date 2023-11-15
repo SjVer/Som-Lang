@@ -30,11 +30,29 @@ let emit_atom f = function
   | Latom_prim _ -> failwith "emit atom prim"
 
 let emit_prim f prim args =
+  let unop op = match args with
+    | [arg] ->
+      fpf f "@[<2>Unboxed_val(%s Val_value(%a))@]"
+        op emit_atom arg
+    | _ -> failwith "emit invalid unop prim"
+  in
   let binop op = match args with
     | [lhs; rhs] ->
       fpf f "@[<2>Unboxed_val(Val_value(%a) %s Val_value(%a))@]"
         emit_atom lhs op emit_atom rhs
     | _ -> failwith "emit invalid binop prim"
+  in
+  let rbinop op = match args with
+    | [lhs; rhs] ->
+      fpf f "@[<2>Unboxed_val(%a %s %a)@]"
+        emit_atom lhs op emit_atom rhs
+    | _ -> failwith "emit invalid rbinop prim"
+  in
+  let fnop fn argc =
+    if List.length args <> argc then
+      failwith "emit invalid fnop prim";
+    fpf f "@[<2>%s (%a)@]"
+      fn (pp_print_list ~pp_sep:comma_sep emit_atom) args
   in
 
   let open Symbols.Primitive in
@@ -42,7 +60,7 @@ let emit_prim f prim args =
     | Prim_add_int
     | Prim_add_char
     | Prim_add_float  -> binop "+"
-    | Prim_add_string -> failwith "emit prim add_string"
+    | Prim_add_string -> fnop "som_str_concat" 2
     | Prim_sub_int
     | Prim_sub_char
     | Prim_sub_float  -> binop "-"
@@ -53,26 +71,26 @@ let emit_prim f prim args =
     | Prim_div_char
     | Prim_div_float  -> binop "/"
     | Prim_rem_int    -> binop "%"
-    | Prim_rem_float  -> failwith "emit prim rem_float"
-    | Prim_abs_int
-    | Prim_abs_float
+    | Prim_rem_float  -> fnop "som_rem_float" 2
+    | Prim_abs_int    -> fnop "som_abs_int" 1
+    | Prim_abs_float  -> fnop "som_abs_float" 1
     | Prim_neg_int
-    | Prim_neg_float
-    | Prim_and
-    | Prim_or
-    | Prim_not
-    | Prim_eq
-    | Prim_eq_value
+    | Prim_neg_float  -> unop "-"
+    | Prim_and        -> binop "&&"
+    | Prim_or         -> binop "||"
+    | Prim_not        -> unop "!"
+    | Prim_eq         -> rbinop "=="
+    | Prim_eq_value   -> failwith "emit invalid prim"
     | Prim_gt_int
-    | Prim_gt_float
+    | Prim_gt_float   -> binop ">"
     | Prim_lt_int
-    | Prim_lt_float
-    | Prim_neq
-    | Prim_neq_value
+    | Prim_lt_float   -> binop "<"
+    | Prim_neq        -> rbinop "!="
+    | Prim_neq_value  -> failwith "emit invalid prim"
     | Prim_gteq_int
-    | Prim_gteq_float
+    | Prim_gteq_float -> binop ">="
     | Prim_lteq_int
-    | Prim_lteq_float
+    | Prim_lteq_float -> binop "<="
     | Prim_tageq -> failwith "emit invalid prim"
 
 let emit_cexpr f = function

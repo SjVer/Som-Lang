@@ -107,7 +107,7 @@ module CodegenFile = Query.Make(struct
     let program = LowerFile.call file in
     let cmodule = Codegen.codegen_program program in
     
-    if !C.args.dump_raw_llvm then begin
+    if !C.args.dump_raw_cir then begin
       Report.report_note "dumping C module:";
       Codegen.Print.print_cmodule cmodule;
       has_dumped ()

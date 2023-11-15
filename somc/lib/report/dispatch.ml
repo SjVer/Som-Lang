@@ -68,7 +68,9 @@ let r_span color print_tail txt span =
   report_fn color span lines digits print_tail txt
 
 let r_note note =
-  prerr_string [Bold] " note: ";
+  prerr_string [] " ";
+  prerr_string (bold Cyan) "note";
+  prerr_string [] ": ";
   String.concat "\n       " (String.split_on_char '\n' note)
     |> prerr_endline
 

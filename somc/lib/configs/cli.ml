@@ -28,8 +28,8 @@ type args_t =
     dump_tast: bool;
     dump_raw_ir: bool;
     dump_ir: bool;
-    dump_raw_llvm: bool;
-    dump_llvm: bool;
+    dump_raw_cir: bool;
+    dump_cir: bool;
 
     search_dirs: string list;
     no_prelude: bool;
@@ -56,8 +56,8 @@ let args = ref {
     dump_tast = false;
     dump_raw_ir = false;
     dump_ir = false;
-    dump_raw_llvm = false;
-    dump_llvm = false;
+    dump_raw_cir = false;
+    dump_cir = false;
 
     search_dirs = [];
     no_prelude = false;

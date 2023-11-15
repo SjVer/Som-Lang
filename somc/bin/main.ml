@@ -112,13 +112,13 @@ let parseargs () =
     ~set_long:"dump-ir"
     ~description:"Dump the intermediate representation"
     false in
-  let dump_raw_llvm = flag
-    ~set_long:"dump-raw-llvm"
-    ~description:"Dump the raw LLVM IR"
+  let dump_raw_cir = flag
+    ~set_long:"dump-raw-cir"
+    ~description:"Dump the raw C IR"
     false in
-  let dump_llvm = flag
-    ~set_long:"dump-llvm"
-    ~description:"Dump the LLVM IR"
+  let dump_cir = flag
+    ~set_long:"dump-cir"
+    ~description:"Dump the C IR"
     false in
   
   (* parse stuff *)
@@ -188,8 +188,8 @@ let parseargs () =
     dump_tast;
     dump_raw_ir;
     dump_ir;
-    dump_raw_llvm;
-    dump_llvm;
+    dump_raw_cir;
+    dump_cir;
 
     search_dirs;
     no_prelude;

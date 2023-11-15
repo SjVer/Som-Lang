@@ -1,4 +1,7 @@
 #include <stdarg.h>
+#include <stdlib.h>
+#include <math.h>
+
 #include "heap.h"
 #include "value.h"
 
@@ -6,6 +9,18 @@ value som_make_float(f64 f) {
     value v = som_malloc_object(8, TAG_FLOAT, 0);
     Val_float(v) = f;
     return v;
+}
+
+value som_rem_float(value lhs, value rhs) {
+    return som_make_float(fmod(Val_float(lhs), Val_float(rhs)));
+}
+
+value som_abs_int(value val) {
+    return Unboxed_val(abs(Val_value(val)));
+}
+
+value som_abs_float(value val) {
+    return som_make_float(fabs(Val_float(val)));
 }
 
 value som_make_closure(void* func, i32 arity, i32 argc, ...) {

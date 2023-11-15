@@ -108,12 +108,17 @@ typedef header* value;
 #pragma region
 
 #define Val_data_ptr(v) (v + 1)
-#define Val_float(v) (*Obj_data_ptr(f64*, *(v)))
 #define Val_field(v, i) (Obj_data_ptr(value*, *(v))[i])
+#define Val_float(v) (*Obj_data_ptr(f64*, *(v)))
 #define Null_val Unboxed_val(0)
 
 #pragma endregion
 
 value som_make_float(f64 f);
+
+value som_rem_float(value lhs, value rhs);
+value som_abs_int(value val);
+value som_abs_float(value val);
+
 value som_make_closure(void* func, i32 arity, i32 argc, ...);
 value som_eval_closure(value val);
